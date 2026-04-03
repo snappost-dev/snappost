@@ -1,0 +1,28 @@
+---
+import Base from '../../layouts/Base.astro';
+import PostCard from '../../components/PostCard.astro';
+
+const configResult = await Astro.locals.runtime.env.DB
+  .prepare('SELECT key, value FROM config')
+  .all();
+
+const config = Object.fromEntries(
+  configResult.results.map((r: any) => [r.key, r.value])
+);
+
+const postsResult = await Astro.locals.runtime.env.DB
+  .prepare('SELECT * FROM posts WHERE published = 1 ORDER BY created_at DESC')
+  .all();
+
+const posts = postsResult.results;
+---
+
+<Base title={`All Posts - ${config.site_title}`}>
+  <h1 class="text-4xl font-bold mb-8">All Posts</h1>
+
+  <div class="space-y-6">
+    {posts.map((post: any) => (
+      <PostCard post={post} />
+    ))}
+  </div>
+</Base>

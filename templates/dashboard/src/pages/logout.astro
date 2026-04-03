@@ -1,0 +1,8 @@
+---
+if (Astro.request.method === 'POST') {
+  Astro.cookies.delete('auth');
+  return Astro.redirect('/login');
+}
+
+return Astro.redirect('/');
+---

@@ -1,0 +1,31 @@
+# Dependencies (tüm alt klasörler)
+node_modules/
+**/node_modules/
+
+# Build outputs (her şablonda)
+dist/
+**/dist/
+.astro/
+**/.astro/
+
+# Cloudflare local state
+.wrangler/
+**/.wrangler/
+.mf/
+.dev.vars
+
+# Environment
+.env
+.env.*
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+.cache/
+
+# IDE
+.vscode/
+.idea/

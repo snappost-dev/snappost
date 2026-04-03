@@ -1,0 +1,28 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const { slug } = Astro.params;
+
+const post = await Astro.locals.runtime.env.DB
+  .prepare('SELECT * FROM posts WHERE slug = ? AND published = 1')
+  .bind(slug)
+  .first();
+
+if (!post) {
+  return Astro.redirect('/404');
+}
+
+const date = new Date(post.created_at).toLocaleDateString('tr-TR', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+});
+---
+
+<Base title={post.title} description={post.description}>
+  <article class="prose prose-lg max-w-none">
+    <h1>{post.title}</h1>
+    <time class="text-gray-500">{date}</time>
+    <div set:html={post.content_html} />
+  </article>
+</Base>

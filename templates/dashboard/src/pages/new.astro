@@ -1,0 +1,117 @@
+---
+import Dashboard from '../layouts/Dashboard.astro';
+import { marked } from 'marked';
+
+let success = false;
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+    const title = formData.get('title') as string;
+    const slug = formData.get('slug') as string;
+    const description = formData.get('description') as string;
+    const content = formData.get('content') as string;
+    const published = formData.get('published') === 'on' ? 1 : 0;
+    
+    // Markdown → HTML
+    const content_html = marked(content);
+    
+    const now = new Date().toISOString();
+    
+    await Astro.locals.runtime.env.DB
+      .prepare(
+        'INSERT INTO posts (slug, title, description, content, content_html, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      )
+      .bind(slug, title, description, content, content_html, published, now, now)
+      .run();
+    
+    return Astro.redirect('/');
+  } catch (e) {
+    error = 'Error creating post: ' + (e as Error).message;
+  }
+}
+---
+
+<Dashboard title="New Post">
+  <h1 class="text-3xl font-bold mb-6">Create New Post</h1>
+
+  {error && (
+    <div class="bg-red-50 text-red-600 p-4 rounded mb-4">
+      {error}
+    </div>
+  )}
+
+  <form method="POST" class="bg-white rounded-lg border p-6">
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Title</label>
+        <input 
+          type="text" 
+          name="title" 
+          required
+          class="w-full px-3 py-2 border rounded"
+          placeholder="My First Post"
+        />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1">Slug</label>
+        <input 
+          type="text" 
+          name="slug" 
+          required
+          class="w-full px-3 py-2 border rounded"
+          placeholder="my-first-post"
+        />
+        <p class="text-xs text-gray-500 mt-1">URL: /blog/slug</p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1">Description</label>
+        <input 
+          type="text" 
+          name="description"
+          class="w-full px-3 py-2 border rounded"
+          placeholder="A short description"
+        />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1">Content (Markdown)</label>
+        <textarea 
+          name="content" 
+          required
+          rows="15"
+          class="w-full px-3 py-2 border rounded font-mono text-sm"
+          placeholder="# Hello World&#10;&#10;This is my **first post**!"
+        ></textarea>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <input 
+          type="checkbox" 
+          name="published" 
+          id="published"
+          class="w-4 h-4"
+        />
+        <label for="published" class="text-sm">Publish immediately</label>
+      </div>
+
+      <div class="flex gap-2 pt-4">
+        <button 
+          type="submit"
+          class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+        >
+          Create Post
+        </button>
+        <a 
+          href="/"
+          class="px-6 py-2 border rounded hover:bg-gray-50"
+        >
+          Cancel
+        </a>
+      </div>
+    </div>
+  </form>
+</Dashboard>

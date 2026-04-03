@@ -1,0 +1,67 @@
+---
+import Dashboard from '../layouts/Dashboard.astro';
+
+const postsResult = await Astro.locals.runtime.env.DB
+  .prepare('SELECT * FROM posts ORDER BY created_at DESC')
+  .all();
+
+const posts = postsResult.results;
+---
+
+<Dashboard title="All Posts">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">All Posts</h1>
+    <a 
+      href="/new"
+      class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+    >
+      + New Post
+    </a>
+  </div>
+
+  <div class="bg-white rounded-lg border">
+    {posts.length === 0 ? (
+      <div class="p-8 text-center text-gray-500">
+        No posts yet. Create your first post!
+      </div>
+    ) : (
+      <table class="w-full">
+        <thead class="border-b bg-gray-50">
+          <tr>
+            <th class="text-left p-4">Title</th>
+            <th class="text-left p-4">Status</th>
+            <th class="text-left p-4">Created</th>
+            <th class="text-right p-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {posts.map((post: any) => (
+            <tr class="border-b hover:bg-gray-50">
+              <td class="p-4 font-medium">{post.title}</td>
+              <td class="p-4">
+                <span class={`px-2 py-1 rounded text-xs ${
+                  post.published 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-gray-100 text-gray-700'
+                }`}>
+                  {post.published ? 'Published' : 'Draft'}
+                </span>
+              </td>
+              <td class="p-4 text-sm text-gray-600">
+                {new Date(post.created_at).toLocaleDateString()}
+              </td>
+              <td class="p-4 text-right">
+                <a 
+                  href={`/edit/${post.id}`}
+                  class="text-blue-600 hover:text-blue-700 text-sm"
+                >
+                  Edit
+                </a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
+  </div>
+</Dashboard>

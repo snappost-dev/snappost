@@ -1,0 +1,23 @@
+{
+  "name": "snappost-dashboard",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "wrangler pages dev --local -- astro dev --port 4322",
+    "build": "astro build",
+    "preview": "wrangler pages dev dist"
+  },
+  "dependencies": {
+    "astro": "^4.15.0",
+    "@astrojs/cloudflare": "^11.0.0",
+    "@astrojs/tailwind": "^5.1.0",
+    "tailwindcss": "^3.4.0",
+    "marked": "^12.0.0",
+    "bcryptjs": "^2.4.3",
+    "@types/bcryptjs": "^2.4.6"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240512.0",
+    "wrangler": "^3.57.0"
+  }
+}
