@@ -1,0 +1,166 @@
+---
+import Base from '../layouts/Base.astro';
+
+const runtime = (Astro.locals as any).runtime;
+const API_URL = runtime?.env?.API_URL || import.meta.env.API_URL || 'http://localhost:8787';
+const token = Astro.cookies.get('auth_token')?.value;
+
+if (!token) {
+  return Astro.redirect('/login');
+}
+
+// Verify token + get user
+let user: any = null;
+let sites: any[] = [];
+let provisionError = '';
+let provisionSuccess = '';
+
+try {
+  const meRes = await fetch(`${API_URL}/api/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!meRes.ok) {
+    Astro.cookies.delete('auth_token', { path: '/' });
+    return Astro.redirect('/login');
+  }
+  const meData = await meRes.json();
+  user = meData.user;
+} catch {
+  return Astro.redirect('/login');
+}
+
+// Handle provision form
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = form.get('action')?.toString();
+
+  if (action === 'provision') {
+    const siteName = form.get('site_name')?.toString();
+    if (!siteName) {
+      provisionError = 'Site name required';
+    } else {
+      try {
+        const res = await fetch(`${API_URL}/api/provision`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ site_name: siteName }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          provisionError = data.error || 'Provisioning failed';
+        } else {
+          provisionSuccess = `Blog "${siteName}" created!`;
+        }
+      } catch {
+        provisionError = 'Could not connect to server';
+      }
+    }
+  }
+
+  if (action === 'logout') {
+    Astro.cookies.delete('auth_token', { path: '/' });
+    return Astro.redirect('/');
+  }
+}
+
+// Fetch sites
+try {
+  const sitesRes = await fetch(`${API_URL}/api/sites`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (sitesRes.ok) {
+    const sitesData = await sitesRes.json();
+    sites = sitesData.sites || [];
+  }
+} catch {}
+---
+
+<Base title="Dashboard">
+  <div class="max-w-5xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-2xl font-bold">Dashboard</h1>
+        <p class="text-gray-500 text-sm">{user.email}</p>
+      </div>
+      <form method="POST">
+        <input type="hidden" name="action" value="logout" />
+        <button type="submit" class="text-gray-500 hover:text-gray-700 text-sm">Log out</button>
+      </form>
+    </div>
+
+    <!-- Provision -->
+    {provisionError && (
+      <div class="bg-red-50 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">{provisionError}</div>
+    )}
+    {provisionSuccess && (
+      <div class="bg-green-50 text-green-700 px-4 py-3 rounded-lg mb-4 text-sm">{provisionSuccess}</div>
+    )}
+
+    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-8">
+      <h2 class="text-lg font-semibold mb-4">Create New Blog</h2>
+      <form method="POST" class="flex gap-3">
+        <input type="hidden" name="action" value="provision" />
+        <input
+          type="text" name="site_name" required
+          pattern="[a-z0-9-]+"
+          class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+          placeholder="my-awesome-blog (lowercase, hyphens only)"
+        />
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition whitespace-nowrap">
+          Create Blog
+        </button>
+      </form>
+      <p class="text-xs text-gray-400 mt-2">This takes ~15 seconds. A D1 database, blog, and dashboard will be created.</p>
+    </div>
+
+    <!-- Sites -->
+    <h2 class="text-lg font-semibold mb-4">Your Blogs ({sites.length})</h2>
+
+    {sites.length === 0 ? (
+      <div class="bg-white border border-gray-200 rounded-xl p-12 text-center">
+        <div class="text-5xl mb-4">📝</div>
+        <h3 class="text-lg font-semibold mb-1">No blogs yet</h3>
+        <p class="text-gray-500 text-sm">Create your first blog above to get started</p>
+      </div>
+    ) : (
+      <div class="space-y-4">
+        {sites.map((site: any) => (
+          <div class="bg-white border border-gray-200 rounded-xl p-6">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="text-lg font-semibold mb-2">{site.site_name}</h3>
+                <div class="space-y-1.5 text-sm">
+                  <div class="flex items-center gap-2">
+                    <span class="text-gray-500 w-20">Blog</span>
+                    <a href={site.shell_url} target="_blank" class="text-blue-600 hover:underline">{site.shell_url}</a>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-gray-500 w-20">Dashboard</span>
+                    <a href={site.dashboard_url} target="_blank" class="text-blue-600 hover:underline">{site.dashboard_url}</a>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-gray-500 w-20">Status</span>
+                    <span class={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                      site.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                    }`}>{site.status}</span>
+                  </div>
+                </div>
+              </div>
+              <a
+                href={`${site.dashboard_url}/login?token=${site.access_token || ''}`}
+                target="_blank"
+                class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition"
+              >
+                Open Dashboard
+              </a>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+</Base>

@@ -1,0 +1,17 @@
+name = "snappost-api"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 Database binding (provisioning veritabanı)
+[[d1_databases]]
+binding = "DB"
+database_name = "snappost-provisioning"
+database_id = "d8c8583f-e604-44f0-8ead-7b0d53b4f151"
+
+[vars]
+CF_ACCOUNT_ID = "1094e722fe9d2b939e94a8ceb124d21b"
+
+# Secrets (wrangler secret put):
+# CF_API_TOKEN
+# JWT_SECRET

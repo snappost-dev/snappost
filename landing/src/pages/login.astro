@@ -1,0 +1,84 @@
+---
+import Base from '../layouts/Base.astro';
+
+const runtime = (Astro.locals as any).runtime;
+const API_URL = runtime?.env?.API_URL || import.meta.env.API_URL || 'http://localhost:8787';
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const email = form.get('email')?.toString();
+  const password = form.get('password')?.toString();
+
+  if (!email || !password) {
+    error = 'Email and password required';
+  } else {
+    try {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        error = data.error || 'Login failed';
+      } else {
+        Astro.cookies.set('auth_token', data.token, {
+          path: '/',
+          httpOnly: true,
+          secure: import.meta.env.PROD,
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 7,
+        });
+        return Astro.redirect('/dashboard');
+      }
+    } catch (e) {
+      error = 'Could not connect to server';
+    }
+  }
+}
+---
+
+<Base title="Login">
+  <div class="min-h-screen flex items-center justify-center px-4">
+    <div class="w-full max-w-md">
+      <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+        <h1 class="text-2xl font-bold mb-2">Welcome Back</h1>
+        <p class="text-gray-500 mb-6">Log in to manage your blogs</p>
+
+        {error && (
+          <div class="bg-red-50 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">{error}</div>
+        )}
+
+        <form method="POST" class="space-y-4">
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email" name="email" id="email" required autocomplete="email"
+              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              placeholder="you@example.com"
+            />
+          </div>
+
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input
+              type="password" name="password" id="password" required
+              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              placeholder="Your password"
+            />
+          </div>
+
+          <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition">
+            Log In
+          </button>
+        </form>
+
+        <p class="text-sm text-gray-500 text-center mt-6">
+          Don't have an account? <a href="/register" class="text-blue-600 hover:underline">Create one</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</Base>

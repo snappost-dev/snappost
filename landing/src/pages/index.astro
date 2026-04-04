@@ -1,0 +1,86 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Home">
+  <div class="container mx-auto px-4 py-16">
+    <div class="max-w-4xl mx-auto text-center">
+      <h1 class="text-6xl font-bold text-gray-900 mb-6">
+        Launch Your Blog<br/>
+        <span class="text-blue-600">In Seconds</span>
+      </h1>
+
+      <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+        No setup. No config files. No hosting worries.<br/>
+        Register, name your blog, and you're live.
+      </p>
+
+      <a
+        href="/register"
+        class="inline-block bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
+      >
+        Start Free &rarr;
+      </a>
+
+      <p class="text-sm text-gray-500 mt-4">
+        Free forever &bull; No credit card required
+      </p>
+    </div>
+
+    <div class="max-w-6xl mx-auto mt-24 grid md:grid-cols-3 gap-8">
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div class="text-3xl mb-4">&#9889;</div>
+        <h3 class="text-xl font-semibold mb-2">Instant Deploy</h3>
+        <p class="text-gray-600">
+          Register, pick a name, get your blog live in 15 seconds.
+        </p>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div class="text-3xl mb-4">&#9729;&#65039;</div>
+        <h3 class="text-xl font-semibold mb-2">Edge-Powered</h3>
+        <p class="text-gray-600">
+          Runs on Cloudflare's global network. Fast everywhere.
+        </p>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div class="text-3xl mb-4">&#9997;&#65039;</div>
+        <h3 class="text-xl font-semibold mb-2">Simple Editor</h3>
+        <p class="text-gray-600">
+          Write in Markdown, publish instantly. No build step needed.
+        </p>
+      </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto mt-24">
+      <h2 class="text-3xl font-bold text-center mb-12">How It Works</h2>
+
+      <div class="space-y-8">
+        <div class="flex gap-4">
+          <div class="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">1</div>
+          <div>
+            <h4 class="font-semibold mb-1">Create an Account</h4>
+            <p class="text-gray-600">Email and password, that's it</p>
+          </div>
+        </div>
+
+        <div class="flex gap-4">
+          <div class="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">2</div>
+          <div>
+            <h4 class="font-semibold mb-1">Name Your Blog</h4>
+            <p class="text-gray-600">Pick a name, we set up everything automatically</p>
+          </div>
+        </div>
+
+        <div class="flex gap-4">
+          <div class="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">3</div>
+          <div>
+            <h4 class="font-semibold mb-1">Start Publishing</h4>
+            <p class="text-gray-600">Open your dashboard, write your first post</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Base>
