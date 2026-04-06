@@ -302,18 +302,20 @@ function showAlertProperties(inst) {
 }
 function insertBlock(type) {
   document.getElementById('add-block-modal').close();
-  if (editor.blocks.getBlocksCount() === 1) {
-    const first = editor.blocks.getBlockByIndex(0);
-    if (first.name === 'paragraph' && !first.holder.textContent.trim()) {
-      editor.blocks.delete(0);
-    }
-  }
-  const index = editor.blocks.getBlocksCount();
   editor.blocks.insert(type);
+
   setTimeout(() => {
-    updateNavigator();
+    const count = editor.blocks.getBlocksCount();
+    for (let i = count - 1; i >= 0; i--) {
+      const b = editor.blocks.getBlockByIndex(i);
+      if (b && b.name === 'paragraph' && !b.holder.textContent.trim()) {
+        if (count > 1) { editor.blocks.delete(i); break; }
+      }
+    }
+
+    const newIndex = editor.blocks.getBlocksCount() - 1;
     const blocks = document.querySelectorAll('.ce-block');
-    const newBlock = blocks[index];
+    const newBlock = blocks[newIndex];
     if (newBlock) {
       newBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
       newBlock.style.outline = '2px solid #3b82f6';
@@ -323,7 +325,7 @@ function insertBlock(type) {
       const editable = newBlock.querySelector('[contenteditable]');
       if (editable) editable.focus();
     }
-    activeBlockIndex = index;
+    activeBlockIndex = newIndex;
     updateNavigator();
   }, 300);
 }
