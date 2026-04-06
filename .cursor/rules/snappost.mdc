@@ -1,0 +1,43 @@
+---
+description: Snappost repo indeksi — PROJECT-STATUS ve kritik mimari kısıtlar
+alwaysApply: true
+---
+
+# Snappost — AI bağlam indeksi
+
+**Tek doğruluk kaynağı:** repo kökünde `PROJECT-STATUS.md`. Uzun mimari, endpoint listesi, deploy ve yol haritası orada; bu dosya yalnızca **hızlı yön bulma** ve **sık hata önleme** içindir.
+
+## PROJECT-STATUS.md bölüm haritası
+
+| § | Konu |
+|---|------|
+| 1 | Ürün özeti + tamamlanan Editor.js dashboard + ölçekleme notu |
+| 2 | Mimari diyagram + provision akışı |
+| 3 | Repo dizin yapısı |
+| 4 | API endpoint tablosu |
+| 5 | Provisioning DB + blog D1 şemaları |
+| 6 | Tech stack |
+| 7 | Production deploy komutları, URL örnekleri, env |
+| 8 | Bilinen limitasyonlar / teknik borç |
+| 9 | Yol haritası (stabilizasyon, mimari pivot, V3) |
+
+Diğer girişler: `README.md`, `api/README.md`, `landing/README.md`. Editor.js arşiv planı: `docs/archive-editorjs-v2-plan.md`.
+
+## Kritik kısıtlar (bunu atlama)
+
+1. **Auth:** Cloudflare OAuth **yok**. Email + şifre → `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` (JWT). Landing: `/register`, `/login`, `/dashboard`, `/logout` — **`/sites` yok**.
+2. **Provision şablonu:** API runtime’da gömülü template `api/src/generated/*-template.ts` içinden gelir. `templates/shell` veya `templates/dashboard` kaynağını değiştirdiysen: **build → `api/src/templates/*` senkron → `cd api && npm run embed` → `wrangler deploy`**. Sadece `git push` yetmez.
+3. **Landing SSR env:** Production’da `import.meta.env.API_URL` güvenilir olmayabilir; Astro Cloudflare’da **`Astro.locals.runtime.env.API_URL`** (bkz. `landing/src/env.d.ts`).
+4. **Dashboard editör:** `templates/dashboard` — Editor.js; `posts.content` JSON, `posts.content_html` sunucuda üretilir. Shell blog **`content_html`** okur.
+5. **Ölçekleme:** Site başına 2× Pages + 1× D1 modeli CF kota açısından sınırlı; uzun vadede multi-tenant / az yüzey — **PROJECT-STATUS §9.3**.
+
+## Kod yolları (kısa)
+
+- API giriş: `api/src/index.ts`
+- CF yardımcıları: `api/src/lib/cloudflare.ts`, `api/src/lib/templates.ts`
+- Embed script: `api/scripts/embed-templates.mjs`
+- Landing sayfalar: `landing/src/pages/`
+- Blog şablon kaynak: `templates/shell/`
+- Admin şablon kaynak: `templates/dashboard/`
+
+Yeni özellik veya mimari değişiklikde önce **PROJECT-STATUS.md** güncellenmeli; bu kural dosyası sadece indeks tutar, ayrıntıyı çoğaltma.

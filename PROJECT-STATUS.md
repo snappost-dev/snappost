@@ -75,6 +75,8 @@ Hata olursa rollback: oluşturulan Pages projeleri ve D1 database silinir.
 
 ```
 ~/snappost/
+├── .cursor/rules/
+│   └── snappost.mdc              # Cursor AI: indeks + kritik kısıtlar → bu dosya
 ├── api/                          # Provisioning API (Cloudflare Workers)
 │   ├── src/
 │   │   ├── index.ts              # Hono app — tüm endpoint'ler
