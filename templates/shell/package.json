@@ -4,7 +4,9 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "wrangler pages dev --local -- astro dev",
-    "build": "astro build"
+    "dev:local": "npm run build && wrangler pages dev dist --local --port 8791 --persist-to ../../.snappost-d1-local",
+    "build": "astro build",
+    "preview": "wrangler pages dev dist --port 8791 --persist-to ../../.snappost-d1-local"
   },
   "dependencies": {
     "astro": "^4.15.0",

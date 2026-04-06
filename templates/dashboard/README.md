@@ -12,8 +12,10 @@ Genel mimari: repo kökünde [`PROJECT-STATUS.md`](../../PROJECT-STATUS.md).
 
 ```bash
 cd templates/dashboard
-npx wrangler d1 execute snappost-shell-dev --local --file=../shell/schema.sql
+npx wrangler d1 execute snappost-shell-dev --local --persist-to ../../.snappost-d1-local --file=../shell/schema.sql
 ```
+
+(`--persist-to` dashboard + shell `dev:local` ile aynı yerel D1 dosyasını paylaşır.)
 
 ### 2A) Hızlı geliştirme (HMR)
 
@@ -41,6 +43,17 @@ npx wrangler pages dev dist --local --port 8790
 1. **http://localhost:&lt;port&gt;/login** — şifre: `changeme` (`wrangler.toml` `[vars]`).
 2. **/new** — Editor.js blok editörü.
 3. **/** — yazı listesi (kayıt sonrası).
+
+## Shell blog ile birlikte test
+
+Aynı yerel D1’i paylaşırlar (`snappost-shell-dev`). İkinci terminal:
+
+```bash
+cd ../shell
+npm run dev:local
+```
+
+Shell genelde **http://localhost:8791** (dashboard **8788** ile port çakışmasın diye).
 
 ## Diğer
 

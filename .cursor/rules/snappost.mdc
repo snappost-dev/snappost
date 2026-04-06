@@ -41,3 +41,5 @@ Diğer girişler: `README.md`, `api/README.md`, `landing/README.md`. Editor.js a
 - Admin şablon kaynak: `templates/dashboard/`
 
 Yeni özellik veya mimari değişiklikde önce **PROJECT-STATUS.md** güncellenmeli; bu kural dosyası sadece indeks tutar, ayrıntıyı çoğaltma.
+
+**Yerel dashboard + shell aynı D1:** `templates/*/npm run dev:local` ortak `--persist-to ../../.snappost-d1-local` kullanır; şema için `wrangler d1 execute … --local --persist-to ../../.snappost-d1-local` (bkz. şablon `README.md` dosyaları).
