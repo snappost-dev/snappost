@@ -17,9 +17,9 @@ alwaysApply: true
 | 4 | API endpoint tablosu |
 | 5 | Provisioning DB + blog D1 şemaları |
 | 6 | Tech stack |
-| 7 | Production deploy komutları, URL örnekleri, env |
+| 7 | Production deploy, **§ deploy modeli** (sabit Git/CLI vs kiracı provision), env |
 | 8 | Bilinen limitasyonlar / teknik borç |
-| 9 | Yol haritası (stabilizasyon, mimari pivot, V3) |
+| 9 | Yol haritası (stabilizasyon, mimari pivot, V3, **§9.5 whitelist + test planı**) |
 
 Diğer girişler: `README.md`, `api/README.md`, `landing/README.md`. Editor.js arşiv planı: `docs/archive-editorjs-v2-plan.md`.
 
@@ -30,6 +30,8 @@ Diğer girişler: `README.md`, `api/README.md`, `landing/README.md`. Editor.js a
 3. **Landing SSR env:** Production’da `import.meta.env.API_URL` güvenilir olmayabilir; Astro Cloudflare’da **`Astro.locals.runtime.env.API_URL`** (bkz. `landing/src/env.d.ts`).
 4. **Dashboard editör:** `templates/dashboard` — Editor.js; `posts.content` JSON, `posts.content_html` sunucuda üretilir. Shell blog **`content_html`** okur.
 5. **Ölçekleme:** Site başına 2× Pages + 1× D1 modeli CF kota açısından sınırlı; uzun vadede multi-tenant / az yüzey — **PROJECT-STATUS §9.3**.
+6. **Deploy ayrımı:** **API + landing** = sabit CF projeleri (Git veya `wrangler`). **Shell + dashboard** (kiracı) = yalnızca **provision** (CF API); landing gibi repodan sürekli deploy edilmez. Git build’de `API_URL` vb. için **Dashboard env** doğrula — **PROJECT-STATUS §7**.
+7. **Blog custom domain:** Yalnızca **shell** (blog) Pages projesi; `POST/DELETE /api/sites/:id/domain`. Admin dashboard `*.pages.dev` kalır. **PROJECT-STATUS §4**, provisioning DB `custom_domain`.
 
 ## Kod yolları (kısa)
 
@@ -40,6 +42,16 @@ Diğer girişler: `README.md`, `api/README.md`, `landing/README.md`. Editor.js a
 - Blog şablon kaynak: `templates/shell/`
 - Admin şablon kaynak: `templates/dashboard/`
 
-Yeni özellik veya mimari değişiklikde önce **PROJECT-STATUS.md** güncellenmeli; bu kural dosyası sadece indeks tutar, ayrıntıyı çoğaltma.
+## Dokümantasyon güncelleme (her implementasyonda)
+
+Yeni özellik veya kullanıcıya dönük davranış değişince şunlar **elle** güncellenir (otomatik senkron yok):
+
+1. **`PROJECT-STATUS.md`** — mimari, env, yol haritası, limitasyonlar.
+2. **`api/README.md`** — API kurulum, env, endpoint özeti (API’ye dokunan her değişiklik).
+3. **`landing/README.md`** — sayfalar, env, landing’i etkileyen auth/whitelist notları.
+
+Bu **`snappost.mdc`** dosyası yalnızca indeks: yeni § veya kritik kısıt eklendiyse kısaca burada da satır güncellenir.
+
+**Otomatik güncelleme yok:** `PROJECT-STATUS.md` ve `.cursor/rules/snappost.mdc` commit/push ile kendiliğinden dolmaz; ajan veya geliştirici özellikle düzenlemelidir.
 
 **Yerel dashboard + shell aynı D1:** `templates/*/npm run dev:local` ortak `--persist-to ../../.snappost-d1-local` kullanır; şema için `wrangler d1 execute … --local --persist-to ../../.snappost-d1-local` (bkz. şablon `README.md` dosyaları).

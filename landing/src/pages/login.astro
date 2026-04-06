@@ -7,8 +7,8 @@ let error = '';
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  const email = form.get('email')?.toString();
-  const password = form.get('password')?.toString();
+  const email = form.get('email')?.toString().trim() ?? '';
+  const password = form.get('password')?.toString().trim() ?? '';
 
   if (!email || !password) {
     error = 'Email and password required';

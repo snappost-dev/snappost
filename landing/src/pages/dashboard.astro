@@ -14,6 +14,8 @@ let user: any = null;
 let sites: any[] = [];
 let provisionError = '';
 let provisionSuccess = '';
+let domainFieldError: { siteId: string; message: string } | null = null;
+let domainSuccessMessage = '';
 
 try {
   const meRes = await fetch(`${API_URL}/api/auth/me`, {
@@ -35,7 +37,7 @@ if (Astro.request.method === 'POST') {
   const action = form.get('action')?.toString();
 
   if (action === 'provision') {
-    const siteName = form.get('site_name')?.toString();
+    const siteName = form.get('site_name')?.toString().trim().toLowerCase() ?? '';
     if (!siteName) {
       provisionError = 'Site name required';
     } else {
@@ -50,12 +52,65 @@ if (Astro.request.method === 'POST') {
         });
         const data = await res.json();
         if (!res.ok) {
-          provisionError = data.error || 'Provisioning failed';
+          const base = data.error || 'Provisioning failed';
+          provisionError = data.detail ? `${base}: ${data.detail}` : base;
         } else {
           provisionSuccess = `Blog "${siteName}" created!`;
         }
       } catch {
         provisionError = 'Could not connect to server';
+      }
+    }
+  } else if (action === 'connect_domain') {
+    const siteId = form.get('site_id')?.toString();
+    const domain = form.get('custom_domain')?.toString()?.trim();
+    if (!siteId || !domain) {
+      domainFieldError = { siteId: siteId || '', message: 'Domain required' };
+    } else {
+      try {
+        const res = await fetch(`${API_URL}/api/sites/${siteId}/domain`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ domain }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          domainFieldError = {
+            siteId,
+            message: data.detail ? `${data.error}: ${data.detail}` : data.error || 'Request failed',
+          };
+        } else {
+          domainSuccessMessage =
+            'Custom domain registered at Cloudflare. Add the CNAME below. DNS and SSL can take 24–48 hours.';
+        }
+      } catch {
+        domainFieldError = { siteId, message: 'Could not connect to server' };
+      }
+    }
+  } else if (action === 'remove_domain') {
+    const siteId = form.get('site_id')?.toString();
+    if (!siteId) {
+      domainFieldError = { siteId: '', message: 'Missing site' };
+    } else {
+      try {
+        const res = await fetch(`${API_URL}/api/sites/${siteId}/domain`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          domainFieldError = {
+            siteId,
+            message: data.detail ? `${data.error}: ${data.detail}` : data.error || 'Remove failed',
+          };
+        } else {
+          domainSuccessMessage = 'Custom domain removed.';
+        }
+      } catch {
+        domainFieldError = { siteId, message: 'Could not connect to server' };
       }
     }
   }
@@ -99,6 +154,11 @@ try {
     {provisionSuccess && (
       <div class="bg-green-50 text-green-700 px-4 py-3 rounded-lg mb-4 text-sm">{provisionSuccess}</div>
     )}
+    {domainSuccessMessage && (
+      <div class="bg-green-50 text-green-800 px-4 py-3 rounded-lg mb-4 text-sm border border-green-200">
+        {domainSuccessMessage}
+      </div>
+    )}
 
     <div class="bg-white border border-gray-200 rounded-xl p-6 mb-8">
       <h2 class="text-lg font-semibold mb-4">Create New Blog</h2>
@@ -128,19 +188,24 @@ try {
       </div>
     ) : (
       <div class="space-y-4">
-        {sites.map((site: any) => (
+        {sites.map((site: any) => {
+          const siteKey = String(site.id);
+          const cnameTarget = site.shell_project_name
+            ? `${site.shell_project_name}.pages.dev`
+            : '';
+          return (
           <div class="bg-white border border-gray-200 rounded-xl p-6">
-            <div class="flex justify-between items-start">
-              <div>
+            <div class="flex justify-between items-start gap-4">
+              <div class="min-w-0 flex-1">
                 <h3 class="text-lg font-semibold mb-2">{site.site_name}</h3>
                 <div class="space-y-1.5 text-sm">
-                  <div class="flex items-center gap-2">
-                    <span class="text-gray-500 w-20">Blog</span>
-                    <a href={site.shell_url} target="_blank" class="text-blue-600 hover:underline">{site.shell_url}</a>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-gray-500 w-20 shrink-0">Blog</span>
+                    <a href={site.shell_url} target="_blank" class="text-blue-600 hover:underline break-all">{site.shell_url}</a>
                   </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-gray-500 w-20">Dashboard</span>
-                    <a href={site.dashboard_url} target="_blank" class="text-blue-600 hover:underline">{site.dashboard_url}</a>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-gray-500 w-20 shrink-0">Dashboard</span>
+                    <a href={site.dashboard_url} target="_blank" class="text-blue-600 hover:underline break-all">{site.dashboard_url}</a>
                   </div>
                   <div class="flex items-center gap-2">
                     <span class="text-gray-500 w-20">Status</span>
@@ -149,17 +214,78 @@ try {
                     }`}>{site.status}</span>
                   </div>
                 </div>
+
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                  <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Custom domain (blog)</p>
+                  {site.custom_domain ? (
+                    <div class="space-y-2">
+                      <div class="text-sm">
+                        <span class="text-gray-500">Connected:</span>{' '}
+                        <span class="font-mono text-gray-900">{site.custom_domain}</span>
+                      </div>
+                      {cnameTarget && (
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-700">
+                          <p class="mb-1">Add a <strong>CNAME</strong> record for your hostname pointing to:</p>
+                          <div class="flex flex-wrap items-center gap-2 font-mono bg-white px-2 py-1.5 rounded border border-slate-200">
+                            <span id={`cname-val-${siteKey}`}>{cnameTarget}</span>
+                            <button
+                              type="button"
+                              class="text-blue-600 hover:underline shrink-0"
+                              data-cname-target={cnameTarget}
+                              onclick="navigator.clipboard.writeText(this.dataset.cnameTarget).then(() => { const b = this; const t = b.textContent; b.textContent = 'Copied!'; setTimeout(() => { b.textContent = t; }, 2000); })"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                          <p class="mt-2 text-slate-500">SSL and global DNS can take 24–48 hours.</p>
+                        </div>
+                      )}
+                      <form method="POST" class="inline">
+                        <input type="hidden" name="action" value="remove_domain" />
+                        <input type="hidden" name="site_id" value={siteKey} />
+                        <button type="submit" class="text-sm text-red-600 hover:text-red-800 hover:underline">
+                          Remove custom domain
+                        </button>
+                      </form>
+                    </div>
+                  ) : (
+                    <form method="POST" class="flex flex-col sm:flex-row gap-2 sm:items-end max-w-xl">
+                      <input type="hidden" name="action" value="connect_domain" />
+                      <input type="hidden" name="site_id" value={siteKey} />
+                      <div class="flex-1 min-w-0">
+                        <label class="sr-only" for={`domain-${siteKey}`}>Custom domain</label>
+                        <input
+                          id={`domain-${siteKey}`}
+                          type="text"
+                          name="custom_domain"
+                          placeholder="blog.yourdomain.com"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-900 transition whitespace-nowrap"
+                      >
+                        Connect domain
+                      </button>
+                    </form>
+                  )}
+                  {domainFieldError && domainFieldError.siteId === siteKey && (
+                    <p class="text-red-600 text-xs mt-2">{domainFieldError.message}</p>
+                  )}
+                </div>
               </div>
               <a
                 href={`${site.dashboard_url}/login?token=${site.access_token || ''}`}
                 target="_blank"
-                class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition"
+                class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition shrink-0"
               >
                 Open Dashboard
               </a>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     )}
   </div>

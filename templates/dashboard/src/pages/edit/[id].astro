@@ -1,33 +1,7 @@
 ---
-const { id } = Astro.params;
+import { renderEditorJSToHTML } from '../../lib/editor';
 
-function renderEditorJSToHTML(json: any): string {
-  if (!json || !json.blocks) return '';
-  return json.blocks.map((block: any) => {
-    switch (block.type) {
-      case 'header':
-        return `<h${block.data.level}>${block.data.text}</h${block.data.level}>`;
-      case 'paragraph':
-        return `<p>${block.data.text}</p>`;
-      case 'list': {
-        const tag = block.data.style === 'ordered' ? 'ol' : 'ul';
-        const items = block.data.items.map((i: string) => `<li>${i}</li>`).join('');
-        return `<${tag}>${items}</${tag}>`;
-      }
-      case 'alert': {
-        const cls: Record<string, string> = {
-          info: 'background:#dbeafe;border-left:4px solid #3b82f6',
-          warning: 'background:#fef3c7;border-left:4px solid #f59e0b',
-          success: 'background:#d1fae5;border-left:4px solid #10b981',
-          error: 'background:#fee2e2;border-left:4px solid #ef4444',
-        };
-        return `<div style="${cls[block.data.type] || cls.info};padding:1rem;margin:1rem 0;border-radius:0.5rem">${block.data.text}</div>`;
-      }
-      default:
-        return '';
-    }
-  }).join('\n');
-}
+const { id } = Astro.params;
 
 const post = await Astro.locals.runtime.env.DB
   .prepare('SELECT * FROM posts WHERE id = ?')
@@ -90,6 +64,10 @@ if (Astro.request.method === 'POST') {
   <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"></script>
   <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"></script>
   <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.js"></script>
+  <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/quote.umd.js"></script>
+  <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0/dist/code.umd.js"></script>
+  <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"></script>
+  <script is:inline src="/dashboard/alert-block.js"></script>
   <style is:inline>
     .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }
     .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }
@@ -176,10 +154,13 @@ if (Astro.request.method === 'POST') {
   <div class="modal-box max-w-sm">
     <h3 class="font-bold text-lg mb-4">Add Block</h3>
     <div class="grid grid-cols-2 gap-2">
-      <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('paragraph')">📝 Paragraph</button>
-      <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('header')">📰 Header</button>
-      <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('list')">📋 List</button>
-      <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('alert')">⚠️ Alert</button>
+      <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('paragraph')">📝 Paragraph</button>
+      <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('header')">📰 Header</button>
+      <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('list')">📋 List</button>
+      <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('alert')">⚠️ Alert</button>
+      <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('quote')">💬 Quote</button>
+      <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('code')">💻 Code</button>
+      <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('delimiter')">➖ Divider</button>
     </div>
     <div class="modal-action">
       <form method="dialog"><button class="btn btn-sm">Close</button></form>
@@ -189,39 +170,19 @@ if (Astro.request.method === 'POST') {
 </dialog>
 
 <script is:inline define:vars={{ editorDataJson: editorData ? JSON.stringify(editorData) : 'null' }}>
-class AlertBlock {
-  static get toolbox() { return { title: 'Alert Box', icon: '⚠️' }; }
-  constructor({data}) {
-    this.data = { text: data.text || 'Alert message...', type: data.type || 'info' };
-    this.wrapper = null; this.span = null;
-  }
-  static get STYLES() {
-    return { info:'background:#dbeafe;border-left:4px solid #3b82f6', warning:'background:#fef3c7;border-left:4px solid #f59e0b', success:'background:#d1fae5;border-left:4px solid #10b981', error:'background:#fee2e2;border-left:4px solid #ef4444' };
-  }
-  render() {
-    this.wrapper = document.createElement('div'); this._applyStyle();
-    this.span = document.createElement('span');
-    this.span.contentEditable = true; this.span.textContent = this.data.text;
-    this.span.style.cssText = 'outline:none;display:block;min-height:1.5em';
-    this.span.addEventListener('input', () => { this.data.text = this.span.textContent; });
-    this.wrapper.appendChild(this.span);
-    this.wrapper.addEventListener('click', () => { document.dispatchEvent(new CustomEvent('alert-selected', { detail: this })); });
-    return this.wrapper;
-  }
-  _applyStyle() {
-    const s = AlertBlock.STYLES[this.data.type] || AlertBlock.STYLES.info;
-    this.wrapper.setAttribute('style', s + ';padding:1rem;margin:0.25rem 0;border-radius:0.5rem;cursor:text');
-  }
-  setType(type) { this.data.type = type; this._applyStyle(); }
-  save() { return { text: this.data.text, type: this.data.type }; }
-  validate(d) { return d.text && d.text.trim().length > 0; }
-}
-
 let editor, activeBlockIndex = null, activeAlertInstance = null, navigatorDebounce = null;
 const existingData = editorDataJson !== 'null' ? JSON.parse(editorDataJson) : null;
 
 function boot() {
-  if (typeof EditorJS === 'undefined' || typeof Header === 'undefined' || typeof List === 'undefined') {
+  if (
+    typeof EditorJS === 'undefined' ||
+    typeof Header === 'undefined' ||
+    typeof List === 'undefined' ||
+    typeof Quote === 'undefined' ||
+    typeof CodeTool === 'undefined' ||
+    typeof Delimiter === 'undefined' ||
+    typeof window.SnappostAlertBlock === 'undefined'
+  ) {
     setTimeout(boot, 50);
     return;
   }
@@ -230,7 +191,10 @@ function boot() {
     tools: {
       header: { class: Header, inlineToolbar: true, config: { placeholder: 'Heading', levels: [1,2,3,4], defaultLevel: 2 } },
       list: { class: List, inlineToolbar: true },
-      alert: { class: AlertBlock },
+      quote: { class: Quote, inlineToolbar: true },
+      code: { class: CodeTool },
+      delimiter: { class: Delimiter },
+      alert: { class: window.SnappostAlertBlock },
     },
     placeholder: 'Start writing...',
     onChange: () => { clearTimeout(navigatorDebounce); navigatorDebounce = setTimeout(updateNavigator, 300); },
@@ -251,13 +215,16 @@ function boot() {
 }
 document.addEventListener('DOMContentLoaded', boot);
 
-const ICONS = { header:'📰', paragraph:'📝', list:'📋', alert:'⚠️' };
+const ICONS = { header:'📰', paragraph:'📝', list:'📋', alert:'⚠️', quote:'💬', code:'💻', delimiter:'➖' };
 function getBlockLabel(block) {
   switch (block.type) {
     case 'header': return block.data.text || 'Empty header — click to edit';
     case 'paragraph': { const t = (block.data.text||'').replace(/<[^>]*>/g,''); return (t.length > 0 ? t.substring(0,30)+(t.length>30?'…':'') : 'Empty paragraph — click to edit'); }
     case 'list': return 'List ('+(block.data.items?.length||0)+' items)';
     case 'alert': return 'Alert: '+(block.data.type||'info');
+    case 'quote': return (block.data.text||'').replace(/<[^>]*>/g,'').substring(0,28) || 'Quote — click to edit';
+    case 'code': return 'Code'+((block.data.code||'').length ? ' ('+Math.min((block.data.code||'').length,999)+' chars)' : '');
+    case 'delimiter': return 'Divider';
     default: return block.type;
   }
 }
@@ -294,9 +261,15 @@ function showAlertProperties(inst) {
   document.getElementById('alert-type-select').addEventListener('change', (e) => { inst.setType(e.target.value); updateNavigator(); });
   document.getElementById('alert-msg-input').addEventListener('input', (e) => { inst.data.text=e.target.value; if(inst.span) inst.span.textContent=e.target.value; updateNavigator(); });
 }
-function insertBlock(type) {
+async function insertBlock(type) {
   document.getElementById('add-block-modal').close();
-  editor.blocks.insert(type);
+  const atIndex = editor.blocks.getBlocksCount();
+  try {
+    await editor.blocks.insert(type, undefined, undefined, atIndex, true);
+  } catch (e) {
+    console.error(e);
+    return;
+  }
 
   setTimeout(() => {
     const newIndex = editor.blocks.getBlocksCount() - 1;
@@ -329,6 +302,10 @@ async function savePost() {
   document.getElementById('hidden-published').value = document.getElementById('post-published').checked ? '1' : '0';
   document.getElementById('save-form').submit();
 }
+function escapePrev(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 async function openPreview() {
   let data; try { data = await editor.save(); } catch { return; }
   const title = document.getElementById('post-title').value || 'Untitled';
@@ -338,6 +315,9 @@ async function openPreview() {
       case 'paragraph': return '<p>'+block.data.text+'</p>';
       case 'list': { const t=block.data.style==='ordered'?'ol':'ul'; return '<'+t+'>'+block.data.items.map(i=>'<li>'+i+'</li>').join('')+'</'+t+'>'; }
       case 'alert': { const s={info:'background:#dbeafe;border-left:4px solid #3b82f6',warning:'background:#fef3c7;border-left:4px solid #f59e0b',success:'background:#d1fae5;border-left:4px solid #10b981',error:'background:#fee2e2;border-left:4px solid #ef4444'}; return '<div style="'+(s[block.data.type]||s.info)+';padding:1rem;margin:1rem 0;border-radius:0.5rem">'+block.data.text+'</div>'; }
+      case 'quote': return '<blockquote style="border-left:4px solid #cbd5e1;padding:0.75rem 1rem;margin:1rem 0;color:#475569;font-style:italic">'+escapePrev(block.data.text)+(block.data.caption?'<cite style="display:block;font-size:0.875rem;margin-top:0.5rem">— '+escapePrev(block.data.caption)+'</cite>':'')+'</blockquote>';
+      case 'code': return '<pre style="background:#1e293b;color:#e2e8f0;padding:1rem;border-radius:0.5rem;overflow-x:auto;font-family:monospace;font-size:0.875rem;margin:1rem 0"><code>'+escapePrev(block.data.code)+'</code></pre>';
+      case 'delimiter': return '<hr style="border:none;border-top:2px solid #e2e8f0;margin:2rem 0" />';
       default: return '';
     }
   }).join('\n');

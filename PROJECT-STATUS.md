@@ -12,9 +12,9 @@ Snappost, kullanıcıların email/password ile kayıt olup **~15 saniyede** tam 
 
 ### Dashboard içerik editörü (V2 — tamamlandı)
 
-- **`templates/dashboard`:** Yazı oluşturma/düzenleme sayfaları **Editor.js** blok editörüne geçirildi (`/new`, `/edit/[id]`): yan menü navigasyonu, özellikler paneli, **Alert** özel bloğu; CDN üzerinden Editor.js + (sadece bu sayfalarda) DaisyUI/Tailwind.
-- **Veri modeli:** `posts.content` alanında **Editor.js JSON** string; `content_html` sunucuda `renderEditorJSToHTML()` ile üretilir. **Eski markdown** içerikli kayıtlar için edit tarafında uyumluluk/uyarı vardır; shell blog yine `content_html` render eder.
-- **Kaynak dosyalar:** `templates/dashboard/src/pages/new.astro`, `edit/[id].astro`.
+- **`templates/dashboard`:** Yazı oluşturma/düzenleme **Editor.js** (`/new`, `/edit/[id]`): header, paragraph, list, quote, code, delimiter, **Alert** (özel); CDN araçları + `public/dashboard/alert-block.js` (`SnappostAlertBlock`). SSR HTML: `src/lib/editor.ts` içindeki `renderEditorJSToHTML()` (sayfalar import eder).
+- **Veri modeli:** `posts.content` — Editor.js JSON; `content_html` — `renderEditorJSToHTML()`. **Eski markdown** kayıtlarında edit uyarısı; shell `content_html` kullanır.
+- **Kaynak dosyalar:** `templates/dashboard/src/pages/new.astro`, `edit/[id].astro`, `src/lib/editor.ts`, `public/dashboard/alert-block.js`.
 - **Provision / API:** Güncel dashboard build’i `api/src/templates/dashboard` + `npm run embed` → `api/src/generated/dashboard-template.ts`; yeni provision bu gömülü şablonu kullanır.
 - **Arşiv dokümantasyon:** Tamamlanmış revize plan → [`docs/archive-editorjs-v2-plan.md`](docs/archive-editorjs-v2-plan.md). Erken taslak → [`docs/cursor-opus-prompt-v1.md`](docs/cursor-opus-prompt-v1.md).
 
@@ -140,20 +140,22 @@ Hata olursa rollback: oluşturulan Pages projeleri ve D1 database silinir.
 |--------|------|----------|
 | POST | `/api/auth/register` | Email + password → bcrypt hash → JWT token |
 | POST | `/api/auth/login` | Email + password verify → JWT token |
-| GET | `/api/auth/me` | Bearer token → user info |
+| GET | `/api/auth/me` | Bearer token → user info; `ALLOWED_EMAILS` doluysa whitelist kontrolü |
 
 ### Provisioning
 | Method | Path | Açıklama |
 |--------|------|----------|
-| POST | `/api/provision` | Auth required. `{ site_name }` → D1 + Shell + Dashboard deploy |
-| GET | `/api/sites` | Auth required. Kullanıcının tüm siteleri |
-| GET | `/api/sites/:id` | Auth required. Tek site detay |
+| POST | `/api/provision` | Auth + whitelist (varsa). `{ site_name }` → D1 + Shell + Dashboard deploy |
+| GET | `/api/sites` | Auth + whitelist (varsa). Kullanıcının tüm siteleri (`shell_project_name`, `custom_domain` dahil) |
+| GET | `/api/sites/:id` | Auth + whitelist (varsa). Tek site detay |
+| POST | `/api/sites/:id/domain` | Auth + whitelist. Body `{ domain }` → shell Pages’e CF custom domain; DB `custom_domain` |
+| DELETE | `/api/sites/:id/domain` | Auth + whitelist. CF’den domain kaldırır; DB `custom_domain` null |
 
 ### Utility
 | Method | Path | Açıklama |
 |--------|------|----------|
 | GET | `/` | Health check |
-| GET | `/test/*` | Development test endpoint'leri (5 adet) |
+| GET | `/test/*` | Test endpoint'leri (5 adet); yalnız `ALLOW_TEST_ROUTES=true` iken, aksi halde **404** |
 
 ---
 
@@ -165,7 +167,7 @@ Hata olursa rollback: oluşturulan Pages projeleri ve D1 database silinir.
 users (id, email, password_hash, created_at)
 sites (id, user_id, site_name, d1_database_id, shell_project_name,
        shell_url, dashboard_project_name, dashboard_url,
-       access_token, status, error_message, created_at)
+       access_token, status, error_message, custom_domain, created_at)
 ```
 
 ### Blog DB (templates/shell/schema.sql) — Her user için ayrı D1
@@ -200,8 +202,17 @@ config (key, value)
 
 ### URL'ler
 - **API:** `https://snappost-api.snappost-dev.workers.dev`
-- **Landing:** `https://snappost-landing.pages.dev`
+- **Landing:** `https://snappost-landing.pages.dev` (Astro `site` / canonical tabanı: `landing/astro.config.mjs`; özel alan bağlanınca orayı güncelleyin)
 - **Custom domain:** `snappost.dev` (opsiyonel; bağlıysa Dashboard’dan doğrulanmalı)
+
+### Deploy modeli — sabit projeler (Git / CLI) vs kiracı (provision)
+
+| Tür | Ne | Nasıl güncellenir |
+|-----|-----|-------------------|
+| **Sabit** | `api` (Worker), `landing` (Pages) | Repoyu **Git ile Cloudflare’e bağlayıp** otomatik build veya **`wrangler deploy`** / **`wrangler pages deploy`**. |
+| **Kiracı başına** | Shell + Dashboard (Pages) + blog D1 | **Git push ile değil**; yalnızca **`POST /api/provision`** tetiklenince Worker **CF REST API** ile proje oluşturur ve gömülü şablonu **Direct Upload** eder (bkz. §2 provision adımları). Şablon kaynağı: `templates/*` → build → `api/src/templates/*` → **`npm run embed`** → API deploy. |
+
+**Git kullanıyorsanız:** `wrangler.toml` içindeki `[vars]` (ör. landing `API_URL`) her build’de otomatik okunmayabilir. **Cloudflare Dashboard → Workers/Pages projesi → Settings → Variables** içinde `API_URL`, secret’lar ve production değerlerinin tanımlı olduğunu doğrulayın.
 
 ### CF Resources
 - **D1:** `snappost-provisioning` (`d8c8583f-e604-44f0-8ead-7b0d53b4f151`)
@@ -221,6 +232,9 @@ cd landing && npm run build && wrangler pages deploy dist --project-name=snappos
 
 # Template değişikliği sonrası
 cd api && npm run embed && wrangler deploy
+
+# Provisioning D1 — custom_domain sütunu (mevcut DB bir kez)
+cd api && wrangler d1 execute snappost-provisioning --remote --file=./src/db/migrations/001_add_custom_domain.sql
 ```
 
 ### Env Variables
@@ -229,12 +243,16 @@ cd api && npm run embed && wrangler deploy
 CF_API_TOKEN=...
 CF_ACCOUNT_ID=...
 JWT_SECRET=...
+# Opsiyonel; SEO/trafik testi için [vars] veya dashboard’da düz metin verilebilir (gizli değil)
+ALLOWED_EMAILS=...
+# Yerelde /test/* kullanacaksanız:
+ALLOW_TEST_ROUTES=true
 
 # landing/.dev.vars (local dev)
 API_URL=http://localhost:8787
 ```
 
-Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `import.meta.env` çalışmaz).
+Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `import.meta.env` çalışmaz). Whitelist yalnızca API tarafında (`ALLOWED_EMAILS`); ayrıntı: `api/README.md`, `landing/README.md`.
 
 ---
 
@@ -242,10 +260,10 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 
 | # | Konu | Detay |
 |---|------|-------|
-| 1 | Test endpoint'leri açık | `/test/*` endpoint'leri production'da da erişilebilir, gerçek CF kaynakları oluşturabilir |
+| 1 | Test endpoint'leri | `/test/*` yalnız `ALLOW_TEST_ROUTES=true` (ör. yerel `.dev.vars`); production’da tanımlanmaz → **404** |
 | 2 | Rate limiting yok | Register, login, provision endpoint'lerine sınırsız istek atılabilir |
 | 3 | Site silme yok | Oluşturulan blog silinemez (ne API'de ne UI'da) |
-| 4 | Custom domain yok | Siteler sadece `*.pages.dev` subdomain'inde çalışıyor |
+| 4 | Blog custom domain | Shell Pages için API + landing kartı; dashboard yalnız `*.pages.dev`. Mevcut D1: `ALTER TABLE sites ADD COLUMN custom_domain …` (schema.sql yorumu) |
 | 5 | Dashboard default password | Her dashboard `changeme` password ile oluşturuluyor, değiştirme UI'ı yok |
 | 6 | Provision sırasında UI feedback yok | 15 saniye boyunca kullanıcı blank page görüyor |
 | 7 | Error handling MVP seviyesinde | Genel try-catch, spesifik hata mesajları yok |
@@ -255,6 +273,7 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 | 11 | CORS config hardcoded | Origin listesi kod içinde, config'den okunmuyor |
 | 12 | Template güncelleme mekanizması yok | Template değişince mevcut siteler eski versiyonda kalıyor |
 | 13 | Site başına 2× Pages + 1× D1 ölçeklenmesi | CF Pages proje limitleri; tek hesapta çok müşteri sürdürülebilir değil — multi-tenant veya az yüzey mimarisi gerekir |
+| 14 | E-posta whitelist | `ALLOWED_EMAILS` (opsiyonel env); boş/tanımsız = kısıt yok — **§9.5** |
 
 ---
 
@@ -266,7 +285,7 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 
 ### 9.2 Sıradaki — Stabilizasyon ve güvenlik (önceden “V2 backlog”)
 
-- `/test/*` endpoint'lerini kaldır veya auth arkasına al
+- `/test/*`: `ALLOW_TEST_ROUTES=true` ile açılır (varsayılan kapalı — yapıldı)
 - Rate limiting (CF Workers built-in veya custom)
 - Site silme / durdurma (DELETE /api/sites/:id)
 - Dashboard password'ü provision sırasında set etme
@@ -282,10 +301,57 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 
 ### 9.4 V3 — Büyüme (ürün)
 
-- Custom domain bağlama (CF API + DNS)
+- Shell blog custom domain — tamam (API + landing). İleride: apex/`www` otomasyonu, landing kendi alanı vb.
 - Template theme seçimi (birden fazla blog tasarımı)
 - Template hot-update (mevcut siteleri yeni template'e upgrade)
 - Analytics dashboard (sayfa görüntüleme, post istatistikleri)
 - Stripe entegrasyonu (paid tier)
 - Password reset flow (email gönderimi)
 - Admin panel (tüm kullanıcılar / siteler yönetimi)
+
+### 9.5 Aktif geliştirme planı — whitelist + mevcut repo / test ortamı
+
+**Karar:** Mimari pivot (§9.3) şimdilik bekliyor; **site başına Shell + Dashboard + ayrı D1** modeli ve bu repodaki akış korunuyor. Yeni özellik ve testler **bu ortamda** yapılacak.
+
+**Uygulama durumu:** `ALLOWED_EMAILS` — register, login, `me`, `sites`, `provision`. `/test/*` — `ALLOW_TEST_ROUTES=true` olmadan **404**. Landing `data.error` gösteriyor. İsteğe bağlı: D1 tabanlı whitelist listesi (§9.5 Faz A1 aşama 2).
+
+#### Hedef
+
+- Sadece **tanımlı e-postalar** kayıt olabilsin ve giriş yapabilsin (**whitelist**).
+- Üretimde kendi CF hesabınızda API + landing + (ihtiyaç halinde) şablon deploy; yerelde `api` + `landing` + `templates/*/dev:local` ile doğrulama.
+
+#### Faz A — Whitelist (API)
+
+| Adım | İş | Not |
+|------|-----|-----|
+| A1 | Whitelist kaynağı | **Aşama 1:** `ALLOWED_EMAILS` (veya `EMAIL_WHITELIST`) — virgülle ayrılmış liste, `api` `wrangler.toml` / secrets yerine `[vars]` veya `.dev.vars` (gizlilik gerekmiyorsa). **Aşama 2 (isteğe bağlı):** provisioning D1’de tablo veya `users` genişletmesi — deploy etmeden liste güncellemek için. |
+| A2 | Normalize | Karşılaştırma öncesi e-postayı **trim + lowercase**; whitelist aynı kuralla tutulmalı. |
+| A3 | `POST /api/auth/register` | Kayıt öncesi whitelist kontrolü; uygun HTTP kodu (ör. **403**) + net mesaj (`{ "error": "..." }`). |
+| A4 | `POST /api/auth/login` | Listede olmayan mevcut kullanıcılar için girişi reddet (veya sadece register’da kısıtla — tercih: **ikisinde de** kontrol, tutarlılık). |
+| A5 | `POST /api/provision` (opsiyonel savunma) | JWT geçerli olsa bile whitelist dışı eski hesapları kesmek için tekrar kontrol. |
+| A6 | Boş whitelist | **Tüm kayıtları kapatmak** mı yoksa **kısıt yok** mu — tek bir kural seçilip dokümante edilmeli (ör. boş = kısıt yok, sadece test ortamında dolu tutulur). |
+
+#### Faz B — Landing UX
+
+- Register/login hata mesajlarını API cevabına göre göstermek; whitelist reddinde kullanıcıya anlaşılır metin (ör. “Bu e-posta ile kayıt kapalı”).
+- İsteğe bağlı: kayıt sayfasında “davetli erişim” notu.
+
+#### Faz C — Test ve doğrulama
+
+| Ortam | Ne test edilir |
+|--------|----------------|
+| Yerel | `api` (`npm run dev`) + `landing` (`npm run dev`); `.dev.vars` içinde whitelist ve `JWT_SECRET` / `CF_*` |
+| Şablon | `templates/dashboard` + `templates/shell` — `dev:local` ve ortak `--persist-to ../../.snappost-d1-local` (README’ler) |
+| CF (kendi hesap) | API + landing deploy; whitelist `[vars]` veya env; gerçek provision (token yetkili) — maliyet/limit bilinci |
+
+#### Faz D — Dokümantasyon ve borç
+
+- `api/README.md`: whitelist env anahtarı ve davranış (boş liste semantiği).
+- §8 tablosuna satır: “Whitelist yok” → tamamlandığında kaldır veya güncelle.
+- İleride: rate limiting (§9.2) ile whitelist birlikte düşünülür (enumeration riski).
+
+#### Tanım tamamlandı sayılır
+
+- Whitelist açıkken listede olmayan e-posta ile register/login **kesin** reddedilir.
+- Listede olan e-posta mevcut akışla kayıt ve provision edebilir.
+- Yerel + en az bir CF deploy senaryosu dokümante ve tekrarlanabilir.

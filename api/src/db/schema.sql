@@ -22,9 +22,14 @@ CREATE TABLE IF NOT EXISTS sites (
   access_token TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending', -- pending | provisioning | active | failed
   error_message TEXT,
+  custom_domain TEXT DEFAULT NULL, -- blog (shell Pages) custom hostname; dashboard uses *.pages.dev only
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+-- Mevcut uzak D1 (provisioning) için bir kez:
+-- wrangler d1 execute snappost-provisioning --remote --command="ALTER TABLE sites ADD COLUMN custom_domain TEXT DEFAULT NULL"
+-- Yerel: ... --local --file=... veya aynı --command ile --local
 
 -- Index for fast user lookups
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

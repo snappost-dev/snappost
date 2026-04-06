@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import {
   createD1Database, executeD1SQL, createPagesProject, uploadToPages,
   setPagesBinding, deletePagesProject, deleteD1Database,
+  addPagesCustomDomain, removePagesCustomDomain,
 } from './lib/cloudflare';
 import { prepareShellTemplate, prepareDashboardTemplate, BLOG_SCHEMA_SQL } from './lib/templates';
 
@@ -13,9 +14,50 @@ type Bindings = {
   CF_API_TOKEN: string;
   CF_ACCOUNT_ID: string;
   JWT_SECRET: string;
+  /** Virgülle ayrılmış; tanımsız veya boş = kısıt yok */
+  ALLOWED_EMAILS?: string;
+  /** Yalnızca tam olarak "true" iken /test/* açılır; production’da tanımlamayın */
+  ALLOW_TEST_ROUTES?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+/** null = whitelist kapalı (herkese açık) */
+function parseAllowedEmailSet(raw: string | undefined): Set<string> | null {
+  if (raw == null) return null;
+  const t = raw.trim();
+  if (t === '') return null;
+  const set = new Set<string>();
+  for (const part of t.split(',')) {
+    const n = normalizeEmail(part);
+    if (n) set.add(n);
+  }
+  return set.size > 0 ? set : null;
+}
+
+function isEmailAllowed(email: string, allowed: Set<string> | null): boolean {
+  if (allowed == null) return true;
+  return allowed.has(normalizeEmail(email));
+}
+
+function rejectIfNotWhitelisted(c: { env: Bindings; json: (body: unknown, status?: number) => Response }, email: string): Response | null {
+  const allowed = parseAllowedEmailSet(c.env.ALLOWED_EMAILS);
+  if (!isEmailAllowed(email, allowed)) {
+    return c.json(
+      { error: 'Bu hesap için API erişimi kapalı. E-posta davetli listede değil.' },
+      403
+    );
+  }
+  return null;
+}
+
+function testRoutesAllowed(env: Bindings): boolean {
+  return env.ALLOW_TEST_ROUTES === 'true';
+}
 
 async function verifyAuth(c: any): Promise<{ userId: number; email: string } | null> {
   const authHeader = c.req.header('Authorization');
@@ -26,6 +68,21 @@ async function verifyAuth(c: any): Promise<{ userId: number; email: string } | n
   } catch {
     return null;
   }
+}
+
+/** FQDN for custom blog domain (shell Pages only). null = invalid */
+function normalizeCustomDomain(raw: unknown): string | null {
+  if (raw == null || typeof raw !== 'string') return null;
+  let d = raw.trim().toLowerCase();
+  if (!d) return null;
+  d = d.replace(/^https?:\/\//, '');
+  d = d.split('/')[0]?.split(':')[0] ?? '';
+  d = d.replace(/\.$/, '');
+  if (d.length < 3 || d.length > 253) return null;
+  if (!d.includes('.')) return null;
+  // etiketler: harf/rakam, içeride tire; nokta ile ayrılmış en az iki segment
+  if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/.test(d)) return null;
+  return d;
 }
 
 // CORS - snappost.dev'den gelen isteklere izin ver
@@ -51,27 +108,41 @@ app.get('/', (c) => {
 app.post('/api/auth/register', async (c) => {
   try {
     const { email, password } = await c.req.json();
-    
-    if (!email || !password) {
+
+    const passwordPlain = typeof password === 'string' ? password.trim() : '';
+    if (!email || !passwordPlain) {
       return c.json({ error: 'Email and password required' }, 400);
     }
+
+    const normalizedEmail = normalizeEmail(String(email));
+    if (!normalizedEmail) {
+      return c.json({ error: 'Email and password required' }, 400);
+    }
+
+    const allowed = parseAllowedEmailSet(c.env.ALLOWED_EMAILS);
+    if (!isEmailAllowed(normalizedEmail, allowed)) {
+      return c.json(
+        { error: 'Bu e-posta ile kayıt şu an kapalı. Davetli kullanıcı listesinde değilsiniz.' },
+        403
+      );
+    }
     
-    // Check if user exists
+    // Check if user exists (mevcut kayıtlar için case-insensitive)
     const existing = await c.env.DB.prepare(
-      'SELECT id FROM users WHERE email = ?'
-    ).bind(email).first();
+      'SELECT id FROM users WHERE LOWER(TRIM(email)) = ?'
+    ).bind(normalizedEmail).first();
     
     if (existing) {
       return c.json({ error: 'Email already registered' }, 409);
     }
     
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
+    // Hash password (trim: tarayıcı / kopyala-yapıştır ile gelen görünmez boşlukları önler)
+    const passwordHash = await bcrypt.hash(passwordPlain, 10);
     
     // Create user
     const result = await c.env.DB.prepare(
       'INSERT INTO users (email, password_hash) VALUES (?, ?) RETURNING id, email, created_at'
-    ).bind(email, passwordHash).first();
+    ).bind(normalizedEmail, passwordHash).first();
     
     if (!result) {
       return c.json({ error: 'Failed to create user' }, 500);
@@ -100,22 +171,36 @@ app.post('/api/auth/register', async (c) => {
 app.post('/api/auth/login', async (c) => {
   try {
     const { email, password } = await c.req.json();
-    
-    if (!email || !password) {
+
+    const passwordPlain = typeof password === 'string' ? password.trim() : '';
+    if (!email || !passwordPlain) {
       return c.json({ error: 'Email and password required' }, 400);
+    }
+
+    const normalizedEmail = normalizeEmail(String(email));
+    if (!normalizedEmail) {
+      return c.json({ error: 'Email and password required' }, 400);
+    }
+
+    const allowed = parseAllowedEmailSet(c.env.ALLOWED_EMAILS);
+    if (!isEmailAllowed(normalizedEmail, allowed)) {
+      return c.json(
+        { error: 'Bu e-posta ile giriş kapalı. Davetli kullanıcı listesinde değilsiniz.' },
+        403
+      );
     }
     
     // Get user
     const user = await c.env.DB.prepare(
-      'SELECT id, email, password_hash, created_at FROM users WHERE email = ?'
-    ).bind(email).first();
+      'SELECT id, email, password_hash, created_at FROM users WHERE LOWER(TRIM(email)) = ?'
+    ).bind(normalizedEmail).first();
     
     if (!user) {
       return c.json({ error: 'Invalid credentials' }, 401);
     }
     
     // Verify password
-    const valid = await bcrypt.compare(password, user.password_hash as string);
+    const valid = await bcrypt.compare(passwordPlain, user.password_hash as string);
     
     if (!valid) {
       return c.json({ error: 'Invalid credentials' }, 401);
@@ -160,6 +245,9 @@ app.get('/api/auth/me', async (c) => {
     if (!user) {
       return c.json({ error: 'User not found' }, 404);
     }
+
+    const denied = rejectIfNotWhitelisted(c, String(user.email));
+    if (denied) return denied;
     
     return c.json({
       user: {
@@ -182,6 +270,9 @@ app.post('/api/provision', async (c) => {
   // 1. Auth
   const user = await verifyAuth(c);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
+  const deniedProvision = rejectIfNotWhitelisted(c, user.email);
+  if (deniedProvision) return deniedProvision;
 
   const { site_name } = await c.req.json();
   if (!site_name || !/^[a-z0-9-]+$/.test(site_name)) {
@@ -284,8 +375,13 @@ app.get('/api/sites', async (c) => {
   const user = await verifyAuth(c);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
+  const denied = rejectIfNotWhitelisted(c, user.email);
+  if (denied) return denied;
+
   const { results } = await c.env.DB.prepare(
-    'SELECT id, site_name, shell_url, dashboard_url, access_token, status, created_at FROM sites WHERE user_id = ? ORDER BY created_at DESC'
+    `SELECT id, site_name, shell_url, dashboard_url, access_token, status, created_at,
+            shell_project_name, custom_domain
+     FROM sites WHERE user_id = ? ORDER BY created_at DESC`
   ).bind(user.userId).all();
 
   return c.json({ sites: results });
@@ -295,6 +391,9 @@ app.get('/api/sites/:id', async (c) => {
   const user = await verifyAuth(c);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
+  const denied = rejectIfNotWhitelisted(c, user.email);
+  if (denied) return denied;
+
   const site = await c.env.DB.prepare(
     'SELECT * FROM sites WHERE id = ? AND user_id = ?'
   ).bind(c.req.param('id'), user.userId).first();
@@ -303,9 +402,140 @@ app.get('/api/sites/:id', async (c) => {
   return c.json({ site });
 });
 
+// Custom domain → yalnızca shell (blog) Pages projesi
+app.post('/api/sites/:id/domain', async (c) => {
+  const user = await verifyAuth(c);
+  if (!user) return c.json({ error: 'Unauthorized' }, 401);
+  const denied = rejectIfNotWhitelisted(c, user.email);
+  if (denied) return denied;
+
+  const siteId = c.req.param('id');
+  let body: { domain?: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'Invalid JSON body' }, 400);
+  }
+
+  const domain = normalizeCustomDomain(body.domain);
+  if (!domain) {
+    return c.json({ error: 'Invalid domain. Use a hostname like blog.example.com (no https://).' }, 400);
+  }
+
+  const site = await c.env.DB.prepare(
+    'SELECT id, user_id, shell_project_name, custom_domain FROM sites WHERE id = ? AND user_id = ?'
+  )
+    .bind(siteId, user.userId)
+    .first();
+
+  if (!site) return c.json({ error: 'Site not found' }, 404);
+
+  const shellProject = site.shell_project_name as string | null;
+  if (!shellProject) {
+    return c.json({ error: 'Site has no shell project' }, 400);
+  }
+
+  const existing = site.custom_domain as string | null;
+  if (existing && existing === domain) {
+    const cnameTarget = `${shellProject}.pages.dev`;
+    return c.json({
+      success: true,
+      domain,
+      cname_target: cnameTarget,
+      status: 'unchanged',
+      message: 'Domain already connected.',
+    });
+  }
+  if (existing) {
+    return c.json(
+      { error: 'Another domain is already connected. Remove it first, then add a new one.' },
+      409
+    );
+  }
+
+  const token = c.env.CF_API_TOKEN;
+  const accountId = c.env.CF_ACCOUNT_ID;
+
+  try {
+    const cfResult = await addPagesCustomDomain(shellProject, domain, token, accountId);
+    await c.env.DB.prepare('UPDATE sites SET custom_domain = ? WHERE id = ? AND user_id = ?')
+      .bind(domain, siteId, user.userId)
+      .run();
+
+    const cnameTarget = `${shellProject}.pages.dev`;
+    return c.json({
+      success: true,
+      domain: cfResult.name || domain,
+      cname_target: cnameTarget,
+      status: cfResult.status || 'pending',
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[domain] add failed:', msg);
+    return c.json(
+      { error: 'Cloudflare could not add this domain.', detail: msg.replace(/^\[[^\]]+\]\s*/, '') },
+      502
+    );
+  }
+});
+
+app.delete('/api/sites/:id/domain', async (c) => {
+  const user = await verifyAuth(c);
+  if (!user) return c.json({ error: 'Unauthorized' }, 401);
+  const denied = rejectIfNotWhitelisted(c, user.email);
+  if (denied) return denied;
+
+  const siteId = c.req.param('id');
+
+  const site = await c.env.DB.prepare(
+    'SELECT id, user_id, shell_project_name, custom_domain FROM sites WHERE id = ? AND user_id = ?'
+  )
+    .bind(siteId, user.userId)
+    .first();
+
+  if (!site) return c.json({ error: 'Site not found' }, 404);
+
+  const shellProject = site.shell_project_name as string | null;
+  const customDomain = site.custom_domain as string | null;
+
+  if (!customDomain) {
+    return c.json({ error: 'No custom domain connected' }, 400);
+  }
+  if (!shellProject) {
+    return c.json({ error: 'Site has no shell project' }, 400);
+  }
+
+  const token = c.env.CF_API_TOKEN;
+  const accountId = c.env.CF_ACCOUNT_ID;
+
+  try {
+    await removePagesCustomDomain(shellProject, customDomain, token, accountId);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[domain] remove CF failed:', msg);
+    return c.json(
+      { error: 'Cloudflare could not remove this domain.', detail: msg.replace(/^\[[^\]]+\]\s*/, '') },
+      502
+    );
+  }
+
+  await c.env.DB.prepare('UPDATE sites SET custom_domain = NULL WHERE id = ? AND user_id = ?')
+    .bind(siteId, user.userId)
+    .run();
+
+  return c.json({ success: true });
+});
+
 // ========================================
-// TEST ENDPOINTS (development only)
+// TEST ENDPOINTS — yalnız ALLOW_TEST_ROUTES=true iken (yerel: .dev.vars)
 // ========================================
+
+app.use('/test/*', async (c, next) => {
+  if (!testRoutesAllowed(c.env)) {
+    return c.body(null, 404);
+  }
+  await next();
+});
 
 app.get('/test/d1', async (c) => {
   try {

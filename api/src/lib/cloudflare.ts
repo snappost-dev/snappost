@@ -225,3 +225,43 @@ export async function deleteD1Database(
     { method: 'DELETE', headers: authHeaders(token) }
   );
 }
+
+/** Cloudflare Pages — custom domain (blog / shell project only). */
+export type PagesCustomDomainResult = {
+  id: string;
+  name: string;
+  status: string;
+};
+
+export async function addPagesCustomDomain(
+  projectName: string,
+  domain: string,
+  token: string,
+  accountId: string
+): Promise<PagesCustomDomainResult> {
+  const result = await cfFetch<PagesCustomDomainResult>(
+    `${CF_API_BASE}/accounts/${accountId}/pages/projects/${encodeURIComponent(projectName)}/domains`,
+    {
+      method: 'POST',
+      headers: authHeaders(token),
+      body: JSON.stringify({ name: domain }),
+    },
+    'addPagesCustomDomain'
+  );
+  return result;
+}
+
+export async function removePagesCustomDomain(
+  projectName: string,
+  domain: string,
+  token: string,
+  accountId: string
+): Promise<void> {
+  const url = `${CF_API_BASE}/accounts/${accountId}/pages/projects/${encodeURIComponent(projectName)}/domains/${encodeURIComponent(domain)}`;
+  const res = await fetch(url, { method: 'DELETE', headers: authHeaders(token) });
+  const data = (await res.json()) as CFResponse<unknown>;
+  if (!data.success) {
+    const msg = data.errors?.map((e) => e.message).join(', ') || 'Unknown CF API error';
+    throw new Error(`[removePagesCustomDomain] ${msg}`);
+  }
+}
