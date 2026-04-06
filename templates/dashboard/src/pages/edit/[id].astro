@@ -302,6 +302,12 @@ function showAlertProperties(inst) {
 }
 function insertBlock(type) {
   document.getElementById('add-block-modal').close();
+  if (editor.blocks.getBlocksCount() === 1) {
+    const first = editor.blocks.getBlockByIndex(0);
+    if (first.name === 'paragraph' && !first.holder.textContent.trim()) {
+      editor.blocks.delete(0);
+    }
+  }
   const index = editor.blocks.getBlocksCount();
   editor.blocks.insert(type);
   setTimeout(() => {
