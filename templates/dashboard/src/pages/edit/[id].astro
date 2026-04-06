@@ -254,8 +254,8 @@ document.addEventListener('DOMContentLoaded', boot);
 const ICONS = { header:'📰', paragraph:'📝', list:'📋', alert:'⚠️' };
 function getBlockLabel(block) {
   switch (block.type) {
-    case 'header': return block.data.text || 'Header';
-    case 'paragraph': { const t = (block.data.text||'').replace(/<[^>]*>/g,''); return t.substring(0,30)+(t.length>30?'…':'') || 'Paragraph'; }
+    case 'header': return block.data.text || 'Empty header — click to edit';
+    case 'paragraph': { const t = (block.data.text||'').replace(/<[^>]*>/g,''); return (t.length > 0 ? t.substring(0,30)+(t.length>30?'…':'') : 'Empty paragraph — click to edit'); }
     case 'list': return 'List ('+(block.data.items?.length||0)+' items)';
     case 'alert': return 'Alert: '+(block.data.type||'info');
     default: return block.type;
@@ -268,8 +268,10 @@ async function updateNavigator() {
   if (!data.blocks.length) { list.innerHTML = '<div class="text-sm text-gray-400 italic">Start writing...</div>'; return; }
   data.blocks.forEach((block, i) => {
     const div = document.createElement('div');
+    const label = getBlockLabel(block);
+    const isEmpty = label.includes('Empty') || label.includes('click to edit');
     div.className = 'nav-item'+(activeBlockIndex===i?' active':'');
-    div.innerHTML = '<span>'+(ICONS[block.type]||'📄')+'</span><span class="truncate">'+getBlockLabel(block)+'</span>';
+    div.innerHTML = '<span>'+(ICONS[block.type]||'📄')+'</span><span class="truncate'+(isEmpty?' text-gray-400 italic':'')+'">'+label+'</span>';
     div.addEventListener('click', () => selectBlock(i));
     list.appendChild(div);
   });
@@ -292,7 +294,27 @@ function showAlertProperties(inst) {
   document.getElementById('alert-type-select').addEventListener('change', (e) => { inst.setType(e.target.value); updateNavigator(); });
   document.getElementById('alert-msg-input').addEventListener('input', (e) => { inst.data.text=e.target.value; if(inst.span) inst.span.textContent=e.target.value; updateNavigator(); });
 }
-function insertBlock(type) { document.getElementById('add-block-modal').close(); editor.blocks.insert(type); setTimeout(updateNavigator,400); }
+function insertBlock(type) {
+  document.getElementById('add-block-modal').close();
+  const index = editor.blocks.getBlocksCount();
+  editor.blocks.insert(type);
+  setTimeout(() => {
+    updateNavigator();
+    const blocks = document.querySelectorAll('.ce-block');
+    const newBlock = blocks[index];
+    if (newBlock) {
+      newBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      newBlock.style.outline = '2px solid #3b82f6';
+      newBlock.style.outlineOffset = '2px';
+      newBlock.style.borderRadius = '4px';
+      setTimeout(() => { newBlock.style.outline = ''; newBlock.style.outlineOffset = ''; }, 1500);
+      const editable = newBlock.querySelector('[contenteditable]');
+      if (editable) editable.focus();
+    }
+    activeBlockIndex = index;
+    updateNavigator();
+  }, 300);
+}
 async function savePost() {
   const title = document.getElementById('post-title').value.trim();
   const slug = document.getElementById('post-slug').value.trim();
