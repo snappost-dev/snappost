@@ -1,8 +1,15 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 /* empty css                                */
-import { c as createComponent, e as renderComponent, b as renderTemplate, d as createAstro, m as maybeRenderHead, f as addAttribute } from '../chunks/astro/server_Cag67392.mjs';
-import { $ as $$Dashboard } from '../chunks/Dashboard_B4HjdNBJ.mjs';
+import { c as createComponent, b as renderHead, f as renderSlot, r as renderTemplate, e as createAstro, g as renderComponent, m as maybeRenderHead, a as addAttribute } from '../chunks/astro/server_CZTmva32.mjs';
 export { renderers } from '../renderers.mjs';
+
+const $$Astro$1 = createAstro();
+const $$Dashboard = createComponent(($$result, $$props, $$slots) => {
+  const Astro2 = $$result.createAstro($$Astro$1, $$props, $$slots);
+  Astro2.self = $$Dashboard;
+  const { title } = Astro2.props;
+  return renderTemplate`<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${title} - Dashboard</title>${renderHead()}</head> <body class="bg-gray-50"> <header class="bg-white border-b"> <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center"> <h1 class="text-xl font-bold">📝 Dashboard</h1> <nav class="flex gap-4"> <a href="/" class="hover:text-blue-600">Posts</a> <a href="/new" class="hover:text-blue-600">New Post</a> <form method="POST" action="/logout" class="inline"> <button type="submit" class="text-red-600 hover:text-red-700">Logout</button> </form> </nav> </div> </header> <main class="max-w-6xl mx-auto px-4 py-8"> ${renderSlot($$result, $$slots["default"])} </main> </body></html>`;
+}, "/home/aurora/snappost/templates/dashboard/src/layouts/Dashboard.astro", void 0);
 
 const $$Astro = createAstro();
 const $$Index = createComponent(async ($$result, $$props, $$slots) => {
