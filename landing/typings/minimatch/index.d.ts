@@ -1,5 +1,5 @@
-// Vendored from @types/minimatch — local typeRoot so tsserver finds "minimatch"
-// when node_modules resolution fails (nested tsconfig / multi-root workspace).
+// Vendored from @types/minimatch — lives next to this package's tsconfig (./typings)
+// so the IDE finds "minimatch" even when the workspace folder is only this subproject.
 // Source: https://github.com/DefinitelyTyped/DefinitelyTyped (MIT)
 // Type definitions for minimatch 5.1
 // Project: https://github.com/isaacs/minimatch
