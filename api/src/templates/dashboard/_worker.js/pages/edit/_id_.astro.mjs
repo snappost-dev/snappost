@@ -74,7 +74,7 @@ const $$id = createComponent(async ($$result, $$props, $$slots) => {
       error = "Error updating post: " + e.message;
     }
   }
-  return renderTemplate(_a || (_a = __template(['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Edit: ', ' - Dashboard</title><link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.css" rel="stylesheet"><script src="https://cdn.tailwindcss.com"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.29.1/dist/editorjs.umd.bundle.min.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.7/dist/header.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.js"><\/script><style>\n    .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }\n    .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }\n    .editor-main { overflow-y: auto; }\n    .nav-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }\n    .nav-item:hover { background: #e2e8f0; }\n    .nav-item.active { background: #dbeafe; color: #1d4ed8; }\n    .ce-block--focused { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 4px; }\n    #editorjs { min-height: 400px; }\n    .codex-editor__redactor { padding-bottom: 200px !important; }\n  </style>', '</head> <body class="bg-gray-50" data-theme="corporate"> ', " ", ' <form method="POST" id="save-form"> <input type="hidden" name="content" id="hidden-content"> <input type="hidden" name="title" id="hidden-title"> <input type="hidden" name="slug" id="hidden-slug"> <input type="hidden" name="description" id="hidden-description"> <input type="hidden" name="published" id="hidden-published" value="0"> </form> <div class="editor-grid"> <!-- SIDEBAR --> <aside class="sidebar flex flex-col"> <div class="p-4 border-b border-gray-200"> <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to Posts</a> </div> <div class="p-4 flex-1"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Blocks</h3> <div id="block-list" class="space-y-1"> <div class="text-sm text-gray-400 italic">Loading...</div> </div> <button id="add-block-btn" class="btn btn-ghost btn-sm w-full mt-3 text-gray-500">+ Add Block</button> </div> <div class="border-t border-gray-200 p-4"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Properties</h3> <div id="properties-content"> <p class="text-sm text-gray-400 italic">Select a block</p> </div> </div> </aside> <!-- MAIN PANEL --> <main class="editor-main"> <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3"> <div class="max-w-3xl mx-auto flex items-center gap-3"> <input id="post-title" type="text"', ' placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg"> <input id="post-slug" type="text"', ' placeholder="slug" class="input input-bordered input-sm w-40 text-xs font-mono"> <label class="flex items-center gap-1.5 text-sm cursor-pointer"> <input type="checkbox" id="post-published" class="checkbox checkbox-sm checkbox-primary"', '> <span>Publish</span> </label> <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button> <button id="save-btn" class="btn btn-primary btn-sm">Save</button> </div> <div class="max-w-3xl mx-auto mt-2"> <input id="post-description" type="text"', ` placeholder="Short description (optional)" class="input input-bordered input-xs w-full"> </div> </div> <div class="max-w-3xl mx-auto px-6 py-8"> <div id="editorjs"></div> </div> </main> </div> <!-- Add Block Modal --> <dialog id="add-block-modal" class="modal"> <div class="modal-box max-w-sm"> <h3 class="font-bold text-lg mb-4">Add Block</h3> <div class="grid grid-cols-2 gap-2"> <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('paragraph')">\u{1F4DD} Paragraph</button> <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('header')">\u{1F4F0} Header</button> <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('list')">\u{1F4CB} List</button> <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('alert')">\u26A0\uFE0F Alert</button> </div> <div class="modal-action"> <form method="dialog"><button class="btn btn-sm">Close</button></form> </div> </div> <form method="dialog" class="modal-backdrop"><button>close</button></form> </dialog> <script>(function(){`, `
+  return renderTemplate(_a || (_a = __template(['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Edit: ', ' - Dashboard</title><link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.css" rel="stylesheet"><script src="https://cdn.tailwindcss.com"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.js"><\/script><style>\n    .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }\n    .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }\n    .editor-main { overflow-y: auto; }\n    .nav-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }\n    .nav-item:hover { background: #e2e8f0; }\n    .nav-item.active { background: #dbeafe; color: #1d4ed8; }\n    .ce-block--focused { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 4px; }\n    #editorjs { min-height: 400px; }\n    .codex-editor__redactor { padding-bottom: 200px !important; }\n  </style>', '</head> <body class="bg-gray-50" data-theme="corporate"> ', " ", ' <form method="POST" id="save-form"> <input type="hidden" name="content" id="hidden-content"> <input type="hidden" name="title" id="hidden-title"> <input type="hidden" name="slug" id="hidden-slug"> <input type="hidden" name="description" id="hidden-description"> <input type="hidden" name="published" id="hidden-published" value="0"> </form> <div class="editor-grid"> <!-- SIDEBAR --> <aside class="sidebar flex flex-col"> <div class="p-4 border-b border-gray-200"> <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to Posts</a> </div> <div class="p-4 flex-1"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Blocks</h3> <div id="block-list" class="space-y-1"> <div class="text-sm text-gray-400 italic">Loading...</div> </div> <button id="add-block-btn" class="btn btn-ghost btn-sm w-full mt-3 text-gray-500">+ Add Block</button> </div> <div class="border-t border-gray-200 p-4"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Properties</h3> <div id="properties-content"> <p class="text-sm text-gray-400 italic">Select a block</p> </div> </div> </aside> <!-- MAIN PANEL --> <main class="editor-main"> <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3"> <div class="max-w-3xl mx-auto flex items-center gap-3"> <input id="post-title" type="text"', ' placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg"> <input id="post-slug" type="text"', ' placeholder="slug" class="input input-bordered input-sm w-40 text-xs font-mono"> <label class="flex items-center gap-1.5 text-sm cursor-pointer"> <input type="checkbox" id="post-published" class="checkbox checkbox-sm checkbox-primary"', '> <span>Publish</span> </label> <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button> <button id="save-btn" class="btn btn-primary btn-sm">Save</button> </div> <div class="max-w-3xl mx-auto mt-2"> <input id="post-description" type="text"', ` placeholder="Short description (optional)" class="input input-bordered input-xs w-full"> </div> </div> <div class="max-w-3xl mx-auto px-6 py-8"> <div id="editorjs"></div> </div> </main> </div> <!-- Add Block Modal --> <dialog id="add-block-modal" class="modal"> <div class="modal-box max-w-sm"> <h3 class="font-bold text-lg mb-4">Add Block</h3> <div class="grid grid-cols-2 gap-2"> <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('paragraph')">\u{1F4DD} Paragraph</button> <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('header')">\u{1F4F0} Header</button> <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('list')">\u{1F4CB} List</button> <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('alert')">\u26A0\uFE0F Alert</button> </div> <div class="modal-action"> <form method="dialog"><button class="btn btn-sm">Close</button></form> </div> </div> <form method="dialog" class="modal-backdrop"><button>close</button></form> </dialog> <script>(function(){`, `
 class AlertBlock {
   static get toolbox() { return { title: 'Alert Box', icon: '\u26A0\uFE0F' }; }
   constructor({data}) {
@@ -140,8 +140,8 @@ document.addEventListener('DOMContentLoaded', boot);
 const ICONS = { header:'\u{1F4F0}', paragraph:'\u{1F4DD}', list:'\u{1F4CB}', alert:'\u26A0\uFE0F' };
 function getBlockLabel(block) {
   switch (block.type) {
-    case 'header': return block.data.text || 'Header';
-    case 'paragraph': { const t = (block.data.text||'').replace(/<[^>]*>/g,''); return t.substring(0,30)+(t.length>30?'\u2026':'') || 'Paragraph'; }
+    case 'header': return block.data.text || 'Empty header \u2014 click to edit';
+    case 'paragraph': { const t = (block.data.text||'').replace(/<[^>]*>/g,''); return (t.length > 0 ? t.substring(0,30)+(t.length>30?'\u2026':'') : 'Empty paragraph \u2014 click to edit'); }
     case 'list': return 'List ('+(block.data.items?.length||0)+' items)';
     case 'alert': return 'Alert: '+(block.data.type||'info');
     default: return block.type;
@@ -151,11 +151,13 @@ async function updateNavigator() {
   if (!editor||!editor.save) return;
   let data; try { data = await editor.save(); } catch { return; }
   const list = document.getElementById('block-list'); list.innerHTML = '';
-  if (!data.blocks.length) { list.innerHTML = '<div class="text-sm text-gray-400 italic">Start writing...</div>'; return; }
+  if (data.blocks.length===0) { list.innerHTML = '<div class="text-sm text-gray-400 italic">Start writing...</div>'; return; }
   data.blocks.forEach((block, i) => {
     const div = document.createElement('div');
+    const label = getBlockLabel(block);
+    const isEmpty = label.includes('Empty') || label.includes('click to edit');
     div.className = 'nav-item'+(activeBlockIndex===i?' active':'');
-    div.innerHTML = '<span>'+(ICONS[block.type]||'\u{1F4C4}')+'</span><span class="truncate">'+getBlockLabel(block)+'</span>';
+    div.innerHTML = '<span>'+(ICONS[block.type]||'\u{1F4C4}')+'</span><span class="truncate'+(isEmpty?' text-gray-400 italic':'')+'">'+label+'</span>';
     div.addEventListener('click', () => selectBlock(i));
     list.appendChild(div);
   });
@@ -178,7 +180,27 @@ function showAlertProperties(inst) {
   document.getElementById('alert-type-select').addEventListener('change', (e) => { inst.setType(e.target.value); updateNavigator(); });
   document.getElementById('alert-msg-input').addEventListener('input', (e) => { inst.data.text=e.target.value; if(inst.span) inst.span.textContent=e.target.value; updateNavigator(); });
 }
-function insertBlock(type) { document.getElementById('add-block-modal').close(); editor.blocks.insert(type); setTimeout(updateNavigator,400); }
+function insertBlock(type) {
+  document.getElementById('add-block-modal').close();
+  editor.blocks.insert(type);
+
+  setTimeout(() => {
+    const newIndex = editor.blocks.getBlocksCount() - 1;
+    const blocks = document.querySelectorAll('.ce-block');
+    const newBlock = blocks[newIndex];
+    if (newBlock) {
+      newBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      newBlock.style.outline = '2px solid #3b82f6';
+      newBlock.style.outlineOffset = '2px';
+      newBlock.style.borderRadius = '4px';
+      setTimeout(() => { newBlock.style.outline = ''; newBlock.style.outlineOffset = ''; }, 1500);
+      const editable = newBlock.querySelector('[contenteditable]');
+      if (editable) editable.focus();
+    }
+    activeBlockIndex = newIndex;
+    updateNavigator();
+  }, 300);
+}
 async function savePost() {
   const title = document.getElementById('post-title').value.trim();
   const slug = document.getElementById('post-slug').value.trim();
@@ -209,7 +231,7 @@ async function openPreview() {
   win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Preview: '+title+'</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;color:#1a1a1a;line-height:1.7}h1,h2,h3,h4{margin-top:1.5em;margin-bottom:0.5em}p{margin:0.75em 0}ul,ol{padding-left:1.5em}</style></head><body><h1>'+title+'</h1>'+html+'</body></html>');
   win.document.close();
 }
-})();<\/script> </body> </html>`], ['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Edit: ', ' - Dashboard</title><link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.css" rel="stylesheet"><script src="https://cdn.tailwindcss.com"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.29.1/dist/editorjs.umd.bundle.min.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.7/dist/header.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.js"><\/script><style>\n    .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }\n    .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }\n    .editor-main { overflow-y: auto; }\n    .nav-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }\n    .nav-item:hover { background: #e2e8f0; }\n    .nav-item.active { background: #dbeafe; color: #1d4ed8; }\n    .ce-block--focused { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 4px; }\n    #editorjs { min-height: 400px; }\n    .codex-editor__redactor { padding-bottom: 200px !important; }\n  </style>', '</head> <body class="bg-gray-50" data-theme="corporate"> ', " ", ' <form method="POST" id="save-form"> <input type="hidden" name="content" id="hidden-content"> <input type="hidden" name="title" id="hidden-title"> <input type="hidden" name="slug" id="hidden-slug"> <input type="hidden" name="description" id="hidden-description"> <input type="hidden" name="published" id="hidden-published" value="0"> </form> <div class="editor-grid"> <!-- SIDEBAR --> <aside class="sidebar flex flex-col"> <div class="p-4 border-b border-gray-200"> <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to Posts</a> </div> <div class="p-4 flex-1"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Blocks</h3> <div id="block-list" class="space-y-1"> <div class="text-sm text-gray-400 italic">Loading...</div> </div> <button id="add-block-btn" class="btn btn-ghost btn-sm w-full mt-3 text-gray-500">+ Add Block</button> </div> <div class="border-t border-gray-200 p-4"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Properties</h3> <div id="properties-content"> <p class="text-sm text-gray-400 italic">Select a block</p> </div> </div> </aside> <!-- MAIN PANEL --> <main class="editor-main"> <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3"> <div class="max-w-3xl mx-auto flex items-center gap-3"> <input id="post-title" type="text"', ' placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg"> <input id="post-slug" type="text"', ' placeholder="slug" class="input input-bordered input-sm w-40 text-xs font-mono"> <label class="flex items-center gap-1.5 text-sm cursor-pointer"> <input type="checkbox" id="post-published" class="checkbox checkbox-sm checkbox-primary"', '> <span>Publish</span> </label> <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button> <button id="save-btn" class="btn btn-primary btn-sm">Save</button> </div> <div class="max-w-3xl mx-auto mt-2"> <input id="post-description" type="text"', ` placeholder="Short description (optional)" class="input input-bordered input-xs w-full"> </div> </div> <div class="max-w-3xl mx-auto px-6 py-8"> <div id="editorjs"></div> </div> </main> </div> <!-- Add Block Modal --> <dialog id="add-block-modal" class="modal"> <div class="modal-box max-w-sm"> <h3 class="font-bold text-lg mb-4">Add Block</h3> <div class="grid grid-cols-2 gap-2"> <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('paragraph')">\u{1F4DD} Paragraph</button> <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('header')">\u{1F4F0} Header</button> <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('list')">\u{1F4CB} List</button> <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('alert')">\u26A0\uFE0F Alert</button> </div> <div class="modal-action"> <form method="dialog"><button class="btn btn-sm">Close</button></form> </div> </div> <form method="dialog" class="modal-backdrop"><button>close</button></form> </dialog> <script>(function(){`, `
+})();<\/script> </body> </html>`], ['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Edit: ', ' - Dashboard</title><link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.css" rel="stylesheet"><script src="https://cdn.tailwindcss.com"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.js"><\/script><style>\n    .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }\n    .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }\n    .editor-main { overflow-y: auto; }\n    .nav-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }\n    .nav-item:hover { background: #e2e8f0; }\n    .nav-item.active { background: #dbeafe; color: #1d4ed8; }\n    .ce-block--focused { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 4px; }\n    #editorjs { min-height: 400px; }\n    .codex-editor__redactor { padding-bottom: 200px !important; }\n  </style>', '</head> <body class="bg-gray-50" data-theme="corporate"> ', " ", ' <form method="POST" id="save-form"> <input type="hidden" name="content" id="hidden-content"> <input type="hidden" name="title" id="hidden-title"> <input type="hidden" name="slug" id="hidden-slug"> <input type="hidden" name="description" id="hidden-description"> <input type="hidden" name="published" id="hidden-published" value="0"> </form> <div class="editor-grid"> <!-- SIDEBAR --> <aside class="sidebar flex flex-col"> <div class="p-4 border-b border-gray-200"> <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to Posts</a> </div> <div class="p-4 flex-1"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Blocks</h3> <div id="block-list" class="space-y-1"> <div class="text-sm text-gray-400 italic">Loading...</div> </div> <button id="add-block-btn" class="btn btn-ghost btn-sm w-full mt-3 text-gray-500">+ Add Block</button> </div> <div class="border-t border-gray-200 p-4"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Properties</h3> <div id="properties-content"> <p class="text-sm text-gray-400 italic">Select a block</p> </div> </div> </aside> <!-- MAIN PANEL --> <main class="editor-main"> <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3"> <div class="max-w-3xl mx-auto flex items-center gap-3"> <input id="post-title" type="text"', ' placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg"> <input id="post-slug" type="text"', ' placeholder="slug" class="input input-bordered input-sm w-40 text-xs font-mono"> <label class="flex items-center gap-1.5 text-sm cursor-pointer"> <input type="checkbox" id="post-published" class="checkbox checkbox-sm checkbox-primary"', '> <span>Publish</span> </label> <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button> <button id="save-btn" class="btn btn-primary btn-sm">Save</button> </div> <div class="max-w-3xl mx-auto mt-2"> <input id="post-description" type="text"', ` placeholder="Short description (optional)" class="input input-bordered input-xs w-full"> </div> </div> <div class="max-w-3xl mx-auto px-6 py-8"> <div id="editorjs"></div> </div> </main> </div> <!-- Add Block Modal --> <dialog id="add-block-modal" class="modal"> <div class="modal-box max-w-sm"> <h3 class="font-bold text-lg mb-4">Add Block</h3> <div class="grid grid-cols-2 gap-2"> <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('paragraph')">\u{1F4DD} Paragraph</button> <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('header')">\u{1F4F0} Header</button> <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('list')">\u{1F4CB} List</button> <button class="btn btn-ghost justify-start gap-2" onclick="insertBlock('alert')">\u26A0\uFE0F Alert</button> </div> <div class="modal-action"> <form method="dialog"><button class="btn btn-sm">Close</button></form> </div> </div> <form method="dialog" class="modal-backdrop"><button>close</button></form> </dialog> <script>(function(){`, `
 class AlertBlock {
   static get toolbox() { return { title: 'Alert Box', icon: '\u26A0\uFE0F' }; }
   constructor({data}) {
@@ -275,8 +297,8 @@ document.addEventListener('DOMContentLoaded', boot);
 const ICONS = { header:'\u{1F4F0}', paragraph:'\u{1F4DD}', list:'\u{1F4CB}', alert:'\u26A0\uFE0F' };
 function getBlockLabel(block) {
   switch (block.type) {
-    case 'header': return block.data.text || 'Header';
-    case 'paragraph': { const t = (block.data.text||'').replace(/<[^>]*>/g,''); return t.substring(0,30)+(t.length>30?'\u2026':'') || 'Paragraph'; }
+    case 'header': return block.data.text || 'Empty header \u2014 click to edit';
+    case 'paragraph': { const t = (block.data.text||'').replace(/<[^>]*>/g,''); return (t.length > 0 ? t.substring(0,30)+(t.length>30?'\u2026':'') : 'Empty paragraph \u2014 click to edit'); }
     case 'list': return 'List ('+(block.data.items?.length||0)+' items)';
     case 'alert': return 'Alert: '+(block.data.type||'info');
     default: return block.type;
@@ -286,11 +308,13 @@ async function updateNavigator() {
   if (!editor||!editor.save) return;
   let data; try { data = await editor.save(); } catch { return; }
   const list = document.getElementById('block-list'); list.innerHTML = '';
-  if (!data.blocks.length) { list.innerHTML = '<div class="text-sm text-gray-400 italic">Start writing...</div>'; return; }
+  if (data.blocks.length===0) { list.innerHTML = '<div class="text-sm text-gray-400 italic">Start writing...</div>'; return; }
   data.blocks.forEach((block, i) => {
     const div = document.createElement('div');
+    const label = getBlockLabel(block);
+    const isEmpty = label.includes('Empty') || label.includes('click to edit');
     div.className = 'nav-item'+(activeBlockIndex===i?' active':'');
-    div.innerHTML = '<span>'+(ICONS[block.type]||'\u{1F4C4}')+'</span><span class="truncate">'+getBlockLabel(block)+'</span>';
+    div.innerHTML = '<span>'+(ICONS[block.type]||'\u{1F4C4}')+'</span><span class="truncate'+(isEmpty?' text-gray-400 italic':'')+'">'+label+'</span>';
     div.addEventListener('click', () => selectBlock(i));
     list.appendChild(div);
   });
@@ -313,7 +337,27 @@ function showAlertProperties(inst) {
   document.getElementById('alert-type-select').addEventListener('change', (e) => { inst.setType(e.target.value); updateNavigator(); });
   document.getElementById('alert-msg-input').addEventListener('input', (e) => { inst.data.text=e.target.value; if(inst.span) inst.span.textContent=e.target.value; updateNavigator(); });
 }
-function insertBlock(type) { document.getElementById('add-block-modal').close(); editor.blocks.insert(type); setTimeout(updateNavigator,400); }
+function insertBlock(type) {
+  document.getElementById('add-block-modal').close();
+  editor.blocks.insert(type);
+
+  setTimeout(() => {
+    const newIndex = editor.blocks.getBlocksCount() - 1;
+    const blocks = document.querySelectorAll('.ce-block');
+    const newBlock = blocks[newIndex];
+    if (newBlock) {
+      newBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      newBlock.style.outline = '2px solid #3b82f6';
+      newBlock.style.outlineOffset = '2px';
+      newBlock.style.borderRadius = '4px';
+      setTimeout(() => { newBlock.style.outline = ''; newBlock.style.outlineOffset = ''; }, 1500);
+      const editable = newBlock.querySelector('[contenteditable]');
+      if (editable) editable.focus();
+    }
+    activeBlockIndex = newIndex;
+    updateNavigator();
+  }, 300);
+}
 async function savePost() {
   const title = document.getElementById('post-title').value.trim();
   const slug = document.getElementById('post-slug').value.trim();

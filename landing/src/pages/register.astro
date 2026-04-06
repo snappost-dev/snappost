@@ -1,8 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
 
-const runtime = (Astro.locals as any).runtime;
-const API_URL = runtime?.env?.API_URL || import.meta.env.API_URL || 'http://localhost:8787';
+const API_URL =
+  Astro.locals.runtime.env.API_URL || import.meta.env.API_URL || 'http://localhost:8787';
 let error = '';
 
 if (Astro.request.method === 'POST') {
