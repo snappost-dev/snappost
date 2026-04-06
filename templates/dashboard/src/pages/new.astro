@@ -244,7 +244,7 @@ function boot() {
       list:   { class: List, inlineToolbar: true },
       alert:  { class: AlertBlock },
     },
-    data: { blocks: [{ type: 'paragraph', data: { text: 'Start writing here...' } }] },
+    placeholder: 'Start writing your post...',
     autofocus: true,
     onChange: () => {
       clearTimeout(navigatorDebounce);
