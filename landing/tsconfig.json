@@ -1,8 +1,8 @@
 {
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
-    "types": ["astro/client", "minimatch"],
-    "typeRoots": ["./node_modules/@types"]
+    "types": ["astro/client"],
+    "typeRoots": ["../typings", "./node_modules/@types"]
   },
   "include": [".astro/types.d.ts", "src/**/*"],
   "exclude": ["dist", "node_modules"]
