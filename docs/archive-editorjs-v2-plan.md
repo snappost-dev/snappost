@@ -1,9 +1,16 @@
+> **Arşiv — 2026-04-06**  
+> Bu belge **tamamlanmış** Editor.js dashboard implementasyonunun revize planıdır.  
+> Aktif özet için repo kökündeki `PROJECT-STATUS.md` dosyasına bakın.  
+> İlk taslak plan: `docs/cursor-opus-prompt-v1.md`
+
+---
+
 # SNAPPOST DASHBOARD - EDITOR.JS IMPLEMENTATION PLAN (V2 - REVISED)
 
 ## CONTEXT
 
 Mevcut dashboard basit markdown textarea kullanıyor. Editor.js ile block-based bir editöre geçiyoruz.
-Branch: `feature/editorjs-dashboard`
+Branch: `feature/editorjs-dashboard` *(iş birleştirildi → `main`)*
 
 ## MEVCUT DURUM
 

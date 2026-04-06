@@ -1,7 +1,7 @@
-# SNAPPOST — Project Status (V1 MVP)
+# SNAPPOST — Project Status (V1 MVP + dashboard editörü)
 
-**Son güncelleme:** 2026-04-05
-**Repo:** https://github.com/snappost-dev/snappost
+**Son güncelleme:** 2026-04-06  
+**Repo:** https://github.com/snappost-dev/snappost  
 **Branch:** main
 
 ---
@@ -9,6 +9,19 @@
 ## 1. Ne Bu Proje?
 
 Snappost, kullanıcıların email/password ile kayıt olup **~15 saniyede** tam bir Astro blog + admin dashboard altyapısını Cloudflare üzerine deploy edebildiği bir SaaS. Merkezi hosting modeli — tüm siteler bizim CF hesabında çalışıyor. Her kullanıcı kendi izole D1 database'ine, blog frontend'ine ve dashboard'a sahip oluyor.
+
+### Dashboard içerik editörü (V2 — tamamlandı)
+
+- **`templates/dashboard`:** Yazı oluşturma/düzenleme sayfaları **Editor.js** blok editörüne geçirildi (`/new`, `/edit/[id]`): yan menü navigasyonu, özellikler paneli, **Alert** özel bloğu; CDN üzerinden Editor.js + (sadece bu sayfalarda) DaisyUI/Tailwind.
+- **Veri modeli:** `posts.content` alanında **Editor.js JSON** string; `content_html` sunucuda `renderEditorJSToHTML()` ile üretilir. **Eski markdown** içerikli kayıtlar için edit tarafında uyumluluk/uyarı vardır; shell blog yine `content_html` render eder.
+- **Kaynak dosyalar:** `templates/dashboard/src/pages/new.astro`, `edit/[id].astro`.
+- **Provision / API:** Güncel dashboard build’i `api/src/templates/dashboard` + `npm run embed` → `api/src/generated/dashboard-template.ts`; yeni provision bu gömülü şablonu kullanır.
+- **Arşiv dokümantasyon:** Tamamlanmış revize plan → [`docs/archive-editorjs-v2-plan.md`](docs/archive-editorjs-v2-plan.md). Erken taslak → [`docs/cursor-opus-prompt-v1.md`](docs/cursor-opus-prompt-v1.md).
+
+### Mimari not — ölçekleme (sıradaki büyük iş)
+
+- Mevcut model: **site başına** ayrı Shell + Dashboard **Cloudflare Pages projesi** + ayrı D1 → hesap düzeyinde **Pages proje sayısı** ve operasyon maliyeti hızlı büyür.
+- **Sonraki faz:** Çok kiracılı (multi-tenant) veya daha az Pages yüzeyi — teknik karar ve backlog özeti aşağıda **bölüm 9**.
 
 ---
 
@@ -92,19 +105,24 @@ Hata olursa rollback: oluşturulan Pages projeleri ve D1 database silinir.
 │   │   └── layouts/
 │   │       └── Base.astro        # Nav (login/signup veya dashboard)
 │   ├── wrangler.toml
-│   └── package.json
+│   ├── package.json
+│   └── typings/minimatch/        # tsserver: vendored @types/minimatch (tsconfig typeRoots)
 │
 ├── templates/                    # Kaynak Astro projeleri (Phase 1'den)
 │   ├── shell/                    # Blog frontend (Astro + Tailwind + D1)
 │   │   ├── src/pages/            # index, blog/[slug], rss.xml
 │   │   ├── schema.sql            # Blog DB schema (posts + config)
+│   │   ├── typings/minimatch/    # tsserver shim (typeRoots)
 │   │   └── dist/                 # Build output → api/src/templates/shell/
-│   └── dashboard/                # Admin panel (Astro + Tailwind + D1)
+│   └── dashboard/                # Admin panel (Astro + Tailwind + D1 + Editor.js)
 │       ├── src/pages/            # index, login, logout, new, edit/[id]
-│       ├── src/middleware.ts      # Auth middleware (password + access_token)
+│       ├── src/middleware.ts     # Auth middleware (password + access_token)
+│       ├── typings/minimatch/    # tsserver shim (typeRoots)
 │       └── dist/                 # Build output → api/src/templates/dashboard/
 │
-├── docs/                         # Eski dokümanlar (referans)
+├── docs/                         # Arşiv / referans dokümanlar
+│   ├── archive-editorjs-v2-plan.md   # Tamamlanan Editor.js V2 planı (arşiv)
+│   └── cursor-opus-prompt-v1.md      # İlk Editor.js taslağı (arşiv)
 ├── PROJECT-STATUS.md             # ← Bu dosya
 └── .gitignore
 ```
@@ -164,7 +182,8 @@ config (key, value)
 | API | Hono, Cloudflare Workers, D1 |
 | Auth | bcryptjs (hash), hono/jwt (HS256) |
 | Landing | Astro 4 SSR, Tailwind, @astrojs/cloudflare |
-| Templates | Astro 4 SSR, Tailwind, D1, marked (markdown) |
+| Templates (dashboard) | Astro 4 SSR, Tailwind, D1, **Editor.js** (CDN), DaisyUI (sadece new/edit sayfaları); sunucuda JSON→HTML |
+| Templates (shell) | Astro 4 SSR, Tailwind, D1; `marked` bağımlılığı şemada/kodda legacy için kalabilir |
 | Deploy mekanizması | CF Pages Direct Upload API (upload-token → bucket upload → upsert-hashes → FormData deployment with _worker.js bundle) |
 | Template embedding | Build time esbuild bundle → base64 encoded TS modules |
 | Session | httpOnly cookie (`auth_token`), JWT Bearer token |
@@ -173,10 +192,12 @@ config (key, value)
 
 ## 7. Production Deploy
 
+> **Not:** Cloudflare’deki projeler hesaptan kaldırılmış veya yeniden oluşturulmuş olabilir. Aşağıdaki URL’ler **son bilinen** örneklerdir; canlı ortamı Cloudflare Dashboard ve `wrangler` ile doğrula.
+
 ### URL'ler
 - **API:** `https://snappost-api.snappost-dev.workers.dev`
 - **Landing:** `https://snappost-landing.pages.dev`
-- **Custom domain:** `snappost.dev` (henüz bağlanmadı)
+- **Custom domain:** `snappost.dev` (opsiyonel; bağlıysa Dashboard’dan doğrulanmalı)
 
 ### CF Resources
 - **D1:** `snappost-provisioning` (`d8c8583f-e604-44f0-8ead-7b0d53b4f151`)
@@ -229,12 +250,18 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 | 10 | Password reset yok | Unutulan password kurtarılamaz |
 | 11 | CORS config hardcoded | Origin listesi kod içinde, config'den okunmuyor |
 | 12 | Template güncelleme mekanizması yok | Template değişince mevcut siteler eski versiyonda kalıyor |
+| 13 | Site başına 2× Pages + 1× D1 ölçeklenmesi | CF Pages proje limitleri; tek hesapta çok müşteri sürdürülebilir değil — multi-tenant veya az yüzey mimarisi gerekir |
 
 ---
 
-## 9. V2/V3 Aday Özellikler
+## 9. Yol haritası
 
-**V2 — Stabilizasyon:**
+### 9.1 Tamamlanan — Dashboard V2 (içerik editörü)
+
+- Editor.js tabanlı yazı editörü (`new` / `edit`), JSON + `content_html` akışı, arşiv plan: [`docs/archive-editorjs-v2-plan.md`](docs/archive-editorjs-v2-plan.md).
+
+### 9.2 Sıradaki — Stabilizasyon ve güvenlik (önceden “V2 backlog”)
+
 - `/test/*` endpoint'lerini kaldır veya auth arkasına al
 - Rate limiting (CF Workers built-in veya custom)
 - Site silme / durdurma (DELETE /api/sites/:id)
@@ -242,8 +269,15 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 - Provision sırasında loading/progress UI
 - Email validation (format + uniqueness)
 - Site sayısı limiti (free tier: 1-3 site)
+- Abuse azaltma (kayıt doğrulama, CAPTCHA vb.)
 
-**V3 — Büyüme:**
+### 9.3 Mimari pivot — ölçekleme (V2.5 / platform)
+
+- **Hedef:** Tek CF hesabında **daha az Pages projesi**, çok kiracı routing; isteğe bağlı kiracı başına D1 veya paylaşımlı D1 + `tenant_id` (bkz. [D1 limits](https://developers.cloudflare.com/d1/platform/limits/) — örn. ~5k D1 binding / Worker, 50k DB / Workers Paid hesabı).
+- Mevcut **per-site shell + dashboard deploy** modeli korunacaksa: CF limit artırımı + maliyet modeli ayrı planlanmalı.
+
+### 9.4 V3 — Büyüme (ürün)
+
 - Custom domain bağlama (CF API + DNS)
 - Template theme seçimi (birden fazla blog tasarımı)
 - Template hot-update (mevcut siteleri yeni template'e upgrade)
