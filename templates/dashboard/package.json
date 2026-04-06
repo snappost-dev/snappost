@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "wrangler pages dev --local -- astro dev --port 4322",
+    "dev:local": "npm run build && wrangler pages dev dist --local",
     "build": "astro build",
     "preview": "wrangler pages dev dist"
   },

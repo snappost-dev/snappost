@@ -117,6 +117,7 @@ Hata olursa rollback: oluşturulan Pages projeleri ve D1 database silinir.
 │   │   ├── typings/minimatch/    # tsserver shim (typeRoots)
 │   │   └── dist/                 # Build output → api/src/templates/shell/
 │   └── dashboard/                # Admin panel (Astro + Tailwind + D1 + Editor.js)
+│       ├── README.md             # Yerel V2 testi (D1 şema + dev:local)
 │       ├── src/pages/            # index, login, logout, new, edit/[id]
 │       ├── src/middleware.ts     # Auth middleware (password + access_token)
 │       ├── typings/minimatch/    # tsserver shim (typeRoots)
