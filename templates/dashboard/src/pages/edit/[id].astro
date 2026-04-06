@@ -305,14 +305,6 @@ function insertBlock(type) {
   editor.blocks.insert(type);
 
   setTimeout(() => {
-    const count = editor.blocks.getBlocksCount();
-    for (let i = count - 1; i >= 0; i--) {
-      const b = editor.blocks.getBlockByIndex(i);
-      if (b && b.name === 'paragraph' && !b.holder.textContent.trim()) {
-        if (count > 1) { editor.blocks.delete(i); break; }
-      }
-    }
-
     const newIndex = editor.blocks.getBlocksCount() - 1;
     const blocks = document.querySelectorAll('.ce-block');
     const newBlock = blocks[newIndex];
