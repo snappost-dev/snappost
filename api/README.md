@@ -1,45 +1,63 @@
 # Snappost Provisioning API
 
-Cloudflare Workers + Hono.js + D1
+Cloudflare Workers + [Hono](https://hono.dev/) + D1. Email/şifre auth (JWT), provision ile kullanıcı başına D1 + Shell + Dashboard (Pages) oluşturma.
 
-## Setup
+Ayrıntılı mimari, endpoint listesi ve yol haritası için repo kökünde **[PROJECT-STATUS.md](../PROJECT-STATUS.md)**.
+
+## Kurulum
 
 ```bash
 cd api
 npm install
 ```
 
-## Development
+## Geliştirme
 
 ```bash
-# Local dev server
 npm run dev
-
-# Access at: http://localhost:8787
+# http://localhost:8787
 ```
 
-## Database Setup
+Yerelde `api/.dev.vars` örneği:
 
 ```bash
-# 1. Create D1 database
+CF_API_TOKEN=...      # Cloudflare API token (D1 + Pages)
+CF_ACCOUNT_ID=...     # wrangler.toml [vars] ile de verilebilir
+JWT_SECRET=...        # JWT imzalama
+```
+
+`wrangler.toml` içinde provisioning D1 `database_id` tanımlı olmalı.
+
+## Veritabanı (provisioning D1)
+
+```bash
+# İlk kez: D1 oluştur (çıktıdaki database_id → wrangler.toml)
 npm run db:create
 
-# Output: database_id değerini kopyala
-# 2. wrangler.toml'daki database_id'yi güncelle
-
-# 3. Migrate schema
+# Uzak D1 şeması
 npm run db:migrate
 ```
 
-## Secrets Setup
+Yerel D1 için: `wrangler d1 execute snappost-provisioning --local --file=./src/db/schema.sql`
+
+## Şablon gömme (dashboard/shell değişince)
+
+`templates/*/dist` → `api/src/templates/*` senkronundan sonra:
 
 ```bash
-# Set CF API token (D1 + Pages permissions)
-wrangler secret put CF_API_TOKEN
+npm run embed
+```
 
-# Set JWT secret for dashboard tokens
+Ardından deploy. Ayrıntı: PROJECT-STATUS.md §3 ve §7.
+
+## Production secrets
+
+```bash
+wrangler secret put CF_API_TOKEN
 wrangler secret put JWT_SECRET
 ```
+
+`CF_ACCOUNT_ID` genelde `wrangler.toml` `[vars]` içinde tutulur.
 
 ## Deploy
 
@@ -47,24 +65,16 @@ wrangler secret put JWT_SECRET
 npm run deploy
 ```
 
-## Endpoints
+## Endpoint özeti
 
-### Auth
-- `POST /api/auth/callback` - CF OAuth callback
-- `GET /api/auth/me` - Current user
-- `POST /api/auth/logout` - Logout
+| Method | Path | Açıklama |
+|--------|------|----------|
+| GET | `/` | Health |
+| POST | `/api/auth/register` | `{ email, password }` → JWT |
+| POST | `/api/auth/login` | `{ email, password }` → JWT |
+| GET | `/api/auth/me` | `Authorization: Bearer …` |
+| POST | `/api/provision` | JWT + `{ site_name }` → D1 + Pages |
+| GET | `/api/sites` | JWT → kullanıcının siteleri |
+| GET | `/api/sites/:id` | JWT → tek site |
 
-### Provisioning
-- `POST /api/provision` - Create new site
-- `GET /api/sites` - List user's sites
-- `GET /api/sites/:id` - Site details
-
-## Implementation Order (Phase 2)
-
-1. ✅ Skeleton setup
-2. ⏭️ CF OAuth integration
-3. ⏭️ D1 creation via CF API
-4. ⏭️ Pages Direct Upload
-5. ⏭️ Binding automation
-6. ⏭️ Full provision endpoint
-7. ⏭️ Token auth
+Geliştirme için `/test/*` route’ları da vardır (production’da kapatılması önerilir — PROJECT-STATUS.md §8).

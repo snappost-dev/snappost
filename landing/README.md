@@ -1,54 +1,56 @@
-# Snappost Landing Page
+# Snappost Landing
 
-snappost.dev - Astro SSR with Cloudflare
+Astro 4 SSR + Tailwind + `@astrojs/cloudflare`. Email/şifre ile kayıt/giriş, kullanıcı panelinde site listesi ve yeni blog provision formu.
 
-## Setup
+Ayrıntılı mimari ve deploy için repo kökünde **[PROJECT-STATUS.md](../PROJECT-STATUS.md)**.
+
+## Kurulum
 
 ```bash
 cd landing
 npm install
 ```
 
-## Development
+## Geliştirme
 
 ```bash
 npm run dev
-
-# Access at: http://localhost:4321
+# http://localhost:4321
 ```
 
-## Pages
+## Sayfalar
 
-- `/` - Homepage (hero + features)
-- `/register` - CF OAuth flow
-- `/sites` - User's site list (authenticated)
+| Rota | Açıklama |
+|------|----------|
+| `/` | Ana sayfa |
+| `/register` | Kayıt → JWT cookie |
+| `/login` | Giriş → JWT cookie |
+| `/dashboard` | Oturum: siteler + provision (API’ye Bearer/cookie ile istek) |
+| `/logout` | Cookie temizleme |
 
-## Environment Variables
+## Ortam değişkenleri
 
-Create `.dev.vars` for local development:
+**Production:** `wrangler.toml` içinde `[vars]` — örnek:
 
+```toml
+[vars]
+API_URL = "https://snappost-api.<subdomain>.workers.dev"
 ```
-CF_CLIENT_ID=your-oauth-client-id
-CF_CLIENT_SECRET=your-oauth-secret
+
+**Local:** `landing/.dev.vars` (Wrangler / Astro):
+
+```bash
 API_URL=http://localhost:8787
-SESSION_SECRET=random-secret-for-cookies
 ```
+
+SSR’da API adresi: `Astro.locals.runtime.env.API_URL` (bkz. `src/env.d.ts`).
 
 ## Deploy
 
 ```bash
 npm run deploy
-
-# Or via Cloudflare Dashboard:
-# 1. Connect GitHub repo
-# 2. Set environment variables
-# 3. Auto-deploy on push
 ```
 
-## Phase 2 Implementation
+Bu komut `npm run build` sonrası `wrangler pages deploy dist` çalıştırır. Proje adı komutta veya `wrangler.toml` `name` ile uyumlu olmalı (ör. `snappost-landing`).
 
-1. ⏭️ CF OAuth integration (register.astro)
-2. ⏭️ Session handling (cookies)
-3. ⏭️ API communication
-4. ⏭️ Sites list (fetch from API)
-5. ⏭️ Auto-login token passing
+Cloudflare Dashboard üzerinden Git bağlantısı kullanıyorsan build komutunu ve `API_URL` env’ini orada da tanımla.
