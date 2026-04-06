@@ -112,6 +112,7 @@ Hata olursa rollback: oluşturulan Pages projeleri ve D1 database silinir.
 │
 ├── templates/                    # Kaynak Astro projeleri (Phase 1'den)
 │   ├── shell/                    # Blog frontend (Astro + Tailwind + D1)
+│   │   ├── README.md             # Yerel test + dashboard ile aynı D1
 │   │   ├── src/pages/            # index, blog/[slug], rss.xml
 │   │   ├── schema.sql            # Blog DB schema (posts + config)
 │   │   ├── typings/minimatch/    # tsserver shim (typeRoots)
