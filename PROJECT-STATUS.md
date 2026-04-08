@@ -12,7 +12,7 @@ Snappost, kullanıcıların email/password ile kayıt olup **~15 saniyede** tam 
 
 ### Dashboard içerik editörü (V2 — tamamlandı)
 
-- **`templates/dashboard`:** Yazı oluşturma/düzenleme **Editor.js** (`/new`, `/edit/[id]`): header, paragraph, list, quote, code, delimiter, **Alert** (özel); CDN araçları + `public/dashboard/alert-block.js` (`SnappostAlertBlock`). SSR HTML: `src/lib/editor.ts` içindeki `renderEditorJSToHTML()` (sayfalar import eder).
+- **`templates/dashboard`:** Yazı oluşturma/düzenleme **Editor.js** (`/new`, `/edit/[id]`): header, paragraph, list, quote, code, delimiter, **Alert** (özel); CDN araçları + `public/dashboard/alert-block.js` (`SnappostAlertBlock`). Blok ekleme yalnızca editördeki **+** (sidebar’da ayrı “Add Block” yok). Kayıt: `POST` sonrası **`/edit/{id}`** (yeni yazıda `last_row_id` ile). SSR HTML: `src/lib/editor.ts` içindeki `renderEditorJSToHTML()` (sayfalar import eder).
 - **Veri modeli:** `posts.content` — Editor.js JSON; `content_html` — `renderEditorJSToHTML()`. **Eski markdown** kayıtlarında edit uyarısı; shell `content_html` kullanır.
 - **Kaynak dosyalar:** `templates/dashboard/src/pages/new.astro`, `edit/[id].astro`, `src/lib/editor.ts`, `public/dashboard/alert-block.js`.
 - **Provision / API:** Güncel dashboard build’i `api/src/templates/dashboard` + `npm run embed` → `api/src/generated/dashboard-template.ts`; yeni provision bu gömülü şablonu kullanır.
@@ -150,6 +150,7 @@ Hata olursa rollback: oluşturulan Pages projeleri ve D1 database silinir.
 | GET | `/api/sites/:id` | Auth + whitelist (varsa). Tek site detay |
 | POST | `/api/sites/:id/domain` | Auth + whitelist. Body `{ domain }` → shell Pages’e CF custom domain; DB `custom_domain` |
 | DELETE | `/api/sites/:id/domain` | Auth + whitelist. CF’den domain kaldırır; DB `custom_domain` null |
+| DELETE | `/api/sites/:id` | Auth + whitelist. Önce custom domain (varsa), sonra dashboard/shell Pages + kiracı D1 **best-effort** silinir; provisioning `sites` satırı silinir |
 
 ### Utility
 | Method | Path | Açıklama |
@@ -282,12 +283,12 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 ### 9.1 Tamamlanan — Dashboard V2 (içerik editörü)
 
 - Editor.js tabanlı yazı editörü (`new` / `edit`), JSON + `content_html` akışı, arşiv plan: [`docs/archive-editorjs-v2-plan.md`](docs/archive-editorjs-v2-plan.md).
+- **Site silme:** `DELETE /api/sites/:id` (CF cleanup + provisioning satırı); landing **Delete blog** ile aynı API.
 
 ### 9.2 Sıradaki — Stabilizasyon ve güvenlik (önceden “V2 backlog”)
 
 - `/test/*`: `ALLOW_TEST_ROUTES=true` ile açılır (varsayılan kapalı — yapıldı)
 - Rate limiting (CF Workers built-in veya custom)
-- Site silme / durdurma (DELETE /api/sites/:id)
 - Dashboard password'ü provision sırasında set etme
 - Provision sırasında loading/progress UI
 - Email validation (format + uniqueness)

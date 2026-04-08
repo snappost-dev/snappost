@@ -1,6 +1,6 @@
 # Snappost Dashboard (şablon)
 
-Admin paneli: giriş, yazı listesi, **Editor.js** ile `/new` ve `/edit/[id]`. Bloklar: paragraph, header, list, quote, code, delimiter, alert (özel). Sunucu tarafı HTML üretimi: `src/lib/editor.ts` → `renderEditorJSToHTML`; istemci alert sınıfı: `public/dashboard/alert-block.js` → `/dashboard/alert-block.js`. Provision sırasında API bu projeyi build edip Cloudflare Pages’e yükler.
+Admin paneli: giriş, yazı listesi, **Editor.js** ile `/new` ve `/edit/[id]`. Bloklar: paragraph, header, list, quote, code, delimiter, alert (özel). Yeni blok ekleme editördeki **+** ile; sidebar yalnızca blok listesi + özellikler. Kayıt sonrası yönlendirme: **`/edit/{id}`**. Sunucu tarafı HTML üretimi: `src/lib/editor.ts` → `renderEditorJSToHTML`; istemci alert sınıfı: `public/dashboard/alert-block.js` → `/dashboard/alert-block.js`. Provision sırasında API bu projeyi build edip Cloudflare Pages’e yükler.
 
 Genel mimari: repo kökünde [`PROJECT-STATUS.md`](../../PROJECT-STATUS.md).
 
