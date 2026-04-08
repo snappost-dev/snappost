@@ -206,7 +206,7 @@ config (key, value)
 > **Not:** Cloudflare’deki projeler hesaptan kaldırılmış veya yeniden oluşturulmuş olabilir. Aşağıdaki URL’ler **son bilinen** örneklerdir; canlı ortamı Cloudflare Dashboard ve `wrangler` ile doğrula.
 
 ### URL'ler
-- **API:** `https://snappost-api.snappost-dev.workers.dev`
+- **API:** `https://snappost-api.snappost-dev.workers.dev` — **`*.workers.dev` yeterli**; özel API domain’i zorunlu değil, ihtiyaç olunca Worker’a custom hostname eklenebilir (bkz. [docs/SPRINT-PLAN.md](docs/SPRINT-PLAN.md) §A2).
 - **Landing:** `https://snappost-landing.pages.dev` (Astro `site` / canonical tabanı: `landing/astro.config.mjs`; özel alan bağlanınca orayı güncelleyin)
 - **Custom domain:** `snappost.dev` (opsiyonel; bağlıysa Dashboard’dan doğrulanmalı)
 

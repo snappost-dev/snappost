@@ -17,7 +17,9 @@
 
 ### A2 — Rate limiting (Cloudflare Dashboard, Worker kodu yok)
 
-**Öneri:** Önce panel/WAF; Worker içi sayaç (KV/D1) **sonraki faz**.
+**API hostname kararı:** Özel API domain’i **zorunlu değil**; Snappost şu an **`*.workers.dev`** ile devam ediyor — bu yeterli. İleride marka, müşteri beklentisi veya zone üzerinden WAF/rate limit yazmayı kolaylaştırmak isterseniz Worker’a `api.example.com` gibi bir route eklenebilir.
+
+**Öneri:** Önce panel/WAF (hesap/planınıza göre `workers.dev` veya ileride eklenen zone hostname için); Worker içi sayaç (KV/D1 veya [Rate Limit binding](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)) **sonraki faz**.
 
 Cloudflare hesabınızda API Worker’ınızın geldiği hostname’i kullanın (ör. `https://snappost-api.<subdomain>.workers.dev`). Tam menü adları plana göre değişebilir; genel akış:
 
