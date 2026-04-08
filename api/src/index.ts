@@ -16,6 +16,8 @@ type Bindings = {
   JWT_SECRET: string;
   /** Virgülle ayrılmış; tanımsız veya boş = kısıt yok */
   ALLOWED_EMAILS?: string;
+  /** Pozitif tam sayı; kullanıcı başına en fazla kaç blog (sites satırı). Tanımsız/boş = sınırsız */
+  MAX_SITES_PER_USER?: string;
   /** Yalnızca tam olarak "true" iken /test/* açılır; production’da tanımlamayın */
   ALLOW_TEST_ROUTES?: string;
 };
@@ -24,6 +26,21 @@ const app = new Hono<{ Bindings: Bindings }>();
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
+}
+
+/** Basit FQDN e-posta formatı (MVP); tam RFC doğrulaması değil */
+function isValidEmailFormat(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+/** null = sınır yok */
+function parseMaxSitesPerUser(raw: string | undefined): number | null {
+  if (raw == null) return null;
+  const t = raw.trim();
+  if (t === '') return null;
+  const n = parseInt(t, 10);
+  if (!Number.isFinite(n) || n < 1) return null;
+  return n;
 }
 
 /** null = whitelist kapalı (herkese açık) */
@@ -118,6 +135,9 @@ app.post('/api/auth/register', async (c) => {
     if (!normalizedEmail) {
       return c.json({ error: 'Email and password required' }, 400);
     }
+    if (!isValidEmailFormat(normalizedEmail)) {
+      return c.json({ error: 'Geçerli bir e-posta adresi girin.' }, 400);
+    }
 
     const allowed = parseAllowedEmailSet(c.env.ALLOWED_EMAILS);
     if (!isEmailAllowed(normalizedEmail, allowed)) {
@@ -180,6 +200,9 @@ app.post('/api/auth/login', async (c) => {
     const normalizedEmail = normalizeEmail(String(email));
     if (!normalizedEmail) {
       return c.json({ error: 'Email and password required' }, 400);
+    }
+    if (!isValidEmailFormat(normalizedEmail)) {
+      return c.json({ error: 'Geçerli bir e-posta adresi girin.' }, 400);
     }
 
     const allowed = parseAllowedEmailSet(c.env.ALLOWED_EMAILS);
@@ -273,6 +296,23 @@ app.post('/api/provision', async (c) => {
 
   const deniedProvision = rejectIfNotWhitelisted(c, user.email);
   if (deniedProvision) return deniedProvision;
+
+  const maxSites = parseMaxSitesPerUser(c.env.MAX_SITES_PER_USER);
+  if (maxSites != null) {
+    const row = await c.env.DB.prepare('SELECT COUNT(*) as cnt FROM sites WHERE user_id = ?')
+      .bind(user.userId)
+      .first<{ cnt: number }>();
+    const count = Number(row?.cnt ?? 0);
+    if (count >= maxSites) {
+      return c.json(
+        {
+          error: 'Blog sınırına ulaşıldı',
+          detail: `Bu hesapla en fazla ${maxSites} blog oluşturabilirsiniz.`,
+        },
+        403
+      );
+    }
+  }
 
   const { site_name } = await c.req.json();
   if (!site_name || !/^[a-z0-9-]+$/.test(site_name)) {

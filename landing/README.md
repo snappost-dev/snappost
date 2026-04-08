@@ -27,7 +27,7 @@ npm run dev
 | `/` | Ana sayfa |
 | `/register` | Kayıt → JWT cookie; API’de `ALLOWED_EMAILS` doluysa yalnızca listedeki adresler |
 | `/login` | Giriş → JWT cookie; aynı whitelist kuralı API tarafında |
-| `/dashboard` | Oturum: siteler + provision + **blog custom domain** (shell Pages; CNAME talimatı kartta) + **Delete blog** → `DELETE /api/sites/:id` (onaylı; CF projeleri + kiracı D1 best-effort) |
+| `/dashboard` | Oturum: siteler + provision (**Create Blog** gönderiminde buton kilitlenir + “Creating…”) + **blog custom domain** (CNAME tablosu) + **Delete blog** → `DELETE /api/sites/:id` (onaylı; CF + kiracı D1 best-effort) |
 | `/logout` | Cookie temizleme |
 
 ## Ortam değişkenleri

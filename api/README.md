@@ -30,11 +30,15 @@ CF_ACCOUNT_ID=...     # wrangler.toml [vars] ile de verilebilir
 JWT_SECRET=...        # JWT imzalama
 # Opsiyonel — tanımlı değil veya boş = kayıt/giriş kısıtı yok
 ALLOWED_EMAILS=alice@example.com,bob@example.com
+# Opsiyonel — kullanıcı başına en fazla kaç blog (sites). Boş = sınırsız
+# MAX_SITES_PER_USER=3
 # Yerelde /test/* açmak için (production’da kullanmayın)
 ALLOW_TEST_ROUTES=true
 ```
 
-**ALLOWED_EMAILS:** Virgülle ayrılmış liste; karşılaştırma **trim + küçük harf**. Şu uçlarda uygulanır: `register`, `login`, `me`, `sites`, `sites/:id`, `provision`. Listede olmayan e-posta **403** döner.
+**ALLOWED_EMAILS:** Virgülle ayrılmış liste; karşılaştırma **trim + küçük harf**. Şu uçlarda uygulanır: `register`, `login`, `me`, `sites`, `sites/:id`, `provision`, `sites/:id/domain`, `sites/:id` (DELETE). Listede olmayan e-posta **403** döner.
+
+**MAX_SITES_PER_USER:** Pozitif tam sayı string (örn. `3`). Tanımsız veya boş = sınırsız blog. `POST /api/provision` öncesi kullanıcının mevcut `sites` sayısı bu üst sınıra eşit veya üstündeyse **403** (`error` + `detail`).
 
 **ALLOW_TEST_ROUTES:** Yalnızca tam olarak `true` iken `/test/*` yanıt verir. Tanımsız veya başka değer → **404** (production’da tanımlamayın).
 
@@ -87,7 +91,7 @@ npm run deploy
 | POST | `/api/auth/register` | `{ email, password }` → JWT |
 | POST | `/api/auth/login` | `{ email, password }` → JWT |
 | GET | `/api/auth/me` | `Authorization: Bearer …` (whitelist varsa kontrol) |
-| POST | `/api/provision` | JWT + `{ site_name }` → D1 + Pages (whitelist varsa kontrol) |
+| POST | `/api/provision` | JWT + `{ site_name }` → D1 + Pages (whitelist + isteğe bağlı `MAX_SITES_PER_USER`) |
 | GET | `/api/sites` | JWT → kullanıcının siteleri (whitelist varsa kontrol) |
 | GET | `/api/sites/:id` | JWT → tek site (whitelist varsa kontrol) |
 | POST | `/api/sites/:id/domain` | JWT + `{ domain }` → shell Pages custom domain (blog) |

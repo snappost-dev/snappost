@@ -4,6 +4,8 @@
 **Repo:** https://github.com/snappost-dev/snappost  
 **Branch:** main
 
+**MVP V1 (bu repodaki kapsam):** Kayıt/giriş, provision (blog + dashboard + kiracı D1), landing dashboard (site listesi, custom domain DNS yardımı, blog silme), dashboard’da Editor.js yazı editörü, opsiyonel e-posta whitelist ve opsiyonel kullanıcı başına blog sayısı sınırı. **Sonraki plan** için ayrı sprint: rate limiting, dashboard şifre yönetimi, mimari ölçekleme (§9.3), ürün büyümesi (§9.4).
+
 ---
 
 ## 1. Ne Bu Proje?
@@ -246,6 +248,8 @@ CF_ACCOUNT_ID=...
 JWT_SECRET=...
 # Opsiyonel; SEO/trafik testi için [vars] veya dashboard’da düz metin verilebilir (gizli değil)
 ALLOWED_EMAILS=...
+# Opsiyonel; kullanıcı başına en fazla blog sayısı (pozitif tam sayı). Boş = sınırsız
+# MAX_SITES_PER_USER=3
 # Yerelde /test/* kullanacaksanız:
 ALLOW_TEST_ROUTES=true
 
@@ -263,18 +267,18 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 |---|------|-------|
 | 1 | Test endpoint'leri | `/test/*` yalnız `ALLOW_TEST_ROUTES=true` (ör. yerel `.dev.vars`); production’da tanımlanmaz → **404** |
 | 2 | Rate limiting yok | Register, login, provision endpoint'lerine sınırsız istek atılabilir |
-| 3 | Site silme yok | Oluşturulan blog silinemez (ne API'de ne UI'da) |
-| 4 | Blog custom domain | Shell Pages için API + landing kartı; dashboard yalnız `*.pages.dev`. Mevcut D1: `ALTER TABLE sites ADD COLUMN custom_domain …` (schema.sql yorumu) |
+| 3 | ~~Site silme yok~~ | **Kaldırıldı:** `DELETE /api/sites/:id` + landing **Delete blog** (§4). |
+| 4 | Blog custom domain | Shell Pages için API + landing kartı (CNAME tablosu); dashboard yalnız `*.pages.dev`. |
 | 5 | Dashboard default password | Her dashboard `changeme` password ile oluşturuluyor, değiştirme UI'ı yok |
-| 6 | Provision sırasında UI feedback yok | 15 saniye boyunca kullanıcı blank page görüyor |
-| 7 | Error handling MVP seviyesinde | Genel try-catch, spesifik hata mesajları yok |
-| 8 | Site limiti yok | Kullanıcı sınırsız site oluşturabilir |
-| 9 | Email verification yok | Herhangi bir email ile kayıt olunabilir |
+| 6 | ~~Provision UI feedback yok~~ | **İyileştirildi:** Landing’de **Create Blog** sonrası buton devre dışı + “Creating…”; tam progress bar yok. |
+| 7 | Error handling MVP seviyesinde | Genel try-catch, spesifik hata mesajları kısmen (whitelist, domain, site limiti). |
+| 8 | Site limiti | **Opsiyonel:** `MAX_SITES_PER_USER` (pozitif tam sayı) ile kullanıcı başına üst sınır; tanımsız/boş = sınırsız. |
+| 9 | Email verification yok | Doğrulama e-postası yok; kayıtta **basit e-posta formatı** kontrolü var. |
 | 10 | Password reset yok | Unutulan password kurtarılamaz |
 | 11 | CORS config hardcoded | Origin listesi kod içinde, config'den okunmuyor |
 | 12 | Template güncelleme mekanizması yok | Template değişince mevcut siteler eski versiyonda kalıyor |
 | 13 | Site başına 2× Pages + 1× D1 ölçeklenmesi | CF Pages proje limitleri; tek hesapta çok müşteri sürdürülebilir değil — multi-tenant veya az yüzey mimarisi gerekir |
-| 14 | E-posta whitelist | `ALLOWED_EMAILS` (opsiyonel env); boş/tanımsız = kısıt yok — **§9.5** |
+| 14 | E-posta whitelist | **Uygulandı:** `ALLOWED_EMAILS` (opsiyonel); boş/tanımsız = kısıt yok. Uçlar: register, login, me, sites, site detay, provision, domain, site silme — **§9.5 (kapatıldı)**. |
 
 ---
 
@@ -290,9 +294,9 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 - `/test/*`: `ALLOW_TEST_ROUTES=true` ile açılır (varsayılan kapalı — yapıldı)
 - Rate limiting (CF Workers built-in veya custom)
 - Dashboard password'ü provision sırasında set etme
-- Provision sırasında loading/progress UI
-- Email validation (format + uniqueness)
-- Site sayısı limiti (free tier: 1-3 site)
+- ~~Provision sırasında loading/progress UI~~ → **Kısmen yapıldı** (landing buton durumu + metin); gerçek ilerleme çubuğu yok
+- ~~Email validation (format)~~ → **Basit format** register/login’de; doğrulama e-postası / uniqueness DB’de zaten
+- ~~Site sayısı limiti~~ → **Opsiyonel env** `MAX_SITES_PER_USER` (free tier’da örn. `3` verilebilir)
 - Abuse azaltma (kayıt doğrulama, CAPTCHA vb.)
 
 ### 9.3 Mimari pivot — ölçekleme (V2.5 / platform)
@@ -310,49 +314,43 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 - Password reset flow (email gönderimi)
 - Admin panel (tüm kullanıcılar / siteler yönetimi)
 
-### 9.5 Aktif geliştirme planı — whitelist + mevcut repo / test ortamı
+### 9.5 Whitelist + kapalı test — **MVP kapsamında kapatıldı (2026-04-06)**
 
-**Karar:** Mimari pivot (§9.3) şimdilik bekliyor; **site başına Shell + Dashboard + ayrı D1** modeli ve bu repodaki akış korunuyor. Yeni özellik ve testler **bu ortamda** yapılacak.
+**Karar:** Mimari pivot (§9.3) sonraya; **site başına Shell + Dashboard + ayrı D1** modeli korunuyor.
 
-**Uygulama durumu:** `ALLOWED_EMAILS` — register, login, `me`, `sites`, `provision`. `/test/*` — `ALLOW_TEST_ROUTES=true` olmadan **404**. Landing `data.error` gösteriyor. İsteğe bağlı: D1 tabanlı whitelist listesi (§9.5 Faz A1 aşama 2).
+**Kod + dokümantasyon:** `ALLOWED_EMAILS` (opsiyonel, virgülle ayrılmış). **Semantik:** tanımsız veya boş string = kısıt yok; en az bir adres varsa yalnızca listedekiler register/login ve tüm korumalı API uçları. **Normalize:** trim + lowercase. **Sonraki sprint (isteğe bağlı):** A1 **aşama 2** — whitelist’i provisioning D1’de tablo olarak tutup deploy etmeden güncelleme; rate limiting (§9.2) ile birlikte ele alınmalı.
 
-#### Hedef
+#### Faz A — Whitelist (API) — durum
 
-- Sadece **tanımlı e-postalar** kayıt olabilsin ve giriş yapabilsin (**whitelist**).
-- Üretimde kendi CF hesabınızda API + landing + (ihtiyaç halinde) şablon deploy; yerelde `api` + `landing` + `templates/*/dev:local` ile doğrulama.
+| Adım | Durum |
+|------|--------|
+| A1 aşama 1 — env listesi | Tamam (`ALLOWED_EMAILS`, `api/README.md`, `wrangler.toml` yorumu) |
+| A1 aşama 2 — D1 tablosu | Yapılmadı; sonraki plan |
+| A2 — Normalize | Tamam |
+| A3 — `POST /api/auth/register` | Tamam (403 + Türkçe mesaj) |
+| A4 — `POST /api/auth/login` | Tamam |
+| A5 — `POST /api/provision` + diğer korumalı uçlar | Tamam (`me`, `sites`, `sites/:id`, domain, site silme) |
+| A6 — Boş liste = kısıt yok | Dokümante (`api/README.md`) |
 
-#### Faz A — Whitelist (API)
+#### Faz B — Landing UX — durum
 
-| Adım | İş | Not |
-|------|-----|-----|
-| A1 | Whitelist kaynağı | **Aşama 1:** `ALLOWED_EMAILS` (veya `EMAIL_WHITELIST`) — virgülle ayrılmış liste, `api` `wrangler.toml` / secrets yerine `[vars]` veya `.dev.vars` (gizlilik gerekmiyorsa). **Aşama 2 (isteğe bağlı):** provisioning D1’de tablo veya `users` genişletmesi — deploy etmeden liste güncellemek için. |
-| A2 | Normalize | Karşılaştırma öncesi e-postayı **trim + lowercase**; whitelist aynı kuralla tutulmalı. |
-| A3 | `POST /api/auth/register` | Kayıt öncesi whitelist kontrolü; uygun HTTP kodu (ör. **403**) + net mesaj (`{ "error": "..." }`). |
-| A4 | `POST /api/auth/login` | Listede olmayan mevcut kullanıcılar için girişi reddet (veya sadece register’da kısıtla — tercih: **ikisinde de** kontrol, tutarlılık). |
-| A5 | `POST /api/provision` (opsiyonel savunma) | JWT geçerli olsa bile whitelist dışı eski hesapları kesmek için tekrar kontrol. |
-| A6 | Boş whitelist | **Tüm kayıtları kapatmak** mı yoksa **kısıt yok** mu — tek bir kural seçilip dokümante edilmeli (ör. boş = kısıt yok, sadece test ortamında dolu tutulur). |
+- Register/login: API `error` (ve provision’da `detail`) gösteriliyor.
+- Register + login: davetli erişim kısa notu eklendi.
 
-#### Faz B — Landing UX
-
-- Register/login hata mesajlarını API cevabına göre göstermek; whitelist reddinde kullanıcıya anlaşılır metin (ör. “Bu e-posta ile kayıt kapalı”).
-- İsteğe bağlı: kayıt sayfasında “davetli erişim” notu.
-
-#### Faz C — Test ve doğrulama
+#### Faz C — Test checklist (operatör)
 
 | Ortam | Ne test edilir |
 |--------|----------------|
-| Yerel | `api` (`npm run dev`) + `landing` (`npm run dev`); `.dev.vars` içinde whitelist ve `JWT_SECRET` / `CF_*` |
-| Şablon | `templates/dashboard` + `templates/shell` — `dev:local` ve ortak `--persist-to ../../.snappost-d1-local` (README’ler) |
-| CF (kendi hesap) | API + landing deploy; whitelist `[vars]` veya env; gerçek provision (token yetkili) — maliyet/limit bilinci |
+| Yerel | `api` + `landing`; `.dev.vars` içinde `ALLOWED_EMAILS` / `JWT_SECRET` / `CF_*` |
+| Şablon | `templates/*` `dev:local` + ortak D1 persist (README’ler) |
+| CF | API + landing deploy; whitelist ve `MAX_SITES_PER_USER` env doğrulama |
 
-#### Faz D — Dokümantasyon ve borç
+#### Faz D — kalan borç (sonraki plan)
 
-- `api/README.md`: whitelist env anahtarı ve davranış (boş liste semantiği).
-- §8 tablosuna satır: “Whitelist yok” → tamamlandığında kaldır veya güncelle.
-- İleride: rate limiting (§9.2) ile whitelist birlikte düşünülür (enumeration riski).
+- Rate limiting + enumeration riski
+- D1 tabanlı whitelist (A1 aşama 2) ihtiyaç halinde
 
-#### Tanım tamamlandı sayılır
+#### Tanım (MVP) tamamlandı
 
-- Whitelist açıkken listede olmayan e-posta ile register/login **kesin** reddedilir.
-- Listede olan e-posta mevcut akışla kayıt ve provision edebilir.
-- Yerel + en az bir CF deploy senaryosu dokümante ve tekrarlanabilir.
+- Whitelist açıkken listede olmayan e-posta register/login reddedilir; JWT ile gelen isteklerde de e-posta whitelist’ten düşürülürse API 403 döner.
+- Dokümantasyon: `api/README.md`, bu dosya §8/§9, `landing/README.md`.

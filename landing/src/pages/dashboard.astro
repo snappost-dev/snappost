@@ -231,7 +231,7 @@ try {
 
     <div class="bg-white border border-gray-200 rounded-xl p-6 mb-8">
       <h2 class="text-lg font-semibold mb-4">Create New Blog</h2>
-      <form method="POST" class="flex gap-3">
+      <form id="provision-form" method="POST" class="flex gap-3">
         <input type="hidden" name="action" value="provision" />
         <input
           type="text" name="site_name" required
@@ -239,12 +239,32 @@ try {
           class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
           placeholder="my-awesome-blog (lowercase, hyphens only)"
         />
-        <button type="submit" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition whitespace-nowrap">
-          Create Blog
+        <button
+          type="submit"
+          id="provision-submit"
+          class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed min-w-[8.5rem]"
+        >
+          <span class="provision-btn-label">Create Blog</span>
+          <span class="provision-btn-loading hidden">Creating…</span>
         </button>
       </form>
       <p class="text-xs text-gray-400 mt-2">This takes ~15 seconds. A D1 database, blog, and dashboard will be created.</p>
     </div>
+    <script is:inline>
+      (function () {
+        var form = document.getElementById('provision-form');
+        var btn = document.getElementById('provision-submit');
+        if (!form || !btn) return;
+        form.addEventListener('submit', function () {
+          if (btn.disabled) return;
+          btn.disabled = true;
+          var label = btn.querySelector('.provision-btn-label');
+          var loading = btn.querySelector('.provision-btn-loading');
+          if (label) label.classList.add('hidden');
+          if (loading) loading.classList.remove('hidden');
+        });
+      })();
+    </script>
 
     <!-- Sites -->
     <h2 class="text-lg font-semibold mb-4">Your Blogs ({sites.length})</h2>
