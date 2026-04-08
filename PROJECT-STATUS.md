@@ -4,7 +4,7 @@
 **Repo:** https://github.com/snappost-dev/snappost  
 **Branch:** main
 
-**MVP V1 (bu repodaki kapsam):** Kayıt/giriş, provision (blog + dashboard + kiracı D1), landing dashboard (site listesi, custom domain DNS yardımı, blog silme), dashboard’da Editor.js yazı editörü, opsiyonel e-posta whitelist ve opsiyonel kullanıcı başına blog sayısı sınırı. **Sonraki plan** için ayrı sprint: rate limiting, dashboard şifre yönetimi, mimari ölçekleme (§9.3), ürün büyümesi (§9.4).
+**MVP V1 (bu repodaki kapsam):** Kayıt/giriş, provision (blog + dashboard + kiracı D1), landing dashboard (site listesi, custom domain DNS yardımı, blog silme), dashboard’da Editor.js yazı editörü, opsiyonel e-posta whitelist ve opsiyonel kullanıcı başına blog sayısı sınırı. **Operasyon + sonraki sprint özeti:** [docs/SPRINT-PLAN.md](docs/SPRINT-PLAN.md) (test kabuğu kapanışı, CF panel rate limit rehberi, duman testleri, blog+R2+SEO planı). **Sonraki kod** için ayrıca: dashboard şifre yönetimi, mimari ölçekleme (§9.3), ürün büyümesi (§9.4).
 
 ---
 
@@ -127,6 +127,8 @@ Hata olursa rollback: oluşturulan Pages projeleri ve D1 database silinir.
 │       └── dist/                 # Build output → api/src/templates/dashboard/
 │
 ├── docs/                         # Arşiv / referans dokümanlar
+│   ├── SPRINT-PLAN.md                # Operasyon, CF rate limit rehberi, duman testleri, blog+R2 sprint
+│   ├── ENV-VARIABLES-CHECKLIST.md    # CF env iş listesi
 │   ├── archive-editorjs-v2-plan.md   # Tamamlanan Editor.js V2 planı (arşiv)
 │   └── cursor-opus-prompt-v1.md      # İlk Editor.js taslağı (arşiv)
 ├── PROJECT-STATUS.md             # ← Bu dosya
@@ -270,7 +272,7 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 | # | Konu | Detay |
 |---|------|-------|
 | 1 | Test endpoint'leri | `/test/*` yalnız `ALLOW_TEST_ROUTES=true` (ör. yerel `.dev.vars`); production’da tanımlanmaz → **404** |
-| 2 | Rate limiting yok | Register, login, provision endpoint'lerine sınırsız istek atılabilir |
+| 2 | Rate limiting | **Worker kodu yok**; kötüye kullanımı kesmek için [Cloudflare Dashboard](https://dash.cloudflare.com) üzerinde API route’larına **IP bazlı rate limit / WAF** önerilir — adımlar: [docs/SPRINT-PLAN.md](docs/SPRINT-PLAN.md) §A2. İsteğe bağlı sonraki faz: Worker + KV/D1 sayaç. |
 | 3 | ~~Site silme yok~~ | **Kaldırıldı:** `DELETE /api/sites/:id` + landing **Delete blog** (§4). |
 | 4 | Blog custom domain | Shell Pages için API + landing kartı (CNAME tablosu); dashboard yalnız `*.pages.dev`. |
 | 5 | Dashboard default password | Her dashboard `changeme` password ile oluşturuluyor, değiştirme UI'ı yok |
@@ -297,7 +299,7 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 
 - `/test/*`: `ALLOW_TEST_ROUTES=true` ile açılır (varsayılan kapalı — yapıldı)
 - ~~CORS sabit liste~~ → **`CORS_ORIGINS` env** (boş = varsayılanlar); özel landing domain için Dashboard’da genişlet
-- Rate limiting (CF Workers built-in veya custom)
+- Rate limiting → **önce CF Dashboard** (WAF / rate rules; bkz. [docs/SPRINT-PLAN.md](docs/SPRINT-PLAN.md) §A2); Worker içi sayaç sonraki faz
 - Dashboard password'ü provision sırasında set etme
 - ~~Provision sırasında loading/progress UI~~ → **Kısmen yapıldı** (landing buton durumu + metin); gerçek ilerleme çubuğu yok
 - ~~Email validation (format)~~ → **Basit format** register/login’de; doğrulama e-postası / uniqueness DB’de zaten

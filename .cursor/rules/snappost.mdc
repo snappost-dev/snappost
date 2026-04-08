@@ -21,7 +21,7 @@ alwaysApply: true
 | 8 | Bilinen limitasyonlar / teknik borç |
 | 9 | Yol haritası (stabilizasyon, mimari pivot, V3, **§9.5 whitelist + test planı**) |
 
-Diğer girişler: `README.md`, `api/README.md`, `landing/README.md`. Cloudflare env kontrol listesi: `docs/ENV-VARIABLES-CHECKLIST.md`. Editor.js arşiv planı: `docs/archive-editorjs-v2-plan.md`.
+Diğer girişler: `README.md`, `api/README.md`, `landing/README.md`. Cloudflare env kontrol listesi: `docs/ENV-VARIABLES-CHECKLIST.md`. Sprint / operasyon / duman testleri / sonraki blog+R2 planı: `docs/SPRINT-PLAN.md`. Editor.js arşiv planı: `docs/archive-editorjs-v2-plan.md`.
 
 ## Kritik kısıtlar (bunu atlama)
 

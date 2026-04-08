@@ -22,6 +22,12 @@
 
 **Komut (secret):** `cd api && wrangler secret put CF_API_TOKEN` ve `wrangler secret put JWT_SECRET`
 
+### Operasyonel (Cloudflare Dashboard — Worker env değil)
+
+| Yapıldı | Ne | Açıklama |
+|--------|-----|----------|
+| [ ] | Rate limiting / WAF | API Worker hostname’inde `POST /api/auth/register`, `/api/auth/login`, `/api/provision` için IP başına eşik — [docs/SPRINT-PLAN.md](./SPRINT-PLAN.md) §A2 |
+
 ---
 
 ## Landing (Cloudflare Pages — `snappost-landing` veya sizin proje)
@@ -50,3 +56,4 @@ SSR’da `Astro.locals.runtime.env.API_URL` okunur; **Production** (ve gerekirse
 - [ ] Whitelist kullanacaksanız: `ALLOWED_EMAILS` hem **doğru ortamda** hem liste güncel
 - [ ] Blog limiti istiyorsanız: `MAX_SITES_PER_USER` sayı string (örn. `3`)
 - [ ] Özel landing domain: tarayıcıdan API’ye istek atılıyorsa `CORS_ORIGINS` içinde o `https://…` origin’i de var (veya tam listeyi CF’de güncellediniz)
+- [ ] Duman testleri: `SMOKE_API_URL=… cd api && npm run smoke` (isteğe bağlı `SMOKE_EMAIL` / `SMOKE_PASSWORD`) — [SPRINT-PLAN.md](./SPRINT-PLAN.md) §C

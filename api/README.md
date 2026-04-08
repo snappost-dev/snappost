@@ -87,6 +87,20 @@ wrangler secret put JWT_SECRET
 npm run deploy
 ```
 
+## Duman testleri (smoke)
+
+Üretim veya staging API köküne karşı hızlı kontrol (secret’ları repoya yazmayın):
+
+```bash
+export SMOKE_API_URL="https://snappost-api.<subdomain>.workers.dev"
+# İsteğe bağlı — login + /api/sites:
+# export SMOKE_EMAIL="..."
+# export SMOKE_PASSWORD="..."
+npm run smoke
+```
+
+Ayrıntılı manuel liste: [docs/SPRINT-PLAN.md](../docs/SPRINT-PLAN.md) §C.
+
 ## Endpoint özeti
 
 | Method | Path | Açıklama |
