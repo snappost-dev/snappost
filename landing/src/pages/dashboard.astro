@@ -1,6 +1,36 @@
 ---
 import Base from '../layouts/Base.astro';
 
+/** CNAME “Name / Host” alanı için basit ipucu (çok parçalı TLD’lerde %100 doğru olmayabilir). */
+function getCnameDnsHint(hostname: string): {
+  nameField: string;
+  nameDetail: string;
+  apexWarning?: string;
+} {
+  const h = hostname.trim().toLowerCase().replace(/\.$/, '');
+  if (!h) {
+    return {
+      nameField: '—',
+      nameDetail: 'Use the hostname you registered above.',
+    };
+  }
+  const parts = h.split('.').filter(Boolean);
+  if (parts.length === 2) {
+    return {
+      nameField: '@',
+      nameDetail:
+        'Root domain (apex): in Cloudflare DNS choose Type CNAME and set Name to @. Some panels use a blank name or @ for the root.',
+      apexWarning:
+        'A few DNS providers do not allow a plain CNAME at the apex; if so, point the domain to Cloudflare nameservers or use their ALIAS/ANAME option.',
+    };
+  }
+  const leaf = parts[0];
+  return {
+    nameField: leaf,
+    nameDetail: `Subdomain: in Name / Host / Subdomain, enter only “${leaf}” (not the full “${h}”), unless your provider asks for the full hostname.`,
+  };
+}
+
 const API_URL =
   Astro.locals.runtime.env.API_URL || import.meta.env.API_URL || 'http://localhost:8787';
 const token = Astro.cookies.get('auth_token')?.value;
@@ -232,6 +262,7 @@ try {
           const cnameTarget = site.shell_project_name
             ? `${site.shell_project_name}.pages.dev`
             : '';
+          const dnsHint = site.custom_domain ? getCnameDnsHint(String(site.custom_domain)) : null;
           return (
           <div class="bg-white border border-gray-200 rounded-xl p-6">
             <div class="flex justify-between items-start gap-4">
@@ -262,21 +293,66 @@ try {
                         <span class="text-gray-500">Connected:</span>{' '}
                         <span class="font-mono text-gray-900">{site.custom_domain}</span>
                       </div>
-                      {cnameTarget && (
-                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-700">
-                          <p class="mb-1">Add a <strong>CNAME</strong> record for your hostname pointing to:</p>
-                          <div class="flex flex-wrap items-center gap-2 font-mono bg-white px-2 py-1.5 rounded border border-slate-200">
-                            <span id={`cname-val-${siteKey}`}>{cnameTarget}</span>
-                            <button
-                              type="button"
-                              class="text-blue-600 hover:underline shrink-0"
-                              data-cname-target={cnameTarget}
-                              onclick="navigator.clipboard.writeText(this.dataset.cnameTarget).then(() => { const b = this; const t = b.textContent; b.textContent = 'Copied!'; setTimeout(() => { b.textContent = t; }, 2000); })"
-                            >
-                              Copy
-                            </button>
+                      {cnameTarget && dnsHint && (
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-xs text-slate-700 space-y-3">
+                          <p class="font-semibold text-slate-800">DNS: add this at your registrar or DNS host</p>
+                          <p class="text-slate-600 leading-relaxed">
+                            Snappost cannot change DNS for you. Create one record so traffic for{' '}
+                            <span class="font-mono bg-white px-1 rounded border border-slate-200">{site.custom_domain}</span>{' '}
+                            reaches Cloudflare Pages.
+                          </p>
+                          <div class="overflow-x-auto rounded border border-slate-200 bg-white">
+                            <table class="w-full text-left border-collapse">
+                              <thead>
+                                <tr class="border-b border-slate-200 bg-slate-100 text-slate-600">
+                                  <th class="py-2 px-3 font-medium">Field</th>
+                                  <th class="py-2 px-3 font-medium">Value</th>
+                                </tr>
+                              </thead>
+                              <tbody class="text-slate-800">
+                                <tr class="border-b border-slate-100">
+                                  <td class="py-2 px-3 font-medium align-top">Type</td>
+                                  <td class="py-2 px-3 font-mono">CNAME</td>
+                                </tr>
+                                <tr class="border-b border-slate-100">
+                                  <td class="py-2 px-3 font-medium align-top">Name / Host</td>
+                                  <td class="py-2 px-3">
+                                    <span class="font-mono bg-slate-50 px-1.5 py-0.5 rounded">{dnsHint.nameField}</span>
+                                    <p class="mt-1 text-slate-600 normal-case font-sans">{dnsHint.nameDetail}</p>
+                                  </td>
+                                </tr>
+                                <tr class="border-b border-slate-100">
+                                  <td class="py-2 px-3 font-medium align-top">Target / Value</td>
+                                  <td class="py-2 px-3">
+                                    <div class="flex flex-wrap items-center gap-2 font-mono bg-slate-50 px-2 py-1.5 rounded border border-slate-200">
+                                      <span id={`cname-val-${siteKey}`}>{cnameTarget}</span>
+                                      <button
+                                        type="button"
+                                        class="text-blue-600 hover:underline shrink-0 text-sm font-sans"
+                                        data-cname-target={cnameTarget}
+                                        onclick="navigator.clipboard.writeText(this.dataset.cnameTarget).then(() => { const b = this; const t = b.textContent; b.textContent = 'Copied!'; setTimeout(() => { b.textContent = t; }, 2000); })"
+                                      >
+                                        Copy
+                                      </button>
+                                    </div>
+                                    <p class="mt-1 text-slate-600 font-sans">Paste this exact hostname as the CNAME target (same as Cloudflare Pages “target”).</p>
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td class="py-2 px-3 font-medium align-top">TTL</td>
+                                  <td class="py-2 px-3">Auto / default</td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </div>
-                          <p class="mt-2 text-slate-500">SSL and global DNS can take 24–48 hours.</p>
+                          <p class="text-slate-600 leading-relaxed">
+                            <strong class="text-slate-800">Cloudflare DNS:</strong> leave the orange cloud <strong>Proxied</strong> on unless your provider docs say otherwise. SSL is issued after the hostname validates; propagation can take <strong>24–48 hours</strong>.
+                          </p>
+                          {dnsHint.apexWarning && (
+                            <p class="text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 leading-relaxed">
+                              <strong>Apex note:</strong> {dnsHint.apexWarning}
+                            </p>
+                          )}
                         </div>
                       )}
                       <form method="POST" class="inline">
@@ -288,26 +364,39 @@ try {
                       </form>
                     </div>
                   ) : (
-                    <form method="POST" class="flex flex-col sm:flex-row gap-2 sm:items-end max-w-xl">
-                      <input type="hidden" name="action" value="connect_domain" />
-                      <input type="hidden" name="site_id" value={siteKey} />
-                      <div class="flex-1 min-w-0">
-                        <label class="sr-only" for={`domain-${siteKey}`}>Custom domain</label>
-                        <input
-                          id={`domain-${siteKey}`}
-                          type="text"
-                          name="custom_domain"
-                          placeholder="blog.yourdomain.com"
-                          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                        />
+                    <div class="space-y-2 max-w-xl">
+                      <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 leading-relaxed">
+                        <p class="font-semibold text-slate-800 mb-1">What to enter</p>
+                        <ul class="list-disc pl-4 space-y-1">
+                          <li>
+                            A hostname you control, e.g. <code class="bg-white px-1 rounded border border-slate-200">blog.example.com</code> or{' '}
+                            <code class="bg-white px-1 rounded border border-slate-200">www.example.com</code> (no <code>https://</code>).
+                          </li>
+                          <li>After you connect, we show a <strong>CNAME</strong> table (Type, Name, Target) like Cloudflare’s DNS form — you copy values into your DNS panel.</li>
+                          <li>Snappost does not log in to your registrar; DNS stays manual for this MVP.</li>
+                        </ul>
                       </div>
-                      <button
-                        type="submit"
-                        class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-900 transition whitespace-nowrap"
-                      >
-                        Connect domain
-                      </button>
-                    </form>
+                      <form method="POST" class="flex flex-col sm:flex-row gap-2 sm:items-end max-w-xl">
+                        <input type="hidden" name="action" value="connect_domain" />
+                        <input type="hidden" name="site_id" value={siteKey} />
+                        <div class="flex-1 min-w-0">
+                          <label class="sr-only" for={`domain-${siteKey}`}>Custom domain</label>
+                          <input
+                            id={`domain-${siteKey}`}
+                            type="text"
+                            name="custom_domain"
+                            placeholder="blog.yourdomain.com"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                          />
+                        </div>
+                        <button
+                          type="submit"
+                          class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-900 transition whitespace-nowrap"
+                        >
+                          Connect domain
+                        </button>
+                      </form>
+                    </div>
                   )}
                   {domainFieldError && domainFieldError.siteId === siteKey && (
                     <p class="text-red-600 text-xs mt-2">{domainFieldError.message}</p>
