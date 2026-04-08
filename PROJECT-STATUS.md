@@ -252,6 +252,8 @@ JWT_SECRET=...
 ALLOWED_EMAILS=...
 # Opsiyonel; kullanıcı başına en fazla blog sayısı (pozitif tam sayı). Boş = sınırsız
 # MAX_SITES_PER_USER=3
+# Opsiyonel; tarayıcı CORS (virgülle Origin). Boş = kod varsayılanları
+# CORS_ORIGINS=https://snappost.dev,https://snappost-landing.pages.dev
 # Yerelde /test/* kullanacaksanız:
 ALLOW_TEST_ROUTES=true
 
@@ -277,7 +279,7 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 | 8 | Site limiti | **Opsiyonel:** `MAX_SITES_PER_USER` (pozitif tam sayı) ile kullanıcı başına üst sınır; tanımsız/boş = sınırsız. |
 | 9 | Email verification yok | Doğrulama e-postası yok; kayıtta **basit e-posta formatı** kontrolü var. |
 | 10 | Password reset yok | Unutulan password kurtarılamaz |
-| 11 | CORS config hardcoded | Origin listesi kod içinde, config'den okunmuyor |
+| 11 | ~~CORS config hardcoded~~ | **İyileştirildi:** `CORS_ORIGINS` (opsiyonel env); boş = yerleşik varsayılan origin listesi |
 | 12 | Template güncelleme mekanizması yok | Template değişince mevcut siteler eski versiyonda kalıyor |
 | 13 | Site başına 2× Pages + 1× D1 ölçeklenmesi | CF Pages proje limitleri; tek hesapta çok müşteri sürdürülebilir değil — multi-tenant veya az yüzey mimarisi gerekir |
 | 14 | E-posta whitelist | **Uygulandı:** `ALLOWED_EMAILS` (opsiyonel); boş/tanımsız = kısıt yok. Uçlar: register, login, me, sites, site detay, provision, domain, site silme — **§9.5 (kapatıldı)**. |
@@ -294,6 +296,7 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 ### 9.2 Sıradaki — Stabilizasyon ve güvenlik (önceden “V2 backlog”)
 
 - `/test/*`: `ALLOW_TEST_ROUTES=true` ile açılır (varsayılan kapalı — yapıldı)
+- ~~CORS sabit liste~~ → **`CORS_ORIGINS` env** (boş = varsayılanlar); özel landing domain için Dashboard’da genişlet
 - Rate limiting (CF Workers built-in veya custom)
 - Dashboard password'ü provision sırasında set etme
 - ~~Provision sırasında loading/progress UI~~ → **Kısmen yapıldı** (landing buton durumu + metin); gerçek ilerleme çubuğu yok

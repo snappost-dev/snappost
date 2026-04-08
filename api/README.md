@@ -32,6 +32,8 @@ JWT_SECRET=...        # JWT imzalama
 ALLOWED_EMAILS=alice@example.com,bob@example.com
 # Opsiyonel — kullanıcı başına en fazla kaç blog (sites). Boş = sınırsız
 # MAX_SITES_PER_USER=3
+# Opsiyonel — CORS Origin listesi (virgülle); boş = varsayılan localhost + snappost.* + pages.dev
+# CORS_ORIGINS=http://localhost:4321,http://localhost:4322
 # Yerelde /test/* açmak için (production’da kullanmayın)
 ALLOW_TEST_ROUTES=true
 ```
@@ -39,6 +41,8 @@ ALLOW_TEST_ROUTES=true
 **ALLOWED_EMAILS:** Virgülle ayrılmış liste; karşılaştırma **trim + küçük harf**. Şu uçlarda uygulanır: `register`, `login`, `me`, `sites`, `sites/:id`, `provision`, `sites/:id/domain`, `sites/:id` (DELETE). Listede olmayan e-posta **403** döner.
 
 **MAX_SITES_PER_USER:** Pozitif tam sayı string (örn. `3`). Tanımsız veya boş = sınırsız blog. `POST /api/provision` öncesi kullanıcının mevcut `sites` sayısı bu üst sınıra eşit veya üstündeyse **403** (`error` + `detail`).
+
+**CORS_ORIGINS:** Virgülle ayrılmış tam origin (`https://example.com`, `http://localhost:4321`). Tarayıcıdan landing → API çağrıları için `Origin` burada olmalı. Tanımsız veya boş = yerleşik liste: `localhost:4321`, `localhost:4322`, `https://snappost.dev`, `https://snappost-landing.pages.dev`. **Özel landing alanı** kullanıyorsanız bu değişkende **hem yeni origin’i hem ihtiyaç duyduğunuz mevcut origin’leri** birlikte verin (boş bırakırsanız özel alan CORS’ta yoktur).
 
 **ALLOW_TEST_ROUTES:** Yalnızca tam olarak `true` iken `/test/*` yanıt verir. Tanımsız veya başka değer → **404** (production’da tanımlamayın).
 

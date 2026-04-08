@@ -16,6 +16,7 @@
 | [ ] | `ALLOWED_EMAILS` | Plain | Hayır | Virgülle e-postalar; boş/tanımsız = herkese açık kayıt/giriş |
 | [ ] | `MAX_SITES_PER_USER` | Plain | Hayır | Örn. `3`; kullanıcı başına blog üst sınırı; boş = sınırsız |
 | [ ] | `ALLOW_TEST_ROUTES` | Plain | Hayır | Yalnız `true` iken `/test/*`; **production’da tanımlama** |
+| [ ] | `CORS_ORIGINS` | Plain | Hayır | Virgülle tam Origin URL’leri (`https://…`); özel landing alanı eklerken **mutlaka** buraya + varsayılanları birlikte yazın. Boş = kod içi varsayılan liste |
 
 \* Worker’da binding olarak da kullanılıyorsa Dashboard’da plain var olarak görünmeli.
 
@@ -48,3 +49,4 @@ SSR’da `Astro.locals.runtime.env.API_URL` okunur; **Production** (ve gerekirse
 - [ ] Landing: kayıt/giriş gerçek API’ye gidiyor (yanlış `API_URL` = sessiz hata veya boş dashboard)
 - [ ] Whitelist kullanacaksanız: `ALLOWED_EMAILS` hem **doğru ortamda** hem liste güncel
 - [ ] Blog limiti istiyorsanız: `MAX_SITES_PER_USER` sayı string (örn. `3`)
+- [ ] Özel landing domain: tarayıcıdan API’ye istek atılıyorsa `CORS_ORIGINS` içinde o `https://…` origin’i de var (veya tam listeyi CF’de güncellediniz)

@@ -20,6 +20,8 @@ type Bindings = {
   MAX_SITES_PER_USER?: string;
   /** Yalnızca tam olarak "true" iken /test/* açılır; production’da tanımlamayın */
   ALLOW_TEST_ROUTES?: string;
+  /** Virgülle ayrılmış tarayıcı Origin listesi; boş/tanımsız = yerleşik varsayılanlar */
+  CORS_ORIGINS?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -102,9 +104,31 @@ function normalizeCustomDomain(raw: unknown): string | null {
   return d;
 }
 
-// CORS - snappost.dev'den gelen isteklere izin ver
+const DEFAULT_CORS_ORIGINS = [
+  'http://localhost:4321',
+  'http://localhost:4322',
+  'https://snappost.dev',
+  'https://snappost-landing.pages.dev',
+] as const;
+
+function corsOriginsForEnv(raw: string | undefined): string[] {
+  if (raw == null || raw.trim() === '') {
+    return [...DEFAULT_CORS_ORIGINS];
+  }
+  const list = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return list.length > 0 ? list : [...DEFAULT_CORS_ORIGINS];
+}
+
+// CORS — tarayıcıdan gelen istekler; özel landing alanı için CORS_ORIGINS kullanın
 app.use('/*', cors({
-  origin: ['http://localhost:4321', 'http://localhost:4322', 'https://snappost.dev', 'https://snappost-landing.pages.dev'],
+  origin: (origin, c) => {
+    const allowed = corsOriginsForEnv(c.env.CORS_ORIGINS);
+    if (!origin) return null;
+    return allowed.includes(origin) ? origin : null;
+  },
   credentials: true,
 }));
 

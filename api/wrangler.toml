@@ -15,6 +15,8 @@ CF_ACCOUNT_ID = "1094e722fe9d2b939e94a8ceb124d21b"
 # ALLOWED_EMAILS = "alice@example.com,bob@example.com"
 # Opsiyonel — kullanıcı başına en çok kaç blog (sites). Tanımsız = sınırsız
 # MAX_SITES_PER_USER = "3"
+# Opsiyonel — tarayıcı CORS Origin listesi (virgülle). Boş = localhost + snappost.dev + pages.dev varsayılanları
+# CORS_ORIGINS = "https://snappost.dev,https://www.snappost.dev,https://snappost-landing.pages.dev"
 # Yerel test için /test/* — production’da eklemeyin
 # ALLOW_TEST_ROUTES = "true"
 
