@@ -217,6 +217,8 @@ config (key, value)
 
 **Git kullanıyorsanız:** `wrangler.toml` içindeki `[vars]` (ör. landing `API_URL`) her build’de otomatik okunmayabilir. **Cloudflare Dashboard → Workers/Pages projesi → Settings → Variables** içinde `API_URL`, secret’lar ve production değerlerinin tanımlı olduğunu doğrulayın.
 
+**İş listesi:** Üretimde hangi değişkenin nerede olması gerektiği için [`docs/ENV-VARIABLES-CHECKLIST.md`](docs/ENV-VARIABLES-CHECKLIST.md) dosyasındaki kutuları işaretleyerek ilerleyin.
+
 ### CF Resources
 - **D1:** `snappost-provisioning` (`d8c8583f-e604-44f0-8ead-7b0d53b4f151`)
 - **Account ID:** `1094e722fe9d2b939e94a8ceb124d21b`
