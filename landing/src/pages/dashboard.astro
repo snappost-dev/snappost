@@ -16,6 +16,8 @@ let provisionError = '';
 let provisionSuccess = '';
 let domainFieldError: { siteId: string; message: string } | null = null;
 let domainSuccessMessage = '';
+let deleteSiteError: { siteId: string; message: string } | null = null;
+let deleteSiteSuccessMessage = '';
 
 try {
   const meRes = await fetch(`${API_URL}/api/auth/me`, {
@@ -113,6 +115,33 @@ if (Astro.request.method === 'POST') {
         domainFieldError = { siteId, message: 'Could not connect to server' };
       }
     }
+  } else if (action === 'delete_site') {
+    const siteId = form.get('site_id')?.toString();
+    if (!siteId) {
+      deleteSiteError = { siteId: '', message: 'Missing site' };
+    } else {
+      try {
+        const res = await fetch(`${API_URL}/api/sites/${siteId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          deleteSiteError = {
+            siteId,
+            message: data.detail ? `${data.error}: ${data.detail}` : data.error || 'Delete failed',
+          };
+        } else {
+          const w = data.warnings;
+          deleteSiteSuccessMessage =
+            Array.isArray(w) && w.length > 0
+              ? `Blog removed. Note: ${w.join(' ')}`
+              : 'Blog removed from your account. Cloudflare projects and tenant database were deleted where possible.';
+        }
+      } catch {
+        deleteSiteError = { siteId, message: 'Could not connect to server' };
+      }
+    }
   }
 
   if (action === 'logout') {
@@ -157,6 +186,16 @@ try {
     {domainSuccessMessage && (
       <div class="bg-green-50 text-green-800 px-4 py-3 rounded-lg mb-4 text-sm border border-green-200">
         {domainSuccessMessage}
+      </div>
+    )}
+    {deleteSiteSuccessMessage && (
+      <div class="bg-green-50 text-green-800 px-4 py-3 rounded-lg mb-4 text-sm border border-green-200">
+        {deleteSiteSuccessMessage}
+      </div>
+    )}
+    {deleteSiteError && (
+      <div class="bg-red-50 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
+        {deleteSiteError.message}
       </div>
     )}
 
@@ -275,13 +314,29 @@ try {
                   )}
                 </div>
               </div>
-              <a
-                href={`${site.dashboard_url}/login?token=${site.access_token || ''}`}
-                target="_blank"
-                class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition shrink-0"
-              >
-                Open Dashboard
-              </a>
+              <div class="flex flex-col gap-2 shrink-0 items-stretch sm:items-end">
+                <a
+                  href={`${site.dashboard_url}/login?token=${site.access_token || ''}`}
+                  target="_blank"
+                  class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition text-center"
+                >
+                  Open Dashboard
+                </a>
+                <form
+                  method="POST"
+                  class="inline"
+                  onsubmit="return confirm('Delete this blog permanently? Cloudflare Pages projects and the tenant database will be removed where possible. This cannot be undone.');"
+                >
+                  <input type="hidden" name="action" value="delete_site" />
+                  <input type="hidden" name="site_id" value={siteKey} />
+                  <button
+                    type="submit"
+                    class="w-full text-red-600 hover:text-red-800 text-sm font-medium py-1 border border-red-200 rounded-lg hover:bg-red-50 transition"
+                  >
+                    Delete blog
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
           );

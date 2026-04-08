@@ -38,9 +38,11 @@
       });
 
       this.wrapper.appendChild(this.span);
-      this.wrapper.addEventListener('click', () => {
+      const announce = () => {
         document.dispatchEvent(new CustomEvent('alert-selected', { detail: this }));
-      });
+      };
+      this.wrapper.addEventListener('click', announce);
+      this.wrapper.addEventListener('focusin', announce);
 
       return this.wrapper;
     }

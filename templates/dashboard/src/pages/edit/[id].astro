@@ -45,7 +45,7 @@ if (Astro.request.method === 'POST') {
         .bind(title, slug, description, contentRaw, content_html, published, now, id)
         .run();
 
-      return Astro.redirect('/');
+      return Astro.redirect(`/edit/${id}`);
     }
   } catch (e) {
     error = 'Error updating post: ' + (e as Error).message;
@@ -114,7 +114,7 @@ if (Astro.request.method === 'POST') {
       <div id="block-list" class="space-y-1">
         <div class="text-sm text-gray-400 italic">Loading...</div>
       </div>
-      <button id="add-block-btn" class="btn btn-ghost btn-sm w-full mt-3 text-gray-500">+ Add Block</button>
+      <p class="text-xs text-gray-400 mt-3 leading-relaxed">Add blocks with the <strong>+</strong> in the editor.</p>
     </div>
 
     <div class="border-t border-gray-200 p-4">
@@ -149,29 +149,13 @@ if (Astro.request.method === 'POST') {
   </main>
 </div>
 
-<!-- Add Block Modal -->
-<dialog id="add-block-modal" class="modal">
-  <div class="modal-box max-w-sm">
-    <h3 class="font-bold text-lg mb-4">Add Block</h3>
-    <div class="grid grid-cols-2 gap-2">
-      <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('paragraph')">📝 Paragraph</button>
-      <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('header')">📰 Header</button>
-      <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('list')">📋 List</button>
-      <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('alert')">⚠️ Alert</button>
-      <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('quote')">💬 Quote</button>
-      <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('code')">💻 Code</button>
-      <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('delimiter')">➖ Divider</button>
-    </div>
-    <div class="modal-action">
-      <form method="dialog"><button class="btn btn-sm">Close</button></form>
-    </div>
-  </div>
-  <form method="dialog" class="modal-backdrop"><button>close</button></form>
-</dialog>
-
 <script is:inline define:vars={{ editorDataJson: editorData ? JSON.stringify(editorData) : 'null' }}>
-let editor, activeBlockIndex = null, activeAlertInstance = null, navigatorDebounce = null;
+let editor, activeBlockIndex = null, navigatorDebounce = null, editorBootStarted = false;
 const existingData = editorDataJson !== 'null' ? JSON.parse(editorDataJson) : null;
+
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) location.reload();
+});
 
 function boot() {
   if (
@@ -186,6 +170,9 @@ function boot() {
     setTimeout(boot, 50);
     return;
   }
+  if (editorBootStarted) return;
+  editorBootStarted = true;
+
   const editorConfig = {
     holder: 'editorjs',
     tools: {
@@ -197,21 +184,20 @@ function boot() {
       alert: { class: window.SnappostAlertBlock },
     },
     placeholder: 'Start writing...',
-    onChange: () => { clearTimeout(navigatorDebounce); navigatorDebounce = setTimeout(updateNavigator, 300); },
+    onChange: () => { clearTimeout(navigatorDebounce); navigatorDebounce = setTimeout(updateNavigator, 150); },
   };
   if (existingData) editorConfig.data = existingData;
 
   editor = new EditorJS(editorConfig);
   editor.isReady.then(() => updateNavigator());
 
-  document.getElementById('add-block-btn').addEventListener('click', () => { document.getElementById('add-block-modal').showModal(); });
   document.getElementById('save-btn').addEventListener('click', savePost);
   document.getElementById('preview-btn').addEventListener('click', openPreview);
   document.getElementById('post-title').addEventListener('input', (e) => {
     const slug = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     document.getElementById('post-slug').value = slug;
   });
-  document.addEventListener('alert-selected', (e) => { activeAlertInstance = e.detail; showAlertProperties(e.detail); });
+  document.addEventListener('alert-selected', (e) => { showAlertToolProperties(e.detail); });
 }
 document.addEventListener('DOMContentLoaded', boot);
 
@@ -246,47 +232,65 @@ async function updateNavigator() {
 function selectBlock(index) {
   activeBlockIndex = index; updateNavigator();
   const blocks = document.querySelectorAll('.ce-block');
-  if (blocks[index]) { blocks[index].scrollIntoView({behavior:'smooth',block:'center'}); blocks[index].querySelector('.ce-block__content')?.click(); }
+  if (blocks[index]) {
+    blocks[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    blocks[index].querySelector('.ce-block__content')?.click();
+    blocks[index].querySelector('[contenteditable]')?.focus();
+  }
   showPropertiesForIndex(index);
 }
 async function showPropertiesForIndex(index) {
   let data; try { data = await editor.save(); } catch { return; }
   const block = data.blocks[index]; if (!block) return;
-  if (block.type==='alert'&&activeAlertInstance) showAlertProperties(activeAlertInstance);
-  else document.getElementById('properties-content').innerHTML = '<p class="text-sm text-gray-400 italic">Edit directly in the editor</p>';
-}
-function showAlertProperties(inst) {
-  const c = document.getElementById('properties-content');
-  c.innerHTML = '<div class="space-y-3"><div><label class="label"><span class="label-text text-xs">Alert Type</span></label><select id="alert-type-select" class="select select-bordered select-sm w-full"><option value="info"'+(inst.data.type==='info'?' selected':'')+'>ℹ️ Info</option><option value="warning"'+(inst.data.type==='warning'?' selected':'')+'>⚠️ Warning</option><option value="success"'+(inst.data.type==='success'?' selected':'')+'>✅ Success</option><option value="error"'+(inst.data.type==='error'?' selected':'')+'>❌ Error</option></select></div><div><label class="label"><span class="label-text text-xs">Message</span></label><textarea id="alert-msg-input" class="textarea textarea-bordered textarea-sm w-full" rows="3">'+inst.data.text+'</textarea></div></div>';
-  document.getElementById('alert-type-select').addEventListener('change', (e) => { inst.setType(e.target.value); updateNavigator(); });
-  document.getElementById('alert-msg-input').addEventListener('input', (e) => { inst.data.text=e.target.value; if(inst.span) inst.span.textContent=e.target.value; updateNavigator(); });
-}
-async function insertBlock(type) {
-  document.getElementById('add-block-modal').close();
-  const atIndex = editor.blocks.getBlocksCount();
-  try {
-    await editor.blocks.insert(type, undefined, undefined, atIndex, true);
-  } catch (e) {
-    console.error(e);
+  if (block.type === 'alert' && block.id) {
+    mountAlertPropertiesByBlockId(block.id, block.data || {});
     return;
   }
-
-  setTimeout(() => {
-    const newIndex = editor.blocks.getBlocksCount() - 1;
-    const blocks = document.querySelectorAll('.ce-block');
-    const newBlock = blocks[newIndex];
-    if (newBlock) {
-      newBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      newBlock.style.outline = '2px solid #3b82f6';
-      newBlock.style.outlineOffset = '2px';
-      newBlock.style.borderRadius = '4px';
-      setTimeout(() => { newBlock.style.outline = ''; newBlock.style.outlineOffset = ''; }, 1500);
-      const editable = newBlock.querySelector('[contenteditable]');
-      if (editable) editable.focus();
-    }
-    activeBlockIndex = newIndex;
+  document.getElementById('properties-content').innerHTML = '<p class="text-sm text-gray-400 italic">Edit directly in the editor</p>';
+}
+function mountAlertPropertiesByBlockId(blockId, data) {
+  const type = data.type || 'info';
+  const text = data.text != null ? String(data.text) : '';
+  const c = document.getElementById('properties-content');
+  c.innerHTML =
+    '<div class="space-y-3"><div><label class="label"><span class="label-text text-xs">Alert Type</span></label>' +
+    '<select id="alert-type-select" class="select select-bordered select-sm w-full">' +
+    '<option value="info"' + (type === 'info' ? ' selected' : '') + '>ℹ️ Info</option>' +
+    '<option value="warning"' + (type === 'warning' ? ' selected' : '') + '>⚠️ Warning</option>' +
+    '<option value="success"' + (type === 'success' ? ' selected' : '') + '>✅ Success</option>' +
+    '<option value="error"' + (type === 'error' ? ' selected' : '') + '>❌ Error</option>' +
+    '</select></div><div><label class="label"><span class="label-text text-xs">Message</span></label>' +
+    '<textarea id="alert-msg-input" class="textarea textarea-bordered textarea-sm w-full" rows="3"></textarea></div></div>';
+  document.getElementById('alert-msg-input').value = text;
+  document.getElementById('alert-type-select').addEventListener('change', async (e) => {
+    const msg = document.getElementById('alert-msg-input').value;
+    try { await editor.blocks.update(blockId, { text: msg, type: e.target.value }); } catch (err) { console.error(err); }
     updateNavigator();
-  }, 300);
+  });
+  document.getElementById('alert-msg-input').addEventListener('input', async (e) => {
+    const t = document.getElementById('alert-type-select').value;
+    try { await editor.blocks.update(blockId, { text: e.target.value, type: t }); } catch (err) { console.error(err); }
+    updateNavigator();
+  });
+}
+function showAlertToolProperties(alertInst) {
+  const c = document.getElementById('properties-content');
+  c.innerHTML =
+    '<div class="space-y-3"><div><label class="label"><span class="label-text text-xs">Alert Type</span></label>' +
+    '<select id="alert-type-select" class="select select-bordered select-sm w-full">' +
+    '<option value="info"' + (alertInst.data.type === 'info' ? ' selected' : '') + '>ℹ️ Info</option>' +
+    '<option value="warning"' + (alertInst.data.type === 'warning' ? ' selected' : '') + '>⚠️ Warning</option>' +
+    '<option value="success"' + (alertInst.data.type === 'success' ? ' selected' : '') + '>✅ Success</option>' +
+    '<option value="error"' + (alertInst.data.type === 'error' ? ' selected' : '') + '>❌ Error</option>' +
+    '</select></div><div><label class="label"><span class="label-text text-xs">Message</span></label>' +
+    '<textarea id="alert-msg-input" class="textarea textarea-bordered textarea-sm w-full" rows="3"></textarea></div></div>';
+  document.getElementById('alert-msg-input').value = alertInst.data.text != null ? String(alertInst.data.text) : '';
+  document.getElementById('alert-type-select').addEventListener('change', (e) => { alertInst.setType(e.target.value); updateNavigator(); });
+  document.getElementById('alert-msg-input').addEventListener('input', (e) => {
+    alertInst.data.text = e.target.value;
+    if (alertInst.span) alertInst.span.textContent = e.target.value;
+    updateNavigator();
+  });
 }
 async function savePost() {
   const title = document.getElementById('post-title').value.trim();

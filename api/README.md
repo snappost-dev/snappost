@@ -92,5 +92,6 @@ npm run deploy
 | GET | `/api/sites/:id` | JWT → tek site (whitelist varsa kontrol) |
 | POST | `/api/sites/:id/domain` | JWT + `{ domain }` → shell Pages custom domain (blog) |
 | DELETE | `/api/sites/:id/domain` | JWT → custom domain kaldır |
+| DELETE | `/api/sites/:id` | JWT → site kaydını sil; CF’de dashboard/shell Pages + kiracı D1 + custom domain (varsa) best-effort temizlik |
 
 `/test/*` route’ları yalnız `ALLOW_TEST_ROUTES=true` iken çalışır (bkz. yukarıdaki `.dev.vars` örneği).

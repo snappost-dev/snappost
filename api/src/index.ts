@@ -526,6 +526,72 @@ app.delete('/api/sites/:id/domain', async (c) => {
   return c.json({ success: true });
 });
 
+/** Remove site row + best-effort Cloudflare cleanup (dashboard Pages, shell Pages, tenant D1). */
+app.delete('/api/sites/:id', async (c) => {
+  const user = await verifyAuth(c);
+  if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
+  const denied = rejectIfNotWhitelisted(c, user.email);
+  if (denied) return denied;
+
+  const siteId = c.req.param('id');
+
+  const site = await c.env.DB.prepare('SELECT * FROM sites WHERE id = ? AND user_id = ?')
+    .bind(siteId, user.userId)
+    .first();
+
+  if (!site) return c.json({ error: 'Site not found' }, 404);
+
+  const token = c.env.CF_API_TOKEN;
+  const accountId = c.env.CF_ACCOUNT_ID;
+  const warnings: string[] = [];
+
+  const shellProject = site.shell_project_name as string | null | undefined;
+  const dashProject = site.dashboard_project_name as string | null | undefined;
+  const d1Id = site.d1_database_id as string | null | undefined;
+  const customDomain = site.custom_domain as string | null | undefined;
+
+  if (token && accountId) {
+    if (customDomain && shellProject) {
+      try {
+        await removePagesCustomDomain(shellProject, customDomain, token, accountId);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        warnings.push(`Custom domain: ${msg.replace(/^\[[^\]]+\]\s*/, '')}`);
+      }
+    }
+    if (dashProject) {
+      try {
+        await deletePagesProject(dashProject, token, accountId);
+      } catch (e) {
+        warnings.push(`Dashboard Pages: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    if (shellProject) {
+      try {
+        await deletePagesProject(shellProject, token, accountId);
+      } catch (e) {
+        warnings.push(`Shell Pages: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    if (d1Id) {
+      try {
+        await deleteD1Database(d1Id, token, accountId);
+      } catch (e) {
+        warnings.push(`Tenant D1: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+  } else {
+    warnings.push('CF_API_TOKEN or CF_ACCOUNT_ID missing; only the provisioning record was removed.');
+  }
+
+  await c.env.DB.prepare('DELETE FROM sites WHERE id = ? AND user_id = ?')
+    .bind(siteId, user.userId)
+    .run();
+
+  return c.json({ success: true, warnings: warnings.length ? warnings : undefined });
+});
+
 // ========================================
 // TEST ENDPOINTS — yalnız ALLOW_TEST_ROUTES=true iken (yerel: .dev.vars)
 // ========================================

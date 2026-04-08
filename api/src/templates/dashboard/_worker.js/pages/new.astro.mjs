@@ -27,21 +27,30 @@ const $$New = createComponent(async ($$result, $$props, $$slots) => {
         const contentJson = JSON.parse(contentRaw);
         const content_html = renderEditorJSToHTML(contentJson);
         const now = (/* @__PURE__ */ new Date()).toISOString();
-        await Astro2.locals.runtime.env.DB.prepare("INSERT INTO posts (slug, title, description, content, content_html, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(slug, title, description, contentRaw, content_html, published, now, now).run();
+        const insertResult = await Astro2.locals.runtime.env.DB.prepare("INSERT INTO posts (slug, title, description, content, content_html, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(slug, title, description, contentRaw, content_html, published, now, now).run();
+        const rawId = insertResult.meta?.last_row_id;
+        const newId = rawId != null ? Number(rawId) : NaN;
+        if (Number.isFinite(newId) && newId > 0) {
+          return Astro2.redirect(`/edit/${newId}`);
+        }
         return Astro2.redirect("/");
       }
     } catch (e) {
       error = "Error creating post: " + e.message;
     }
   }
-  return renderTemplate(_a || (_a = __template(['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>New Post - Dashboard</title><link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.css" rel="stylesheet"><script src="https://cdn.tailwindcss.com"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/quote.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0/dist/code.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"><\/script><script src="/dashboard/alert-block.js"><\/script><style>\n    .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }\n    .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }\n    .editor-main { overflow-y: auto; }\n    .nav-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }\n    .nav-item:hover { background: #e2e8f0; }\n    .nav-item.active { background: #dbeafe; color: #1d4ed8; }\n    .ce-block--focused { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 4px; }\n    #editorjs { min-height: 400px; }\n    .codex-editor__redactor { padding-bottom: 200px !important; }\n  </style>', '</head> <body class="bg-gray-50" data-theme="corporate"> ', ` <form method="POST" id="save-form"> <input type="hidden" name="content" id="hidden-content"> <input type="hidden" name="title" id="hidden-title"> <input type="hidden" name="slug" id="hidden-slug"> <input type="hidden" name="description" id="hidden-description"> <input type="hidden" name="published" id="hidden-published" value="0"> </form> <div class="editor-grid"> <!-- SIDEBAR --> <aside class="sidebar flex flex-col"> <div class="p-4 border-b border-gray-200"> <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to Posts</a> </div> <!-- Navigator --> <div class="p-4 flex-1"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Blocks</h3> <div id="block-list" class="space-y-1"> <div class="text-sm text-gray-400 italic">Start writing...</div> </div> <button id="add-block-btn" class="btn btn-ghost btn-sm w-full mt-3 text-gray-500">+ Add Block</button> </div> <!-- Properties --> <div class="border-t border-gray-200 p-4"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Properties</h3> <div id="properties-content"> <p class="text-sm text-gray-400 italic">Select a block</p> </div> </div> </aside> <!-- MAIN PANEL --> <main class="editor-main"> <!-- Navbar --> <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3"> <div class="max-w-3xl mx-auto flex items-center gap-3"> <input id="post-title" type="text" placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg"> <input id="post-slug" type="text" placeholder="slug" class="input input-bordered input-sm w-40 text-xs font-mono"> <label class="flex items-center gap-1.5 text-sm cursor-pointer"> <input type="checkbox" id="post-published" class="checkbox checkbox-sm checkbox-primary"> <span>Publish</span> </label> <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button> <button id="save-btn" class="btn btn-primary btn-sm">Save</button> </div> <div class="max-w-3xl mx-auto mt-2"> <input id="post-description" type="text" placeholder="Short description (optional)" class="input input-bordered input-xs w-full"> </div> </div> <!-- Editor --> <div class="max-w-3xl mx-auto px-6 py-8"> <div id="editorjs"></div> </div> </main> </div> <!-- Add Block Modal --> <dialog id="add-block-modal" class="modal"> <div class="modal-box max-w-sm"> <h3 class="font-bold text-lg mb-4">Add Block</h3> <div class="grid grid-cols-2 gap-2"> <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('paragraph')">\u{1F4DD} Paragraph</button> <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('header')">\u{1F4F0} Header</button> <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('list')">\u{1F4CB} List</button> <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('alert')">\u26A0\uFE0F Alert</button> <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('quote')">\u{1F4AC} Quote</button> <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('code')">\u{1F4BB} Code</button> <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('delimiter')">\u2796 Divider</button> </div> <div class="modal-action"> <form method="dialog"><button class="btn btn-sm">Close</button></form> </div> </div> <form method="dialog" class="modal-backdrop"><button>close</button></form> </dialog> <script>
+  return renderTemplate(_a || (_a = __template(['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>New Post - Dashboard</title><link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.css" rel="stylesheet"><script src="https://cdn.tailwindcss.com"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/quote.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0/dist/code.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"><\/script><script src="/dashboard/alert-block.js"><\/script><style>\n    .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }\n    .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }\n    .editor-main { overflow-y: auto; }\n    .nav-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }\n    .nav-item:hover { background: #e2e8f0; }\n    .nav-item.active { background: #dbeafe; color: #1d4ed8; }\n    .ce-block--focused { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 4px; }\n    #editorjs { min-height: 400px; }\n    .codex-editor__redactor { padding-bottom: 200px !important; }\n  </style>', '</head> <body class="bg-gray-50" data-theme="corporate"> ', ` <form method="POST" id="save-form"> <input type="hidden" name="content" id="hidden-content"> <input type="hidden" name="title" id="hidden-title"> <input type="hidden" name="slug" id="hidden-slug"> <input type="hidden" name="description" id="hidden-description"> <input type="hidden" name="published" id="hidden-published" value="0"> </form> <div class="editor-grid"> <!-- SIDEBAR --> <aside class="sidebar flex flex-col"> <div class="p-4 border-b border-gray-200"> <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to Posts</a> </div> <!-- Navigator --> <div class="p-4 flex-1"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Blocks</h3> <div id="block-list" class="space-y-1"> <div class="text-sm text-gray-400 italic">Start writing...</div> </div> <p class="text-xs text-gray-400 mt-3 leading-relaxed">Add blocks with the <strong>+</strong> in the editor.</p> </div> <!-- Properties --> <div class="border-t border-gray-200 p-4"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Properties</h3> <div id="properties-content"> <p class="text-sm text-gray-400 italic">Select a block</p> </div> </div> </aside> <!-- MAIN PANEL --> <main class="editor-main"> <!-- Navbar --> <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3"> <div class="max-w-3xl mx-auto flex items-center gap-3"> <input id="post-title" type="text" placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg"> <input id="post-slug" type="text" placeholder="slug" class="input input-bordered input-sm w-40 text-xs font-mono"> <label class="flex items-center gap-1.5 text-sm cursor-pointer"> <input type="checkbox" id="post-published" class="checkbox checkbox-sm checkbox-primary"> <span>Publish</span> </label> <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button> <button id="save-btn" class="btn btn-primary btn-sm">Save</button> </div> <div class="max-w-3xl mx-auto mt-2"> <input id="post-description" type="text" placeholder="Short description (optional)" class="input input-bordered input-xs w-full"> </div> </div> <!-- Editor --> <div class="max-w-3xl mx-auto px-6 py-8"> <div id="editorjs"></div> </div> </main> </div> <script>
 // ==========================================
 // State (AlertBlock: /dashboard/alert-block.js \u2192 SnappostAlertBlock)
 // ==========================================
 let editor;
 let activeBlockIndex = null;
-let activeAlertInstance = null;
 let navigatorDebounce = null;
+let editorBootStarted = false;
+
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) location.reload();
+});
 
 // ==========================================
 // Editor.js Init
@@ -59,6 +68,9 @@ function boot() {
     setTimeout(boot, 50);
     return;
   }
+  if (editorBootStarted) return;
+  editorBootStarted = true;
+
   editor = new EditorJS({
     holder: 'editorjs',
     tools: {
@@ -73,12 +85,8 @@ function boot() {
     autofocus: true,
     onChange: () => {
       clearTimeout(navigatorDebounce);
-      navigatorDebounce = setTimeout(updateNavigator, 300);
+      navigatorDebounce = setTimeout(updateNavigator, 150);
     },
-  });
-
-  document.getElementById('add-block-btn').addEventListener('click', () => {
-    document.getElementById('add-block-modal').showModal();
   });
 
   document.getElementById('save-btn').addEventListener('click', savePost);
@@ -91,8 +99,7 @@ function boot() {
   });
 
   document.addEventListener('alert-selected', (e) => {
-    activeAlertInstance = e.detail;
-    showAlertProperties(e.detail);
+    showAlertToolProperties(e.detail);
   });
 }
 document.addEventListener('DOMContentLoaded', boot);
@@ -147,6 +154,7 @@ function selectBlock(index) {
   if (blocks[index]) {
     blocks[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
     blocks[index].querySelector('.ce-block__content')?.click();
+    blocks[index].querySelector('[contenteditable]')?.focus();
   }
 
   showPropertiesForIndex(index);
@@ -161,74 +169,77 @@ async function showPropertiesForIndex(index) {
   const block = data.blocks[index];
   if (!block) return;
 
-  if (block.type === 'alert' && activeAlertInstance) {
-    showAlertProperties(activeAlertInstance);
-  } else {
-    document.getElementById('properties-content').innerHTML =
-      '<p class="text-sm text-gray-400 italic">Edit directly in the editor</p>';
+  if (block.type === 'alert' && block.id) {
+    mountAlertPropertiesByBlockId(block.id, block.data || {});
+    return;
   }
+  document.getElementById('properties-content').innerHTML =
+    '<p class="text-sm text-gray-400 italic">Edit directly in the editor</p>';
 }
 
-function showAlertProperties(alertInst) {
+/** Sidebar: uses Editor.js block id + blocks.update */
+function mountAlertPropertiesByBlockId(blockId, data) {
+  const type = data.type || 'info';
+  const text = data.text != null ? String(data.text) : '';
   const container = document.getElementById('properties-content');
-  container.innerHTML = \`
-    <div class="space-y-3">
-      <div>
-        <label class="label"><span class="label-text text-xs">Alert Type</span></label>
-        <select id="alert-type-select" class="select select-bordered select-sm w-full">
-          <option value="info" \${alertInst.data.type === 'info' ? 'selected' : ''}>\u2139\uFE0F Info</option>
-          <option value="warning" \${alertInst.data.type === 'warning' ? 'selected' : ''}>\u26A0\uFE0F Warning</option>
-          <option value="success" \${alertInst.data.type === 'success' ? 'selected' : ''}>\u2705 Success</option>
-          <option value="error" \${alertInst.data.type === 'error' ? 'selected' : ''}>\u274C Error</option>
-        </select>
-      </div>
-      <div>
-        <label class="label"><span class="label-text text-xs">Message</span></label>
-        <textarea id="alert-msg-input" class="textarea textarea-bordered textarea-sm w-full" rows="3">\${alertInst.data.text}</textarea>
-      </div>
-    </div>\`;
+  container.innerHTML =
+    '<div class="space-y-3">' +
+    '<div><label class="label"><span class="label-text text-xs">Alert Type</span></label>' +
+    '<select id="alert-type-select" class="select select-bordered select-sm w-full">' +
+    '<option value="info"' + (type === 'info' ? ' selected' : '') + '>\u2139\uFE0F Info</option>' +
+    '<option value="warning"' + (type === 'warning' ? ' selected' : '') + '>\u26A0\uFE0F Warning</option>' +
+    '<option value="success"' + (type === 'success' ? ' selected' : '') + '>\u2705 Success</option>' +
+    '<option value="error"' + (type === 'error' ? ' selected' : '') + '>\u274C Error</option>' +
+    '</select></div>' +
+    '<div><label class="label"><span class="label-text text-xs">Message</span></label>' +
+    '<textarea id="alert-msg-input" class="textarea textarea-bordered textarea-sm w-full" rows="3"></textarea></div></div>';
+  document.getElementById('alert-msg-input').value = text;
+
+  document.getElementById('alert-type-select').addEventListener('change', async (e) => {
+    const msg = document.getElementById('alert-msg-input').value;
+    try {
+      await editor.blocks.update(blockId, { text: msg, type: e.target.value });
+    } catch (err) {
+      console.error(err);
+    }
+    updateNavigator();
+  });
+  document.getElementById('alert-msg-input').addEventListener('input', async (e) => {
+    const t = document.getElementById('alert-type-select').value;
+    try {
+      await editor.blocks.update(blockId, { text: e.target.value, type: t });
+    } catch (err) {
+      console.error(err);
+    }
+    updateNavigator();
+  });
+}
+
+/** Click inside alert block in editor: sync tool instance */
+function showAlertToolProperties(alertInst) {
+  const container = document.getElementById('properties-content');
+  container.innerHTML =
+    '<div class="space-y-3">' +
+    '<div><label class="label"><span class="label-text text-xs">Alert Type</span></label>' +
+    '<select id="alert-type-select" class="select select-bordered select-sm w-full">' +
+    '<option value="info"' + (alertInst.data.type === 'info' ? ' selected' : '') + '>\u2139\uFE0F Info</option>' +
+    '<option value="warning"' + (alertInst.data.type === 'warning' ? ' selected' : '') + '>\u26A0\uFE0F Warning</option>' +
+    '<option value="success"' + (alertInst.data.type === 'success' ? ' selected' : '') + '>\u2705 Success</option>' +
+    '<option value="error"' + (alertInst.data.type === 'error' ? ' selected' : '') + '>\u274C Error</option>' +
+    '</select></div>' +
+    '<div><label class="label"><span class="label-text text-xs">Message</span></label>' +
+    '<textarea id="alert-msg-input" class="textarea textarea-bordered textarea-sm w-full" rows="3"></textarea></div></div>';
+  document.getElementById('alert-msg-input').value = alertInst.data.text != null ? String(alertInst.data.text) : '';
 
   document.getElementById('alert-type-select').addEventListener('change', (e) => {
     alertInst.setType(e.target.value);
     updateNavigator();
   });
-
   document.getElementById('alert-msg-input').addEventListener('input', (e) => {
     alertInst.data.text = e.target.value;
     if (alertInst.span) alertInst.span.textContent = e.target.value;
     updateNavigator();
   });
-}
-
-// ==========================================
-// Add Block
-// ==========================================
-async function insertBlock(type) {
-  document.getElementById('add-block-modal').close();
-  const atIndex = editor.blocks.getBlocksCount();
-  try {
-    await editor.blocks.insert(type, undefined, undefined, atIndex, true);
-  } catch (e) {
-    console.error(e);
-    return;
-  }
-
-  setTimeout(() => {
-    const newIndex = editor.blocks.getBlocksCount() - 1;
-    const blocks = document.querySelectorAll('.ce-block');
-    const newBlock = blocks[newIndex];
-    if (newBlock) {
-      newBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      newBlock.style.outline = '2px solid #3b82f6';
-      newBlock.style.outlineOffset = '2px';
-      newBlock.style.borderRadius = '4px';
-      setTimeout(() => { newBlock.style.outline = ''; newBlock.style.outlineOffset = ''; }, 1500);
-      const editable = newBlock.querySelector('[contenteditable]');
-      if (editable) editable.focus();
-    }
-    activeBlockIndex = newIndex;
-    updateNavigator();
-  }, 300);
 }
 
 // ==========================================
@@ -302,14 +313,18 @@ function renderPreviewHTML(content) {
     }
   }).join('\\n');
 }
-<\/script> </body> </html>`], ['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>New Post - Dashboard</title><link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.css" rel="stylesheet"><script src="https://cdn.tailwindcss.com"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/quote.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0/dist/code.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"><\/script><script src="/dashboard/alert-block.js"><\/script><style>\n    .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }\n    .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }\n    .editor-main { overflow-y: auto; }\n    .nav-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }\n    .nav-item:hover { background: #e2e8f0; }\n    .nav-item.active { background: #dbeafe; color: #1d4ed8; }\n    .ce-block--focused { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 4px; }\n    #editorjs { min-height: 400px; }\n    .codex-editor__redactor { padding-bottom: 200px !important; }\n  </style>', '</head> <body class="bg-gray-50" data-theme="corporate"> ', ` <form method="POST" id="save-form"> <input type="hidden" name="content" id="hidden-content"> <input type="hidden" name="title" id="hidden-title"> <input type="hidden" name="slug" id="hidden-slug"> <input type="hidden" name="description" id="hidden-description"> <input type="hidden" name="published" id="hidden-published" value="0"> </form> <div class="editor-grid"> <!-- SIDEBAR --> <aside class="sidebar flex flex-col"> <div class="p-4 border-b border-gray-200"> <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to Posts</a> </div> <!-- Navigator --> <div class="p-4 flex-1"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Blocks</h3> <div id="block-list" class="space-y-1"> <div class="text-sm text-gray-400 italic">Start writing...</div> </div> <button id="add-block-btn" class="btn btn-ghost btn-sm w-full mt-3 text-gray-500">+ Add Block</button> </div> <!-- Properties --> <div class="border-t border-gray-200 p-4"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Properties</h3> <div id="properties-content"> <p class="text-sm text-gray-400 italic">Select a block</p> </div> </div> </aside> <!-- MAIN PANEL --> <main class="editor-main"> <!-- Navbar --> <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3"> <div class="max-w-3xl mx-auto flex items-center gap-3"> <input id="post-title" type="text" placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg"> <input id="post-slug" type="text" placeholder="slug" class="input input-bordered input-sm w-40 text-xs font-mono"> <label class="flex items-center gap-1.5 text-sm cursor-pointer"> <input type="checkbox" id="post-published" class="checkbox checkbox-sm checkbox-primary"> <span>Publish</span> </label> <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button> <button id="save-btn" class="btn btn-primary btn-sm">Save</button> </div> <div class="max-w-3xl mx-auto mt-2"> <input id="post-description" type="text" placeholder="Short description (optional)" class="input input-bordered input-xs w-full"> </div> </div> <!-- Editor --> <div class="max-w-3xl mx-auto px-6 py-8"> <div id="editorjs"></div> </div> </main> </div> <!-- Add Block Modal --> <dialog id="add-block-modal" class="modal"> <div class="modal-box max-w-sm"> <h3 class="font-bold text-lg mb-4">Add Block</h3> <div class="grid grid-cols-2 gap-2"> <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('paragraph')">\u{1F4DD} Paragraph</button> <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('header')">\u{1F4F0} Header</button> <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('list')">\u{1F4CB} List</button> <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('alert')">\u26A0\uFE0F Alert</button> <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('quote')">\u{1F4AC} Quote</button> <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('code')">\u{1F4BB} Code</button> <button type="button" class="btn btn-ghost justify-start gap-2" onclick="insertBlock('delimiter')">\u2796 Divider</button> </div> <div class="modal-action"> <form method="dialog"><button class="btn btn-sm">Close</button></form> </div> </div> <form method="dialog" class="modal-backdrop"><button>close</button></form> </dialog> <script>
+<\/script> </body> </html>`], ['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>New Post - Dashboard</title><link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.css" rel="stylesheet"><script src="https://cdn.tailwindcss.com"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/quote.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0/dist/code.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"><\/script><script src="/dashboard/alert-block.js"><\/script><style>\n    .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }\n    .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }\n    .editor-main { overflow-y: auto; }\n    .nav-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }\n    .nav-item:hover { background: #e2e8f0; }\n    .nav-item.active { background: #dbeafe; color: #1d4ed8; }\n    .ce-block--focused { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 4px; }\n    #editorjs { min-height: 400px; }\n    .codex-editor__redactor { padding-bottom: 200px !important; }\n  </style>', '</head> <body class="bg-gray-50" data-theme="corporate"> ', ` <form method="POST" id="save-form"> <input type="hidden" name="content" id="hidden-content"> <input type="hidden" name="title" id="hidden-title"> <input type="hidden" name="slug" id="hidden-slug"> <input type="hidden" name="description" id="hidden-description"> <input type="hidden" name="published" id="hidden-published" value="0"> </form> <div class="editor-grid"> <!-- SIDEBAR --> <aside class="sidebar flex flex-col"> <div class="p-4 border-b border-gray-200"> <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to Posts</a> </div> <!-- Navigator --> <div class="p-4 flex-1"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Blocks</h3> <div id="block-list" class="space-y-1"> <div class="text-sm text-gray-400 italic">Start writing...</div> </div> <p class="text-xs text-gray-400 mt-3 leading-relaxed">Add blocks with the <strong>+</strong> in the editor.</p> </div> <!-- Properties --> <div class="border-t border-gray-200 p-4"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Properties</h3> <div id="properties-content"> <p class="text-sm text-gray-400 italic">Select a block</p> </div> </div> </aside> <!-- MAIN PANEL --> <main class="editor-main"> <!-- Navbar --> <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3"> <div class="max-w-3xl mx-auto flex items-center gap-3"> <input id="post-title" type="text" placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg"> <input id="post-slug" type="text" placeholder="slug" class="input input-bordered input-sm w-40 text-xs font-mono"> <label class="flex items-center gap-1.5 text-sm cursor-pointer"> <input type="checkbox" id="post-published" class="checkbox checkbox-sm checkbox-primary"> <span>Publish</span> </label> <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button> <button id="save-btn" class="btn btn-primary btn-sm">Save</button> </div> <div class="max-w-3xl mx-auto mt-2"> <input id="post-description" type="text" placeholder="Short description (optional)" class="input input-bordered input-xs w-full"> </div> </div> <!-- Editor --> <div class="max-w-3xl mx-auto px-6 py-8"> <div id="editorjs"></div> </div> </main> </div> <script>
 // ==========================================
 // State (AlertBlock: /dashboard/alert-block.js \u2192 SnappostAlertBlock)
 // ==========================================
 let editor;
 let activeBlockIndex = null;
-let activeAlertInstance = null;
 let navigatorDebounce = null;
+let editorBootStarted = false;
+
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) location.reload();
+});
 
 // ==========================================
 // Editor.js Init
@@ -327,6 +342,9 @@ function boot() {
     setTimeout(boot, 50);
     return;
   }
+  if (editorBootStarted) return;
+  editorBootStarted = true;
+
   editor = new EditorJS({
     holder: 'editorjs',
     tools: {
@@ -341,12 +359,8 @@ function boot() {
     autofocus: true,
     onChange: () => {
       clearTimeout(navigatorDebounce);
-      navigatorDebounce = setTimeout(updateNavigator, 300);
+      navigatorDebounce = setTimeout(updateNavigator, 150);
     },
-  });
-
-  document.getElementById('add-block-btn').addEventListener('click', () => {
-    document.getElementById('add-block-modal').showModal();
   });
 
   document.getElementById('save-btn').addEventListener('click', savePost);
@@ -359,8 +373,7 @@ function boot() {
   });
 
   document.addEventListener('alert-selected', (e) => {
-    activeAlertInstance = e.detail;
-    showAlertProperties(e.detail);
+    showAlertToolProperties(e.detail);
   });
 }
 document.addEventListener('DOMContentLoaded', boot);
@@ -415,6 +428,7 @@ function selectBlock(index) {
   if (blocks[index]) {
     blocks[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
     blocks[index].querySelector('.ce-block__content')?.click();
+    blocks[index].querySelector('[contenteditable]')?.focus();
   }
 
   showPropertiesForIndex(index);
@@ -429,74 +443,77 @@ async function showPropertiesForIndex(index) {
   const block = data.blocks[index];
   if (!block) return;
 
-  if (block.type === 'alert' && activeAlertInstance) {
-    showAlertProperties(activeAlertInstance);
-  } else {
-    document.getElementById('properties-content').innerHTML =
-      '<p class="text-sm text-gray-400 italic">Edit directly in the editor</p>';
+  if (block.type === 'alert' && block.id) {
+    mountAlertPropertiesByBlockId(block.id, block.data || {});
+    return;
   }
+  document.getElementById('properties-content').innerHTML =
+    '<p class="text-sm text-gray-400 italic">Edit directly in the editor</p>';
 }
 
-function showAlertProperties(alertInst) {
+/** Sidebar: uses Editor.js block id + blocks.update */
+function mountAlertPropertiesByBlockId(blockId, data) {
+  const type = data.type || 'info';
+  const text = data.text != null ? String(data.text) : '';
   const container = document.getElementById('properties-content');
-  container.innerHTML = \\\`
-    <div class="space-y-3">
-      <div>
-        <label class="label"><span class="label-text text-xs">Alert Type</span></label>
-        <select id="alert-type-select" class="select select-bordered select-sm w-full">
-          <option value="info" \\\${alertInst.data.type === 'info' ? 'selected' : ''}>\u2139\uFE0F Info</option>
-          <option value="warning" \\\${alertInst.data.type === 'warning' ? 'selected' : ''}>\u26A0\uFE0F Warning</option>
-          <option value="success" \\\${alertInst.data.type === 'success' ? 'selected' : ''}>\u2705 Success</option>
-          <option value="error" \\\${alertInst.data.type === 'error' ? 'selected' : ''}>\u274C Error</option>
-        </select>
-      </div>
-      <div>
-        <label class="label"><span class="label-text text-xs">Message</span></label>
-        <textarea id="alert-msg-input" class="textarea textarea-bordered textarea-sm w-full" rows="3">\\\${alertInst.data.text}</textarea>
-      </div>
-    </div>\\\`;
+  container.innerHTML =
+    '<div class="space-y-3">' +
+    '<div><label class="label"><span class="label-text text-xs">Alert Type</span></label>' +
+    '<select id="alert-type-select" class="select select-bordered select-sm w-full">' +
+    '<option value="info"' + (type === 'info' ? ' selected' : '') + '>\u2139\uFE0F Info</option>' +
+    '<option value="warning"' + (type === 'warning' ? ' selected' : '') + '>\u26A0\uFE0F Warning</option>' +
+    '<option value="success"' + (type === 'success' ? ' selected' : '') + '>\u2705 Success</option>' +
+    '<option value="error"' + (type === 'error' ? ' selected' : '') + '>\u274C Error</option>' +
+    '</select></div>' +
+    '<div><label class="label"><span class="label-text text-xs">Message</span></label>' +
+    '<textarea id="alert-msg-input" class="textarea textarea-bordered textarea-sm w-full" rows="3"></textarea></div></div>';
+  document.getElementById('alert-msg-input').value = text;
+
+  document.getElementById('alert-type-select').addEventListener('change', async (e) => {
+    const msg = document.getElementById('alert-msg-input').value;
+    try {
+      await editor.blocks.update(blockId, { text: msg, type: e.target.value });
+    } catch (err) {
+      console.error(err);
+    }
+    updateNavigator();
+  });
+  document.getElementById('alert-msg-input').addEventListener('input', async (e) => {
+    const t = document.getElementById('alert-type-select').value;
+    try {
+      await editor.blocks.update(blockId, { text: e.target.value, type: t });
+    } catch (err) {
+      console.error(err);
+    }
+    updateNavigator();
+  });
+}
+
+/** Click inside alert block in editor: sync tool instance */
+function showAlertToolProperties(alertInst) {
+  const container = document.getElementById('properties-content');
+  container.innerHTML =
+    '<div class="space-y-3">' +
+    '<div><label class="label"><span class="label-text text-xs">Alert Type</span></label>' +
+    '<select id="alert-type-select" class="select select-bordered select-sm w-full">' +
+    '<option value="info"' + (alertInst.data.type === 'info' ? ' selected' : '') + '>\u2139\uFE0F Info</option>' +
+    '<option value="warning"' + (alertInst.data.type === 'warning' ? ' selected' : '') + '>\u26A0\uFE0F Warning</option>' +
+    '<option value="success"' + (alertInst.data.type === 'success' ? ' selected' : '') + '>\u2705 Success</option>' +
+    '<option value="error"' + (alertInst.data.type === 'error' ? ' selected' : '') + '>\u274C Error</option>' +
+    '</select></div>' +
+    '<div><label class="label"><span class="label-text text-xs">Message</span></label>' +
+    '<textarea id="alert-msg-input" class="textarea textarea-bordered textarea-sm w-full" rows="3"></textarea></div></div>';
+  document.getElementById('alert-msg-input').value = alertInst.data.text != null ? String(alertInst.data.text) : '';
 
   document.getElementById('alert-type-select').addEventListener('change', (e) => {
     alertInst.setType(e.target.value);
     updateNavigator();
   });
-
   document.getElementById('alert-msg-input').addEventListener('input', (e) => {
     alertInst.data.text = e.target.value;
     if (alertInst.span) alertInst.span.textContent = e.target.value;
     updateNavigator();
   });
-}
-
-// ==========================================
-// Add Block
-// ==========================================
-async function insertBlock(type) {
-  document.getElementById('add-block-modal').close();
-  const atIndex = editor.blocks.getBlocksCount();
-  try {
-    await editor.blocks.insert(type, undefined, undefined, atIndex, true);
-  } catch (e) {
-    console.error(e);
-    return;
-  }
-
-  setTimeout(() => {
-    const newIndex = editor.blocks.getBlocksCount() - 1;
-    const blocks = document.querySelectorAll('.ce-block');
-    const newBlock = blocks[newIndex];
-    if (newBlock) {
-      newBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      newBlock.style.outline = '2px solid #3b82f6';
-      newBlock.style.outlineOffset = '2px';
-      newBlock.style.borderRadius = '4px';
-      setTimeout(() => { newBlock.style.outline = ''; newBlock.style.outlineOffset = ''; }, 1500);
-      const editable = newBlock.querySelector('[contenteditable]');
-      if (editable) editable.focus();
-    }
-    activeBlockIndex = newIndex;
-    updateNavigator();
-  }, 300);
 }
 
 // ==========================================
