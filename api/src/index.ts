@@ -8,9 +8,12 @@ import {
   addPagesCustomDomain, removePagesCustomDomain,
 } from './lib/cloudflare';
 import { prepareShellTemplate, prepareDashboardTemplate, BLOG_SCHEMA_SQL } from './lib/templates';
+import { MEDIA_KEY_PREFIX_DOC } from './lib/media-keys';
 
 type Bindings = {
   DB: D1Database;
+  /** R2 — kiracı görselleri (B1); B2’de upload bu binding ile yazacak */
+  MEDIA_BUCKET: R2Bucket;
   CF_API_TOKEN: string;
   CF_ACCOUNT_ID: string;
   JWT_SECRET: string;
@@ -138,6 +141,16 @@ app.get('/', (c) => {
     status: 'ok',
     service: 'snappost-provisioning-api',
     version: '1.0.0'
+  });
+});
+
+/** Medya/R2 durumu (B1) — upload B2’de; key stratejisi dokümantasyon için */
+app.get('/api/media/status', (c) => {
+  return c.json({
+    r2: true,
+    binding: 'MEDIA_BUCKET',
+    tenant_key_prefix: MEDIA_KEY_PREFIX_DOC,
+    note: 'Upload ve imzalı URL B2 sprintinde eklenecek.',
   });
 });
 

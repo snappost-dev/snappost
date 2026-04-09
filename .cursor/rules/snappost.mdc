@@ -32,6 +32,7 @@ Diğer girişler: `README.md`, `api/README.md`, `landing/README.md`. Cloudflare 
 5. **Ölçekleme:** Site başına 2× Pages + 1× D1 modeli CF kota açısından sınırlı; uzun vadede multi-tenant / az yüzey — **PROJECT-STATUS §9.3**.
 6. **Deploy ayrımı:** **API + landing** = sabit CF projeleri (Git veya `wrangler`). **Shell + dashboard** (kiracı) = yalnızca **provision** (CF API); landing gibi repodan sürekli deploy edilmez. Git build’de `API_URL` vb. için **Dashboard env** doğrula — **PROJECT-STATUS §7**.
 7. **Blog custom domain:** Yalnızca **shell** (blog) Pages projesi; `POST/DELETE /api/sites/:id/domain`. Admin dashboard `*.pages.dev` kalır. **PROJECT-STATUS §4**, provisioning DB `custom_domain`.
+8. **R2 medya:** Tek bucket `snappost-media`, Worker `MEDIA_BUCKET`; object key prefix `u{userId}/s{siteId}/…` — `api/src/lib/media-keys.ts`. Upload B2 sprintinde.
 
 ## Kod yolları (kısa)
 

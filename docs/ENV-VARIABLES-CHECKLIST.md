@@ -27,6 +27,7 @@
 | Yapıldı | Ne | Açıklama |
 |--------|-----|----------|
 | [ ] | Rate limiting / WAF | API Worker hostname’inde `POST /api/auth/register`, `/api/auth/login`, `/api/provision` için IP başına eşik — [docs/SPRINT-PLAN.md](./SPRINT-PLAN.md) §A2 |
+| [ ] | R2 bucket `snappost-media` | [`api/wrangler.toml`](../api/wrangler.toml) `MEDIA_BUCKET` binding; yoksa `wrangler r2 bucket create snappost-media` — [api/README.md](../api/README.md) § R2 medya |
 
 ---
 

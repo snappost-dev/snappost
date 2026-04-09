@@ -9,6 +9,12 @@ binding = "DB"
 database_name = "snappost-provisioning"
 database_id = "d8c8583f-e604-44f0-8ead-7b0d53b4f151"
 
+# Blog/medya (B1) — tek bucket, kiracı prefix: u{userId}/s{siteId}/…
+# Oluşturma: wrangler r2 bucket create snappost-media
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "snappost-media"
+
 [vars]
 CF_ACCOUNT_ID = "1094e722fe9d2b939e94a8ceb124d21b"
 # Opsiyonel — virgülle ayrılmış e-postalar; boş veya satır yok = kayıt/giriş herkese açık

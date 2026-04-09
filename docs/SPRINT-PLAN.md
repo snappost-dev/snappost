@@ -49,7 +49,7 @@ Cloudflare hesabınızda API Worker’ınızın geldiği hostname’i kullanın 
 
 | # | İş | Not |
 |---|-----|-----|
-| B1 | R2 bucket | Tek bucket + kiracı izolasyonu: örn. key prefix `sp-{userId}-{siteName}/…` veya site ID. |
+| B1 | R2 bucket | **Yapıldı:** bucket `snappost-media`, binding `MEDIA_BUCKET`, prefix `u{userId}/s{siteId}/…` — [`api/src/lib/media-keys.ts`](../api/src/lib/media-keys.ts), `GET /api/media/status`. |
 | B2 | Upload / imza | Kısa ömürlü upload URL veya dashboard Worker üzerinden sınırlı boyut/MIME; kötü amaçlı dosya sınırları. |
 | B3 | Editor.js Image | Blok + kayıtlı URL’nin `content_html` çıktısında güvenli (`alt`, boyut). |
 | B4 | Shell render | `content_html` + görseller; mümkünse `loading="lazy"`. |
@@ -89,6 +89,7 @@ flowchart LR
 | # | Adım | Beklenen |
 |---|------|----------|
 | T1 | `GET /` (API kökü) | `200`, JSON `status: ok` |
+| T1b | `GET /api/media/status` | `200`, R2 stratejisi JSON |
 | T2 | `GET /api/sites` (Authorization yok) | `401` |
 | T3 | `POST /api/auth/register` — whitelist **kapalı**, geçerli body | `200` veya mevcut kullanıcıda `409` |
 | T4 | `POST /api/auth/register` — whitelist **açık**, listede olmayan e-posta | `403`, anlama uygun `error` |

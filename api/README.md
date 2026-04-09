@@ -50,6 +50,18 @@ ALLOW_TEST_ROUTES=true
 
 `wrangler.toml` içinde provisioning D1 `database_id` tanımlı olmalı.
 
+## R2 medya (B1)
+
+Tek bucket **`snappost-media`**, Worker binding **`MEDIA_BUCKET`**. Kiracı görselleri **object key prefix** ile ayrılır: `u{userId}/s{siteId}/…` (`userId` = provisioning `users.id`, `siteId` = `sites.id`). Yardımcılar: [`src/lib/media-keys.ts`](src/lib/media-keys.ts).
+
+İlk kurulum (bucket yoksa):
+
+```bash
+npx wrangler r2 bucket create snappost-media
+```
+
+Durum JSON: `GET /api/media/status` (auth gerekmez; B2’de upload eklenecek).
+
 ## Veritabanı (provisioning D1)
 
 ```bash
@@ -106,6 +118,7 @@ Ayrıntılı manuel liste: [docs/SPRINT-PLAN.md](../docs/SPRINT-PLAN.md) §C.
 | Method | Path | Açıklama |
 |--------|------|----------|
 | GET | `/` | Health |
+| GET | `/api/media/status` | R2 stratejisi özeti (B1; upload B2) |
 | POST | `/api/auth/register` | `{ email, password }` → JWT |
 | POST | `/api/auth/login` | `{ email, password }` → JWT |
 | GET | `/api/auth/me` | `Authorization: Bearer …` (whitelist varsa kontrol) |

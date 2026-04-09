@@ -160,6 +160,7 @@ Hata olursa rollback: oluşturulan Pages projeleri ve D1 database silinir.
 | Method | Path | Açıklama |
 |--------|------|----------|
 | GET | `/` | Health check |
+| GET | `/api/media/status` | R2 kiracı key prefix stratejisi (B1); upload B2 sprintinde |
 | GET | `/test/*` | Test endpoint'leri (5 adet); yalnız `ALLOW_TEST_ROUTES=true` iken, aksi halde **404** |
 
 ---
@@ -223,6 +224,7 @@ config (key, value)
 
 ### CF Resources
 - **D1:** `snappost-provisioning` (`d8c8583f-e604-44f0-8ead-7b0d53b4f151`)
+- **R2:** `snappost-media` — Worker binding `MEDIA_BUCKET`; kiracı prefix `u{userId}/s{siteId}/` ([`api/src/lib/media-keys.ts`](api/src/lib/media-keys.ts))
 - **Account ID:** `1094e722fe9d2b939e94a8ceb124d21b`
 
 ### Secrets (wrangler secret put ile eklendi)

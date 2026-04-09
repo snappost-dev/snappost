@@ -8,7 +8,8 @@
     "deploy": "wrangler deploy",
     "db:create": "wrangler d1 create snappost-provisioning",
     "db:migrate": "wrangler d1 execute snappost-provisioning --remote --file=./src/db/schema.sql",
-    "smoke": "bash scripts/smoke-api.sh"
+    "smoke": "bash scripts/smoke-api.sh",
+    "r2:create": "wrangler r2 bucket create snappost-media"
   },
   "dependencies": {
     "hono": "^4.0.0",

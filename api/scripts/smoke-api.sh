@@ -31,6 +31,11 @@ c=$(code_for GET "$BASE/")
 [[ "$c" == "200" ]] || fail "GET / beklenen 200, gelen: $c"
 pass "GET / -> 200"
 
+# R2 / medya (B1)
+c=$(code_for GET "$BASE/api/media/status")
+[[ "$c" == "200" ]] || fail "GET /api/media/status beklenen 200, gelen: $c"
+pass "GET /api/media/status -> 200"
+
 # T2 — sites without auth
 c=$(code_for GET "$BASE/api/sites")
 [[ "$c" == "401" ]] || fail "GET /api/sites (no auth) beklenen 401, gelen: $c"
