@@ -50,7 +50,7 @@ Cloudflare hesabınızda API Worker’ınızın geldiği hostname’i kullanın 
 | # | İş | Not |
 |---|-----|-----|
 | B1 | R2 bucket | **Yapıldı:** bucket `snappost-media`, binding `MEDIA_BUCKET`, prefix `u{userId}/s{siteId}/…` — [`api/src/lib/media-keys.ts`](../api/src/lib/media-keys.ts), `GET /api/media/status`. |
-| B2 | Upload / imza | Kısa ömürlü upload URL veya dashboard Worker üzerinden sınırlı boyut/MIME; kötü amaçlı dosya sınırları. |
+| B2 | Upload / imza | **Yapıldı (MVP):** `POST /api/sites/:id/media` (multipart `file`), MIME allowlist + `MAX_MEDIA_UPLOAD_MB`; public `GET /api/media/raw/:enc`; site silinince R2 prefix temizliği. İmzalı URL / doğrudan R2 domain sonraki iyileştirme. |
 | B3 | Editor.js Image | Blok + kayıtlı URL’nin `content_html` çıktısında güvenli (`alt`, boyut). |
 | B4 | Shell render | `content_html` + görseller; mümkünse `loading="lazy"`. |
 | B5 | SEO | Post ve index şablonlarında meta, canonical, `og:*`. |

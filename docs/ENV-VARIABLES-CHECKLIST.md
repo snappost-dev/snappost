@@ -16,7 +16,8 @@
 | [ ] | `ALLOWED_EMAILS` | Plain | Hayır | Virgülle e-postalar; boş/tanımsız = herkese açık kayıt/giriş |
 | [ ] | `MAX_SITES_PER_USER` | Plain | Hayır | Örn. `3`; kullanıcı başına blog üst sınırı; boş = sınırsız |
 | [ ] | `ALLOW_TEST_ROUTES` | Plain | Hayır | Yalnız `true` iken `/test/*`; **production’da tanımlama** |
-| [ ] | `CORS_ORIGINS` | Plain | Hayır | Virgülle tam Origin URL’leri (`https://…`); özel landing alanı eklerken **mutlaka** buraya + varsayılanları birlikte yazın. Boş = kod içi varsayılan liste |
+| [ ] | `CORS_ORIGINS` | Plain | Hayır | Virgülle tam Origin URL’leri (`https://…`); özel landing alanı eklerken **mutlaka** buraya + varsayılanları birlikte yazın. Boş = kod içi varsayılan liste. Kiracı `sp-*-dash.pages.dev` upload için kodda ayrıca izinli |
+| [ ] | `MAX_MEDIA_UPLOAD_MB` | Plain | Hayır | Görsel yükleme üst sınırı (0.5–20), varsayılan 5 |
 
 \* Worker’da binding olarak da kullanılıyorsa Dashboard’da plain var olarak görünmeli.
 

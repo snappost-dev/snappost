@@ -8,7 +8,19 @@ import {
   addPagesCustomDomain, removePagesCustomDomain,
 } from './lib/cloudflare';
 import { prepareShellTemplate, prepareDashboardTemplate, BLOG_SCHEMA_SQL } from './lib/templates';
-import { MEDIA_KEY_PREFIX_DOC } from './lib/media-keys';
+import {
+  buildMediaObjectKey,
+  MEDIA_KEY_PREFIX_DOC,
+  tenantMediaPrefix,
+} from './lib/media-keys';
+import { ALLOWED_IMAGE_TYPES, maxUploadBytes } from './lib/media-upload';
+import {
+  encodeKeyForUrlPath,
+  decodeKeyFromUrlPath,
+  isValidPublicMediaKey,
+  isTenantDashboardOrigin,
+  deleteR2ObjectsWithPrefix,
+} from './lib/media-serve';
 
 type Bindings = {
   DB: D1Database;
@@ -17,6 +29,8 @@ type Bindings = {
   CF_API_TOKEN: string;
   CF_ACCOUNT_ID: string;
   JWT_SECRET: string;
+  /** Opsiyonel; görsel yükleme üst sınırı (MB), 0.5–20, varsayılan 5 */
+  MAX_MEDIA_UPLOAD_MB?: string;
   /** Virgülle ayrılmış; tanımsız veya boş = kısıt yok */
   ALLOWED_EMAILS?: string;
   /** Pozitif tam sayı; kullanıcı başına en fazla kaç blog (sites satırı). Tanımsız/boş = sınırsız */
@@ -125,12 +139,14 @@ function corsOriginsForEnv(raw: string | undefined): string[] {
   return list.length > 0 ? list : [...DEFAULT_CORS_ORIGINS];
 }
 
-// CORS — tarayıcıdan gelen istekler; özel landing alanı için CORS_ORIGINS kullanın
+// CORS — landing + kiracı dashboard (sp-*-dash.pages.dev) upload için
 app.use('/*', cors({
   origin: (origin, c) => {
     const allowed = corsOriginsForEnv(c.env.CORS_ORIGINS);
     if (!origin) return null;
-    return allowed.includes(origin) ? origin : null;
+    if (allowed.includes(origin)) return origin;
+    if (isTenantDashboardOrigin(origin)) return origin;
+    return null;
   },
   credentials: true,
 }));
@@ -144,13 +160,34 @@ app.get('/', (c) => {
   });
 });
 
-/** Medya/R2 durumu (B1) — upload B2’de; key stratejisi dokümantasyon için */
+/** Medya/R2 durumu — key stratejisi + upload limiti özeti */
 app.get('/api/media/status', (c) => {
+  const maxMb = maxUploadBytes(c.env.MAX_MEDIA_UPLOAD_MB) / (1024 * 1024);
   return c.json({
     r2: true,
     binding: 'MEDIA_BUCKET',
     tenant_key_prefix: MEDIA_KEY_PREFIX_DOC,
-    note: 'Upload ve imzalı URL B2 sprintinde eklenecek.',
+    max_upload_mb: maxMb,
+    allowed_types: [...ALLOWED_IMAGE_TYPES],
+    upload: 'POST /api/sites/:id/media (multipart field file, Bearer)',
+    public_url_pattern: 'GET /api/media/raw/:base64urlKey',
+  });
+});
+
+/** Herkese açık okuma — shell/img src; key tahmin edilemez UUID içerir */
+app.get('/api/media/raw/:enc', async (c) => {
+  const key = decodeKeyFromUrlPath(c.req.param('enc'));
+  if (!key || !isValidPublicMediaKey(key)) {
+    return c.body(null, 404);
+  }
+  const obj = await c.env.MEDIA_BUCKET.get(key);
+  if (!obj) return c.body(null, 404);
+  const ct = obj.httpMetadata?.contentType || 'application/octet-stream';
+  return new Response(obj.body, {
+    headers: {
+      'Content-Type': ct,
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    },
   });
 });
 
@@ -479,6 +516,78 @@ app.get('/api/sites/:id', async (c) => {
   return c.json({ site });
 });
 
+/** Multipart `file` — jpeg/png/webp/gif; Bearer + site sahipliği (B2) */
+app.post('/api/sites/:id/media', async (c) => {
+  const user = await verifyAuth(c);
+  if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
+  const denied = rejectIfNotWhitelisted(c, user.email);
+  if (denied) return denied;
+
+  const siteIdParam = c.req.param('id');
+  const site = await c.env.DB.prepare('SELECT id, user_id FROM sites WHERE id = ? AND user_id = ?')
+    .bind(siteIdParam, user.userId)
+    .first<{ id: number; user_id: number }>();
+
+  if (!site) return c.json({ error: 'Site not found' }, 404);
+
+  const siteId = Number(site.id);
+  if (!Number.isFinite(siteId)) {
+    return c.json({ error: 'Site not found' }, 404);
+  }
+
+  let form: Record<string, unknown>;
+  try {
+    form = await c.req.parseBody();
+  } catch {
+    return c.json({ error: 'Geçersiz form gövdesi' }, 400);
+  }
+
+  const file = form['file'];
+  if (!(file instanceof File)) {
+    return c.json({ error: 'multipart alanı file gerekli' }, 400);
+  }
+
+  const maxBytes = maxUploadBytes(c.env.MAX_MEDIA_UPLOAD_MB);
+  if (file.size > maxBytes) {
+    return c.json({ error: 'Dosya çok büyük', max_bytes: maxBytes }, 413);
+  }
+
+  const ct = (file.type || '').trim().toLowerCase();
+  if (!ct || !ALLOWED_IMAGE_TYPES.has(ct)) {
+    return c.json(
+      { error: 'Desteklenmeyen dosya türü', allowed: [...ALLOWED_IMAGE_TYPES] },
+      415
+    );
+  }
+
+  const objectId = crypto.randomUUID();
+  const key = buildMediaObjectKey(user.userId, siteId, objectId, file.name);
+
+  try {
+    await c.env.MEDIA_BUCKET.put(key, file.stream(), {
+      httpMetadata: {
+        contentType: ct,
+        cacheControl: 'public, max-age=31536000, immutable',
+      },
+    });
+  } catch (e) {
+    console.error('[media] put failed:', e);
+    return c.json({ error: 'R2 kaydı başarısız', detail: String(e) }, 500);
+  }
+
+  const enc = encodeKeyForUrlPath(key);
+  const origin = new URL(c.req.url).origin;
+  const url = `${origin}/api/media/raw/${enc}`;
+
+  return c.json({
+    key,
+    url,
+    content_type: ct,
+    size: file.size,
+  });
+});
+
 // Custom domain → yalnızca shell (blog) Pages projesi
 app.post('/api/sites/:id/domain', async (c) => {
   const user = await verifyAuth(c);
@@ -660,6 +769,16 @@ app.delete('/api/sites/:id', async (c) => {
     }
   } else {
     warnings.push('CF_API_TOKEN or CF_ACCOUNT_ID missing; only the provisioning record was removed.');
+  }
+
+  try {
+    const uid = Number(site.user_id);
+    const sid = Number(site.id);
+    if (Number.isFinite(uid) && Number.isFinite(sid)) {
+      await deleteR2ObjectsWithPrefix(c.env.MEDIA_BUCKET, tenantMediaPrefix(uid, sid));
+    }
+  } catch (e) {
+    warnings.push(`R2 media: ${e instanceof Error ? e.message : String(e)}`);
   }
 
   await c.env.DB.prepare('DELETE FROM sites WHERE id = ? AND user_id = ?')

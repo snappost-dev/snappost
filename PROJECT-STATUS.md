@@ -154,13 +154,15 @@ Hata olursa rollback: oluşturulan Pages projeleri ve D1 database silinir.
 | GET | `/api/sites/:id` | Auth + whitelist (varsa). Tek site detay |
 | POST | `/api/sites/:id/domain` | Auth + whitelist. Body `{ domain }` → shell Pages’e CF custom domain; DB `custom_domain` |
 | DELETE | `/api/sites/:id/domain` | Auth + whitelist. CF’den domain kaldırır; DB `custom_domain` null |
-| DELETE | `/api/sites/:id` | Auth + whitelist. Önce custom domain (varsa), sonra dashboard/shell Pages + kiracı D1 **best-effort** silinir; provisioning `sites` satırı silinir |
+| DELETE | `/api/sites/:id` | Auth + whitelist. Önce custom domain (varsa), sonra dashboard/shell Pages + kiracı D1 **best-effort** silinir; provisioning `sites` satırı silinir; kiracı **R2** prefix `u{userId}/s{siteId}/` best-effort temizlenir |
+| POST | `/api/sites/:id/media` | Auth + whitelist + site sahibi. `multipart/form-data` alan `file` — jpeg/png/webp/gif, boyut `MAX_MEDIA_UPLOAD_MB` (varsayılan 5 MB) |
+| GET | `/api/media/raw/:enc` | Auth yok. R2 key (base64url); blog `<img src>` |
 
 ### Utility
 | Method | Path | Açıklama |
 |--------|------|----------|
 | GET | `/` | Health check |
-| GET | `/api/media/status` | R2 kiracı key prefix stratejisi (B1); upload B2 sprintinde |
+| GET | `/api/media/status` | R2 key stratejisi + yükleme limiti + izinli MIME özeti |
 | GET | `/test/*` | Test endpoint'leri (5 adet); yalnız `ALLOW_TEST_ROUTES=true` iken, aksi halde **404** |
 
 ---
@@ -258,6 +260,8 @@ ALLOWED_EMAILS=...
 # MAX_SITES_PER_USER=3
 # Opsiyonel; tarayıcı CORS (virgülle Origin). Boş = kod varsayılanları
 # CORS_ORIGINS=https://snappost.dev,https://snappost-landing.pages.dev
+# Opsiyonel; görsel yükleme MB üst sınırı (0.5–20), varsayılan 5
+# MAX_MEDIA_UPLOAD_MB=5
 # Yerelde /test/* kullanacaksanız:
 ALLOW_TEST_ROUTES=true
 
