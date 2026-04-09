@@ -76,6 +76,10 @@ flowchart LR
   Sh -->|read_posts| D1
 ```
 
+### B8 — MVP sonrası (şimdilik yok)
+
+- **API kullanım rehberi / geliştirici UI:** MVP ve öğrenme aşamasında **öncelik değil**; CF Dashboard + `api/README.md` + `PROJECT-STATUS.md` §4 yeterli. Harici tüketim veya ortak geliştirici kitlesi gerekince: OpenAPI + tek sayfa doküman veya `api.*` altında statik docs.
+
 ---
 
 ## C — Duman testleri

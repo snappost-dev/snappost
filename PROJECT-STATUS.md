@@ -313,6 +313,7 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 
 ### 9.4 V3 — Büyüme (ürün)
 
+- **API geliştirici yüzü (MVP sonrası, öğrenme / harici entegrasyon):** Şimdilik Cloudflare Worker sayfası + repo `api/README.md` yeterli. İleride: OpenAPI şeması, `/docs` veya ayrı Pages’te Redoc/Scalar — **public API veya ortak entegrasyon** açılınca önceliklendir.
 - Shell blog custom domain — tamam (API + landing). İleride: apex/`www` otomasyonu, landing kendi alanı vb.
 - Template theme seçimi (birden fazla blog tasarımı)
 - Template hot-update (mevcut siteleri yeni template'e upgrade)
