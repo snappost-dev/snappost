@@ -44,6 +44,8 @@ let user: any = null;
 let sites: any[] = [];
 let provisionError = '';
 let provisionSuccess = '';
+/** Provision yanıtındaki dashboard giriş şifresi (bir kez) */
+let provisionDashboardPassword = '';
 let domainFieldError: { siteId: string; message: string } | null = null;
 let domainSuccessMessage = '';
 let deleteSiteError: { siteId: string; message: string } | null = null;
@@ -86,8 +88,11 @@ if (Astro.request.method === 'POST') {
         if (!res.ok) {
           const base = data.error || 'Provisioning failed';
           provisionError = data.detail ? `${base}: ${data.detail}` : base;
+          provisionDashboardPassword = '';
         } else {
           provisionSuccess = `Blog "${siteName}" created!`;
+          provisionDashboardPassword =
+            typeof data.dashboard_password === 'string' ? data.dashboard_password : '';
         }
       } catch {
         provisionError = 'Could not connect to server';
@@ -211,7 +216,22 @@ try {
       <div class="bg-red-50 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">{provisionError}</div>
     )}
     {provisionSuccess && (
-      <div class="bg-green-50 text-green-700 px-4 py-3 rounded-lg mb-4 text-sm">{provisionSuccess}</div>
+      <div class="space-y-3 mb-4">
+        <div class="bg-green-50 text-green-800 px-4 py-3 rounded-lg text-sm border border-green-200">
+          {provisionSuccess}
+        </div>
+        {provisionDashboardPassword && (
+          <div class="bg-amber-50 text-amber-950 px-4 py-3 rounded-lg text-sm border border-amber-200">
+            <p class="font-semibold mb-1">Dashboard login password (shown once — save it)</p>
+            <p class="text-amber-900/90 text-xs mb-2">
+              Use this on the dashboard /login page. If you lose it, set a new value in Cloudflare → Pages → your
+              <code class="bg-amber-100 px-1 rounded">*-dash</code> project → Settings → Variables →
+              <code class="bg-amber-100 px-1 rounded">ADMIN_PASSWORD</code>.
+            </p>
+            <pre class="bg-white border border-amber-200 rounded-md p-3 text-sm font-mono break-all select-all whitespace-pre-wrap">{provisionDashboardPassword}</pre>
+          </div>
+        )}
+      </div>
     )}
     {domainSuccessMessage && (
       <div class="bg-green-50 text-green-800 px-4 py-3 rounded-lg mb-4 text-sm border border-green-200">

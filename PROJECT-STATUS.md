@@ -144,7 +144,7 @@ Hata olursa rollback: oluşturulan Pages projeleri ve D1 database silinir.
 |--------|------|----------|
 | POST | `/api/auth/register` | Email + password → bcrypt hash → JWT token |
 | POST | `/api/auth/login` | Email + password verify → JWT token |
-| GET | `/api/auth/me` | Bearer token → user info; `ALLOWED_EMAILS` doluysa whitelist kontrolü |
+| GET | `/api/auth/me` | Bearer token → user info; whitelist açıksa (env ∪ D1) kontrol |
 
 ### Provisioning
 | Method | Path | Açıklama |
@@ -218,7 +218,21 @@ config (key, value)
 | Tür | Ne | Nasıl güncellenir |
 |-----|-----|-------------------|
 | **Sabit** | `api` (Worker), `landing` (Pages) | Repoyu **Git ile Cloudflare’e bağlayıp** otomatik build veya **`wrangler deploy`** / **`wrangler pages deploy`**. |
-| **Kiracı başına** | Shell + Dashboard (Pages) + blog D1 | **Git push ile değil**; yalnızca **`POST /api/provision`** tetiklenince Worker **CF REST API** ile proje oluşturur ve gömülü şablonu **Direct Upload** eder (bkz. §2 provision adımları). Şablon kaynağı: `templates/*` → build → `api/src/templates/*` → **`npm run embed`** → API deploy. |
+| **Kiracı başına** | Shell + Dashboard (Pages) + blog D1 | **Git push ile değil**; yalnızca **`POST /api/provision`** tetiklenince Worker **CF REST API** ile proje oluşturur ve gömülü şablonu **Direct Upload** eder (bkz. §2 provision adımları). Şablon hattı ayrıntısı aşağıda **“Kiracı şablon hattı”**. |
+
+#### Kiracı şablon hattı (B7)
+
+| Adım | Ne | Komut / konum |
+|------|-----|----------------|
+| 1 | Shell + dashboard Astro build | `cd api && npm run templates:build` veya ayrı ayrı `templates/shell` / `templates/dashboard` içinde `npm run build` |
+| 2 | `dist/` → `api/src/templates/*` | `cd api && npm run sync-templates` ([`api/scripts/sync-templates.mjs`](api/scripts/sync-templates.mjs)) |
+| 3 | Gömülü TS üretimi | `cd api && npm run embed` → [`api/src/generated/`](api/src/generated/) |
+| 4 | Worker deploy | `cd api && wrangler deploy` |
+| 5 | Versiyon kontrolü | `api/src/templates/*` + `api/src/generated/*` **commit** (provision bu çıktıyı okur) |
+
+**Kısayol:** `cd api && npm run templates:ship` (1+2+3). Operasyon özeti: [docs/SPRINT-PLAN.md](docs/SPRINT-PLAN.md) **§B7**.
+
+**Mevcut kiracılar:** Yeni API deploy’u **yalnızca bundan sonra provision edilen** sitelere yeni şablonu verir; eski Pages projeleri otomatik yenilenmez (§8 “Template güncelleme”).
 
 **Git kullanıyorsanız:** `wrangler.toml` içindeki `[vars]` (ör. landing `API_URL`) her build’de otomatik okunmayabilir. **Cloudflare Dashboard → Workers/Pages projesi → Settings → Variables** içinde `API_URL`, secret’lar ve production değerlerinin tanımlı olduğunu doğrulayın.
 
@@ -241,11 +255,12 @@ cd api && wrangler deploy
 # Landing
 cd landing && npm run build && wrangler pages deploy dist --project-name=snappost-landing
 
-# Template değişikliği sonrası
-cd api && npm run embed && wrangler deploy
+# Kiracı şablonu değişikliği sonrası (tam hat)
+cd api && npm run templates:ship && wrangler deploy
 
-# Provisioning D1 — custom_domain sütunu (mevcut DB bir kez)
+# Provisioning D1 — geçmiş tek seferlik migrasyonlar (uygulanmışsa atlayın)
 cd api && wrangler d1 execute snappost-provisioning --remote --file=./src/db/migrations/001_add_custom_domain.sql
+cd api && wrangler d1 execute snappost-provisioning --remote --file=./src/db/migrations/002_sites_user_sitename_unique.sql
 ```
 
 ### Env Variables
@@ -281,7 +296,7 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 | 2 | Rate limiting | **Worker kodu yok**; kötüye kullanımı kesmek için [Cloudflare Dashboard](https://dash.cloudflare.com) üzerinde API route’larına **IP bazlı rate limit / WAF** önerilir — adımlar: [docs/SPRINT-PLAN.md](docs/SPRINT-PLAN.md) §A2. İsteğe bağlı sonraki faz: Worker + KV/D1 sayaç. |
 | 3 | ~~Site silme yok~~ | **Kaldırıldı:** `DELETE /api/sites/:id` + landing **Delete blog** (§4). |
 | 4 | Blog custom domain | Shell Pages için API + landing kartı (CNAME tablosu); dashboard yalnız `*.pages.dev`. |
-| 5 | Dashboard default password | Her dashboard `changeme` password ile oluşturuluyor, değiştirme UI'ı yok |
+| 5 | ~~Dashboard default password~~ | **İyileştirildi:** Provision rastgele `ADMIN_PASSWORD` üretir (Pages env) + API `dashboard_password`; landing bir kez gösterir. Eski siteler / yerel `wrangler.toml` için `changeme` riski kalabilir |
 | 6 | ~~Provision UI feedback yok~~ | **İyileştirildi:** Landing’de **Create Blog** sonrası buton devre dışı + “Creating…”; tam progress bar yok. |
 | 7 | Error handling MVP seviyesinde | Genel try-catch, spesifik hata mesajları kısmen (whitelist, domain, site limiti). |
 | 8 | Site limiti | **Opsiyonel:** `MAX_SITES_PER_USER` (pozitif tam sayı) ile kullanıcı başına üst sınır; tanımsız/boş = sınırsız. |
@@ -300,17 +315,19 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 
 - Editor.js tabanlı yazı editörü (`new` / `edit`), JSON + `content_html` akışı, arşiv plan: [`docs/archive-editorjs-v2-plan.md`](docs/archive-editorjs-v2-plan.md).
 - **Site silme:** `DELETE /api/sites/:id` (CF cleanup + provisioning satırı); landing **Delete blog** ile aynı API.
+- **Blog + medya sprint’i (B1–B7):** R2 upload, Editor.js görsel, shell `content_html`/SEO/performans, `templates:ship` hattı — [`docs/SPRINT-PLAN.md`](docs/SPRINT-PLAN.md) **§B** ve **§B sprint kapanışı**.
 
 ### 9.2 Sıradaki — Stabilizasyon ve güvenlik (önceden “V2 backlog”)
 
 - `/test/*`: `ALLOW_TEST_ROUTES=true` ile açılır (varsayılan kapalı — yapıldı)
 - ~~CORS sabit liste~~ → **`CORS_ORIGINS` env** (boş = varsayılanlar); özel landing domain için Dashboard’da genişlet
 - Rate limiting → **önce CF Dashboard** (WAF / rate rules; bkz. [docs/SPRINT-PLAN.md](docs/SPRINT-PLAN.md) §A2); Worker içi sayaç sonraki faz
-- Dashboard password'ü provision sırasında set etme
+- ~~Dashboard password'ü provision sırasında set etme~~ → **Yapıldı** (`ADMIN_PASSWORD` + `dashboard_password` yanıtı)
 - ~~Provision sırasında loading/progress UI~~ → **Kısmen yapıldı** (landing buton durumu + metin); gerçek ilerleme çubuğu yok
 - ~~Email validation (format)~~ → **Basit format** register/login’de; doğrulama e-postası / uniqueness DB’de zaten
 - ~~Site sayısı limiti~~ → **Opsiyonel env** `MAX_SITES_PER_USER` (free tier’da örn. `3` verilebilir)
 - Abuse azaltma (kayıt doğrulama, CAPTCHA vb.)
+- ~~Aynı kullanıcıda çift `site_name` provision~~ → **409** + `UNIQUE(user_id, site_name)` (migrasyon `002_sites_user_sitename_unique.sql`)
 
 ### 9.3 Mimari pivot — ölçekleme (V2.5 / platform)
 
@@ -332,14 +349,14 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 
 **Karar:** Mimari pivot (§9.3) sonraya; **site başına Shell + Dashboard + ayrı D1** modeli korunuyor.
 
-**Kod + dokümantasyon:** `ALLOWED_EMAILS` (opsiyonel, virgülle ayrılmış). **Semantik:** tanımsız veya boş string = kısıt yok; en az bir adres varsa yalnızca listedekiler register/login ve tüm korumalı API uçları. **Normalize:** trim + lowercase. **Sonraki sprint (isteğe bağlı):** A1 **aşama 2** — whitelist’i provisioning D1’de tablo olarak tutup deploy etmeden güncelleme; rate limiting (§9.2) ile birlikte ele alınmalı.
+**Kod + dokümantasyon:** `ALLOWED_EMAILS` (opsiyonel, virgülle ayrılmış) **ve** provisioning D1 **`allowed_emails`** tablosu — **birleşim**; ikisi de boş = kısıt yok. **Normalize:** trim + lowercase. **Rate limiting:** §9.2.
 
 #### Faz A — Whitelist (API) — durum
 
 | Adım | Durum |
 |------|--------|
 | A1 aşama 1 — env listesi | Tamam (`ALLOWED_EMAILS`, `api/README.md`, `wrangler.toml` yorumu) |
-| A1 aşama 2 — D1 tablosu | Yapılmadı; sonraki plan |
+| A1 aşama 2 — D1 tablosu | Tamam (`allowed_emails`, `003_allowed_emails_table.sql`, `api/src/lib/allowed-emails.ts`) |
 | A2 — Normalize | Tamam |
 | A3 — `POST /api/auth/register` | Tamam (403 + Türkçe mesaj) |
 | A4 — `POST /api/auth/login` | Tamam |
@@ -362,7 +379,6 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 #### Faz D — kalan borç (sonraki plan)
 
 - Rate limiting + enumeration riski
-- D1 tabanlı whitelist (A1 aşama 2) ihtiyaç halinde
 
 #### Tanım (MVP) tamamlandı
 

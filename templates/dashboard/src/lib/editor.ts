@@ -43,6 +43,16 @@ export function renderEditorJSToHTML(json: any): string {
           )}</code></pre>`;
         case 'delimiter':
           return `<hr style="border:none;border-top:2px solid #e2e8f0;margin:2rem 0" />`;
+        case 'image': {
+          const url = String(block.data?.file?.url ?? block.data?.url ?? '').trim();
+          const caption = String(block.data?.caption ?? '').trim();
+          if (!url) return '';
+          const alt = escapeHtml(caption);
+          const cap = caption
+            ? `<figcaption style="font-size:0.875rem;color:#64748b;margin-top:0.5rem">${escapeHtml(caption)}</figcaption>`
+            : '';
+          return `<figure style="margin:1rem 0"><img src="${escapeHtml(url)}" alt="${alt}" loading="lazy" decoding="async" style="max-width:100%;height:auto;display:block" />${cap}</figure>`;
+        }
         default:
           return '';
       }

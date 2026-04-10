@@ -1,4 +1,5 @@
 ---
+import '../styles/global.css';
 import { renderEditorJSToHTML } from '../lib/editor';
 
 let error = '';
@@ -43,15 +44,6 @@ if (Astro.request.method === 'POST') {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Post - Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.css" rel="stylesheet" />
-  <script is:inline src="https://cdn.tailwindcss.com"></script>
-  <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"></script>
-  <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"></script>
-  <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.js"></script>
-  <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/quote.umd.js"></script>
-  <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0/dist/code.umd.js"></script>
-  <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"></script>
-  <script is:inline src="/dashboard/alert-block.js"></script>
   <style is:inline>
     .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }
     .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }
@@ -131,6 +123,15 @@ if (Astro.request.method === 'POST') {
   </main>
 </div>
 
+<script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"></script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"></script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.js"></script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/quote.umd.js"></script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0/dist/code.umd.js"></script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"></script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0/dist/image.umd.js"></script>
+<script is:inline src="/dashboard/alert-block.js"></script>
+
 <script is:inline>
 // ==========================================
 // State (AlertBlock: /dashboard/alert-block.js → SnappostAlertBlock)
@@ -155,6 +156,7 @@ function boot() {
     typeof Quote === 'undefined' ||
     typeof CodeTool === 'undefined' ||
     typeof Delimiter === 'undefined' ||
+    typeof ImageTool === 'undefined' ||
     typeof window.SnappostAlertBlock === 'undefined'
   ) {
     setTimeout(boot, 50);
@@ -171,6 +173,13 @@ function boot() {
       quote:  { class: Quote, inlineToolbar: true },
       code:   { class: CodeTool },
       delimiter: { class: Delimiter },
+      image: {
+        class: ImageTool,
+        config: {
+          endpoints: { byFile: '/api/upload-media' },
+          field: 'file',
+        },
+      },
       alert:  { class: window.SnappostAlertBlock },
     },
     placeholder: 'Start writing your post...',
@@ -199,7 +208,7 @@ document.addEventListener('DOMContentLoaded', boot);
 // ==========================================
 // Navigator
 // ==========================================
-const ICONS = { header: '📰', paragraph: '📝', list: '📋', alert: '⚠️', quote: '💬', code: '💻', delimiter: '➖' };
+const ICONS = { header: '📰', paragraph: '📝', list: '📋', alert: '⚠️', quote: '💬', code: '💻', delimiter: '➖', image: '🖼️' };
 
 function getBlockLabel(block) {
   switch (block.type) {
@@ -210,6 +219,7 @@ function getBlockLabel(block) {
     case 'quote':     return (block.data.text || '').replace(/<[^>]*>/g, '').substring(0, 28) || 'Quote — click to edit';
     case 'code':      return 'Code' + ((block.data.code || '').length ? ' (' + Math.min((block.data.code || '').length, 999) + ' chars)' : '');
     case 'delimiter': return 'Divider';
+    case 'image':     return 'Image';
     default:          return block.type;
   }
 }
@@ -401,6 +411,13 @@ function renderPreviewHTML(content) {
         return '<pre style="background:#1e293b;color:#e2e8f0;padding:1rem;border-radius:0.5rem;overflow-x:auto;font-family:monospace;font-size:0.875rem;margin:1rem 0"><code>' + escapePrev(block.data.code) + '</code></pre>';
       case 'delimiter':
         return '<hr style="border:none;border-top:2px solid #e2e8f0;margin:2rem 0" />';
+      case 'image': {
+        const u = (block.data.file && block.data.file.url) || block.data.url || '';
+        const cap = block.data.caption ? String(block.data.caption) : '';
+        if (!u) return '';
+        return '<figure style="margin:1rem 0"><img src="' + escapePrev(u) + '" alt="' + escapePrev(cap) + '" loading="lazy" style="max-width:100%;height:auto;display:block" />' +
+          (cap ? '<figcaption style="font-size:0.875rem;color:#64748b;margin-top:0.5rem">' + escapePrev(cap) + '</figcaption>' : '') + '</figure>';
+      }
       default: return '';
     }
   }).join('\n');

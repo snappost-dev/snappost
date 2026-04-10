@@ -5,3 +5,7 @@ compatibility_date = "2024-01-01"
 binding = "DB"
 database_name = "snappost-shell-dev"
 database_id = "fe7f0120-f53b-4419-926f-0032e9b6c47e"
+
+# Opsiyonel — SEO canonical / og:url / RSS (örn. http://127.0.0.1:8791). Production’da provision `SITE_URL` yazar.
+# [vars]
+# SITE_URL = "http://127.0.0.1:8791"

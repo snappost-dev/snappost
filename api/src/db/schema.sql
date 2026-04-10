@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS sites (
   error_message TEXT,
   custom_domain TEXT DEFAULT NULL, -- blog (shell Pages) custom hostname; dashboard uses *.pages.dev only
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  UNIQUE(user_id, site_name)
 );
 
 -- Mevcut uzak D1 (provisioning) için bir kez:
@@ -35,3 +36,8 @@ CREATE TABLE IF NOT EXISTS sites (
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_sites_user_id ON sites(user_id);
 CREATE INDEX IF NOT EXISTS idx_sites_status ON sites(status);
+
+CREATE TABLE IF NOT EXISTS allowed_emails (
+  email TEXT PRIMARY KEY NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

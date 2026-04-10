@@ -1,9 +1,12 @@
 ---
 import Base from '../../layouts/Base.astro';
+import { loadBlogConfig } from '../../lib/blog-config';
+import { shellPostBodyHtml } from '../../lib/post-body';
 
 const { slug } = Astro.params;
 
-const post = await Astro.locals.runtime.env.DB
+const db = Astro.locals.runtime.env.DB;
+const post = await db
   .prepare('SELECT * FROM posts WHERE slug = ? AND published = 1')
   .bind(slug)
   .first();
@@ -12,17 +15,39 @@ if (!post) {
   return Astro.redirect('/404');
 }
 
-const date = new Date(post.created_at).toLocaleDateString('tr-TR', {
+const config = await loadBlogConfig(db);
+
+const title = String(post.title ?? '');
+const description = post.description != null ? String(post.description) : undefined;
+const createdAt = String(post.created_at ?? '');
+const updatedAt = post.updated_at != null ? String(post.updated_at) : createdAt;
+
+const date = new Date(createdAt).toLocaleDateString('tr-TR', {
   year: 'numeric',
   month: 'long',
   day: 'numeric'
 });
+
+const bodyHtml = shellPostBodyHtml(post as { content_html?: string | null; content?: string | null });
+
+const pageTitle = `${title} – ${config.site_title}`;
+const canonicalPath = `/blog/${String(slug ?? '')}`;
 ---
 
-<Base title={post.title} description={post.description}>
-  <article class="prose prose-lg max-w-none">
-    <h1>{post.title}</h1>
-    <time class="text-gray-500">{date}</time>
-    <div set:html={post.content_html} />
+<Base
+  config={config}
+  title={pageTitle}
+  description={description}
+  canonicalPath={canonicalPath}
+  ogType="article"
+  publishedTime={new Date(createdAt).toISOString()}
+  modifiedTime={new Date(updatedAt).toISOString()}
+>
+  <article
+    class="prose prose-lg prose-slate max-w-none prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-pre:max-w-full prose-img:max-w-full prose-img:h-auto prose-figure:my-8 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-gray-600"
+  >
+    <h1>{title}</h1>
+    <time class="not-prose text-gray-500 text-sm block mb-6" datetime={createdAt}>{date}</time>
+    <div class="post-body" set:html={bodyHtml} />
   </article>
 </Base>

@@ -13,11 +13,12 @@
 | [ ] | `CF_ACCOUNT_ID` | Plain | Evet* | CF hesap ID; genelde `wrangler.toml` ile aynı |
 | [ ] | `CF_API_TOKEN` | **Secret** | Evet | D1 + Pages API; repoya koyma |
 | [ ] | `JWT_SECRET` | **Secret** | Evet | JWT imza; repoya koyma |
-| [ ] | `ALLOWED_EMAILS` | Plain | Hayır | Virgülle e-postalar; boş/tanımsız = herkese açık kayıt/giriş |
+| [ ] | `ALLOWED_EMAILS` | Plain | Hayır | Virgülle e-postalar; boş/tanımsız = env tarafı açık. D1 `allowed_emails` ile **birleşim** — ikisi de boş = kısıt yok (`api/README.md`) |
 | [ ] | `MAX_SITES_PER_USER` | Plain | Hayır | Örn. `3`; kullanıcı başına blog üst sınırı; boş = sınırsız |
 | [ ] | `ALLOW_TEST_ROUTES` | Plain | Hayır | Yalnız `true` iken `/test/*`; **production’da tanımlama** |
 | [ ] | `CORS_ORIGINS` | Plain | Hayır | Virgülle tam Origin URL’leri (`https://…`); özel landing alanı eklerken **mutlaka** buraya + varsayılanları birlikte yazın. Boş = kod içi varsayılan liste. Kiracı `sp-*-dash.pages.dev` upload için kodda ayrıca izinli |
 | [ ] | `MAX_MEDIA_UPLOAD_MB` | Plain | Hayır | Görsel yükleme üst sınırı (0.5–20), varsayılan 5 |
+| [ ] | `SNAPPOST_API_PUBLIC_URL` | Plain | Hayır | Kamuya açık API kökü (`https://…`, sondaki `/` olmadan). **Önerilir:** production’da tanımlayın; medya `url` yanıtı ve provision’da dashboard’a yazılan `SNAPPOST_API_URL` bununla hizalanır. Boş bırakılırsa isteğin `Origin`’i kullanılır (yerel `wrangler dev` ile oluşan dashboard’da upload URL’leri yanlış olabilir) |
 
 \* Worker’da binding olarak da kullanılıyorsa Dashboard’da plain var olarak görünmeli.
 
@@ -42,6 +43,29 @@ SSR’da `Astro.locals.runtime.env.API_URL` okunur; **Production** (ve gerekirse
 
 ---
 
+## Kiracı blog dashboard (Cloudflare Pages — `sp-*-dash`; provision otomatik yazar)
+
+| Eklendi | Değişken | Tür | Açıklama |
+|--------|----------|-----|----------|
+| [ ] | `ACCESS_TOKEN` | Plain | `sites.access_token` — `/api/upload-media` sunucu proxy’si ile API medya yüklemesi |
+| [ ] | `SNAPPOST_API_URL` | Plain | API kamu kökü, sondaki `/` yok (Worker’da `SNAPPOST_API_PUBLIC_URL` veya provision isteğinin origin’i) |
+| [ ] | `SNAPPOST_SITE_ID` | Plain | Merkezi `sites.id` (string) |
+| [ ] | `ADMIN_PASSWORD` | Plain | Dashboard cookie girişi — **yeni provision** ile rastgele üretilir ve API yanıtında bir kez döner; Pages env’e yazılır. Eski `changeme` projeler: CF’de elle güncelleyin |
+
+**Mevcut kiracılar:** `SNAPPOST_*` / `ACCESS_TOKEN` yoksa görsel yükleme **503**. `ADMIN_PASSWORD` yoksa veya `changeme` ise güvenlik için CF’de güçlü değer tanımlayın.
+
+---
+
+## Kiracı shell — blog (Cloudflare Pages — `sp-*-shell`; provision otomatik yazar)
+
+| Eklendi | Değişken | Tür | Açıklama |
+|--------|----------|-----|----------|
+| [ ] | `SITE_URL` | Plain | Kanonik blog kökü, sondaki `/` yok (örn. `https://sp-…-shell.pages.dev`). SEO canonical, `og:url`, RSS `<link>` için. **Özel blog domain** bağladıysanız değeri `https://blog.example.com` olacak şekilde Pages’de güncelleyin. Boşsa isteğin `Origin`’i kullanılır |
+
+**Mevcut kiracılar:** Yeni provision öncesi oluşmuş shell’de `SITE_URL` yoksa canonical/RSS isteğin host’una göre üretilir; mümkünse env’i ekleyin.
+
+---
+
 ## Yerel geliştirme (repoda commitlenmez)
 
 | Dosya | İçerik özeti |
@@ -59,3 +83,4 @@ SSR’da `Astro.locals.runtime.env.API_URL` okunur; **Production** (ve gerekirse
 - [ ] Blog limiti istiyorsanız: `MAX_SITES_PER_USER` sayı string (örn. `3`)
 - [ ] Özel landing domain: tarayıcıdan API’ye istek atılıyorsa `CORS_ORIGINS` içinde o `https://…` origin’i de var (veya tam listeyi CF’de güncellediniz)
 - [ ] Duman testleri: `SMOKE_API_URL=… cd api && npm run smoke` (isteğe bağlı `SMOKE_EMAIL` / `SMOKE_PASSWORD`) — [SPRINT-PLAN.md](./SPRINT-PLAN.md) §C
+- [ ] Kiracı **shell/dashboard** şablonunu değiştirdiyseniz: `cd api && npm run templates:ship`, ardından **`wrangler deploy`** ve `api/src/templates/*` + `api/src/generated/*` commit — [SPRINT-PLAN.md](./SPRINT-PLAN.md) §B7, [PROJECT-STATUS.md](../PROJECT-STATUS.md) §7

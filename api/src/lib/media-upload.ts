@@ -1,5 +1,8 @@
 /** B2 — yükleme kuralları (SVG script riski: kapalı) */
 
+/** B6 — önerilen uzun kenar (px); aşımı engellemez, `GET /api/media/status` ile duyurulur */
+export const RECOMMENDED_IMAGE_MAX_EDGE_PX = 1920;
+
 export const ALLOWED_IMAGE_TYPES = new Set([
   'image/jpeg',
   'image/png',

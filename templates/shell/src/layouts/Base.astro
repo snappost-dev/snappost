@@ -1,19 +1,40 @@
 ---
+import SeoHead from '../components/SeoHead.astro';
+import { loadBlogConfig } from '../lib/blog-config';
+import { absoluteUrl, resolveSiteOrigin } from '../lib/site-url';
+
 interface Props {
   title: string;
   description?: string;
+  /** Varsayılan: mevcut istek pathname + search */
+  canonicalPath?: string;
+  ogType?: 'website' | 'article';
+  publishedTime?: string;
+  modifiedTime?: string;
+  /** Aynı istekte ikinci config sorgusu önlemek için */
+  config?: Record<string, string>;
 }
 
-const { title, description } = Astro.props;
+const {
+  title,
+  description,
+  canonicalPath,
+  ogType = 'website',
+  publishedTime,
+  modifiedTime,
+  config: configProp,
+} = Astro.props;
 
-// D1'den config çek
-const configResult = await Astro.locals.runtime.env.DB
-  .prepare('SELECT key, value FROM config')
-  .all();
+const config = configProp ?? (await loadBlogConfig(Astro.locals.runtime.env.DB));
 
-const config = Object.fromEntries(
-  configResult.results.map((r: any) => [r.key, r.value])
-);
+const origin = resolveSiteOrigin(Astro.locals.runtime.env, Astro.url.href);
+const path = canonicalPath ?? `${Astro.url.pathname}${Astro.url.search}`;
+const canonicalHref = absoluteUrl(origin, path);
+const rssHref = absoluteUrl(origin, '/rss.xml');
+
+const metaDescRaw = (description ?? config.site_description ?? '').trim();
+const metaDesc =
+  metaDescRaw.length > 160 ? `${metaDescRaw.slice(0, 157)}…` : metaDescRaw;
 ---
 
 <!DOCTYPE html>
@@ -21,9 +42,19 @@ const config = Object.fromEntries(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content={description || config.site_description}>
-  <meta name="theme-color" content={config.theme_color}>
+  <meta name="description" content={metaDesc} />
+  <meta name="theme-color" content={config.theme_color} />
   <title>{title}</title>
+  <SeoHead
+    title={title}
+    description={metaDesc}
+    canonicalHref={canonicalHref}
+    siteName={config.site_title}
+    ogType={ogType}
+    publishedTime={publishedTime}
+    modifiedTime={modifiedTime}
+    rssHref={rssHref}
+  />
 </head>
 <body class="bg-gray-50 text-gray-900">
   <header class="bg-white border-b sticky top-0 z-10">

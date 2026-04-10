@@ -22,7 +22,8 @@ if (Astro.request.method === 'POST') {
       const data = await res.json();
 
       if (!res.ok) {
-        error = data.error || 'Login failed';
+        const base = data.error || 'Login failed';
+        error = data.detail ? `${base}: ${data.detail}` : base;
       } else {
         Astro.cookies.set('auth_token', data.token, {
           path: '/',

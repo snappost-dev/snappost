@@ -4,6 +4,10 @@
   "type": "module",
   "scripts": {
     "embed": "node scripts/embed-templates.mjs",
+    "sync-templates": "node scripts/sync-templates.mjs",
+    "templates:build": "npm run build --prefix ../templates/shell && npm run build --prefix ../templates/dashboard",
+    "templates:embed": "npm run sync-templates && npm run embed",
+    "templates:ship": "npm run templates:build && npm run sync-templates && npm run embed",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "db:create": "wrangler d1 create snappost-provisioning",

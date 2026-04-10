@@ -1,6 +1,6 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
-import './chunks/astro-designed-error-pages_08KFLzh9.mjs';
-import { s as sequence } from './chunks/index_DsziyhBL.mjs';
+import './chunks/astro-designed-error-pages_CXg6XMd3.mjs';
+import { s as sequence } from './chunks/index_PAp2kv8u.mjs';
 
 const When = {
                 	Client: 'client',

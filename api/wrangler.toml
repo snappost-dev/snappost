@@ -25,6 +25,8 @@ CF_ACCOUNT_ID = "1094e722fe9d2b939e94a8ceb124d21b"
 # CORS_ORIGINS = "https://snappost.dev,https://www.snappost.dev,https://snappost-landing.pages.dev"
 # Opsiyonel — görsel yükleme üst sınırı (MB), 0.5–20, varsayılan 5
 # MAX_MEDIA_UPLOAD_MB = "5"
+# Opsiyonel — medya yanıt URL’leri ve yeni provision edilen dashboard SNAPPOST_API_URL için kamu API kökü (örn. https://snappost-api.xxx.workers.dev). Boş = istek origin’i (yerel provision’da dashboard upload’u kırabilir)
+# SNAPPOST_API_PUBLIC_URL = "https://snappost-api.<subdomain>.workers.dev"
 # Yerel test için /test/* — production’da eklemeyin
 # ALLOW_TEST_ROUTES = "true"
 

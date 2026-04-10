@@ -1,23 +1,19 @@
 ---
 import Base from '../layouts/Base.astro';
 import PostCard from '../components/PostCard.astro';
+import { loadBlogConfig } from '../lib/blog-config';
 
-const configResult = await Astro.locals.runtime.env.DB
-  .prepare('SELECT key, value FROM config')
-  .all();
+const db = Astro.locals.runtime.env.DB;
+const config = await loadBlogConfig(db);
 
-const config = Object.fromEntries(
-  configResult.results.map((r: any) => [r.key, r.value])
-);
-
-const postsResult = await Astro.locals.runtime.env.DB
+const postsResult = await db
   .prepare('SELECT * FROM posts WHERE published = 1 ORDER BY created_at DESC LIMIT 5')
   .all();
 
 const posts = postsResult.results;
 ---
 
-<Base title={config.site_title} description={config.site_description}>
+<Base config={config} title={config.site_title} description={config.site_description} canonicalPath="/">
   <div class="text-center mb-12">
     <h1 class="text-4xl font-bold mb-4">{config.site_title}</h1>
     <p class="text-xl text-gray-600">{config.site_description}</p>

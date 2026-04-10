@@ -1,0 +1,51 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  canonicalHref: string;
+  siteName: string;
+  ogType: 'website' | 'article';
+  publishedTime?: string;
+  modifiedTime?: string;
+  rssHref: string;
+}
+
+const { title, description, canonicalHref, siteName, ogType, publishedTime, modifiedTime, rssHref } =
+  Astro.props;
+
+const twDesc = description.length > 200 ? `${description.slice(0, 197)}…` : description;
+
+let articleJsonLd: string | null = null;
+if (ogType === 'article' && publishedTime) {
+  articleJsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: title,
+    description,
+    datePublished: publishedTime,
+    dateModified: modifiedTime || publishedTime,
+    url: canonicalHref,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalHref },
+  }).replace(/</g, '\\u003c');
+}
+---
+
+<link rel="canonical" href={canonicalHref} />
+<link rel="alternate" type="application/rss+xml" title={siteName} href={rssHref} />
+
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonicalHref} />
+<meta property="og:type" content={ogType} />
+<meta property="og:site_name" content={siteName} />
+<meta property="og:locale" content="tr_TR" />
+{publishedTime && <meta property="article:published_time" content={publishedTime} />}
+{modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={twDesc} />
+
+{articleJsonLd && (
+  <script type="application/ld+json" set:html={articleJsonLd} />
+)}

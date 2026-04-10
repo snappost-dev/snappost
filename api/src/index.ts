@@ -13,7 +13,11 @@ import {
   MEDIA_KEY_PREFIX_DOC,
   tenantMediaPrefix,
 } from './lib/media-keys';
-import { ALLOWED_IMAGE_TYPES, maxUploadBytes } from './lib/media-upload';
+import {
+  ALLOWED_IMAGE_TYPES,
+  RECOMMENDED_IMAGE_MAX_EDGE_PX,
+  maxUploadBytes,
+} from './lib/media-upload';
 import {
   encodeKeyForUrlPath,
   decodeKeyFromUrlPath,
@@ -21,6 +25,12 @@ import {
   isTenantDashboardOrigin,
   deleteR2ObjectsWithPrefix,
 } from './lib/media-serve';
+import { generateDashboardAdminPassword } from './lib/dashboard-password';
+import {
+  normalizeEmail,
+  isEmailAllowed,
+  resolveEffectiveAllowedEmailSet,
+} from './lib/allowed-emails';
 
 type Bindings = {
   DB: D1Database;
@@ -39,13 +49,15 @@ type Bindings = {
   ALLOW_TEST_ROUTES?: string;
   /** Virgülle ayrılmış tarayıcı Origin listesi; boş/tanımsız = yerleşik varsayılanlar */
   CORS_ORIGINS?: string;
+  /**
+   * Medya `url` yanıtında ve dashboard `SNAPPOST_API_URL` için kullanılacak kamuya açık API kökü
+   * (örn. `https://snappost-api.xxx.workers.dev`). Yerel `wrangler dev` ile provision’da boş bırakılırsa
+   * istek origin’i kullanılır; gerçek kiracı dashboard’ları için production’da tanımlanmalıdır.
+   */
+  SNAPPOST_API_PUBLIC_URL?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
-
-function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase();
-}
 
 /** Basit FQDN e-posta formatı (MVP); tam RFC doğrulaması değil */
 function isValidEmailFormat(email: string): boolean {
@@ -62,29 +74,17 @@ function parseMaxSitesPerUser(raw: string | undefined): number | null {
   return n;
 }
 
-/** null = whitelist kapalı (herkese açık) */
-function parseAllowedEmailSet(raw: string | undefined): Set<string> | null {
-  if (raw == null) return null;
-  const t = raw.trim();
-  if (t === '') return null;
-  const set = new Set<string>();
-  for (const part of t.split(',')) {
-    const n = normalizeEmail(part);
-    if (n) set.add(n);
-  }
-  return set.size > 0 ? set : null;
-}
-
-function isEmailAllowed(email: string, allowed: Set<string> | null): boolean {
-  if (allowed == null) return true;
-  return allowed.has(normalizeEmail(email));
-}
-
-function rejectIfNotWhitelisted(c: { env: Bindings; json: (body: unknown, status?: number) => Response }, email: string): Response | null {
-  const allowed = parseAllowedEmailSet(c.env.ALLOWED_EMAILS);
+async function rejectIfNotWhitelisted(
+  c: { env: Bindings; json: (body: unknown, status?: number) => Response },
+  email: string
+): Promise<Response | null> {
+  const allowed = await resolveEffectiveAllowedEmailSet(c.env, c.env.DB);
   if (!isEmailAllowed(email, allowed)) {
     return c.json(
-      { error: 'Bu hesap için API erişimi kapalı. E-posta davetli listede değil.' },
+      {
+        error: 'Bu hesap için API erişimi kapalı. E-posta davetli listede değil.',
+        detail: 'İzin listesi: Worker ALLOWED_EMAILS ve/veya D1 allowed_emails.',
+      },
       403
     );
   }
@@ -95,15 +95,34 @@ function testRoutesAllowed(env: Bindings): boolean {
   return env.ALLOW_TEST_ROUTES === 'true';
 }
 
-async function verifyAuth(c: any): Promise<{ userId: number; email: string } | null> {
-  const authHeader = c.req.header('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) return null;
+async function verifyJwtBearer(
+  bearer: string,
+  secret: string
+): Promise<{ userId: number; email: string } | null> {
   try {
-    const decoded = await verify(authHeader.substring(7), c.env.JWT_SECRET, 'HS256');
+    const decoded = await verify(bearer, secret, 'HS256');
     return { userId: decoded.userId as number, email: decoded.email as string };
   } catch {
     return null;
   }
+}
+
+async function verifyAuth(c: any): Promise<{ userId: number; email: string } | null> {
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  return verifyJwtBearer(authHeader.substring(7).trim(), c.env.JWT_SECRET);
+}
+
+function apiPublicOrigin(env: Bindings, requestUrl: string): string {
+  const raw = env.SNAPPOST_API_PUBLIC_URL?.trim();
+  if (raw) {
+    try {
+      return new URL(raw).origin;
+    } catch {
+      /* ignore invalid URL */
+    }
+  }
+  return new URL(requestUrl).origin;
 }
 
 /** FQDN for custom blog domain (shell Pages only). null = invalid */
@@ -169,7 +188,9 @@ app.get('/api/media/status', (c) => {
     tenant_key_prefix: MEDIA_KEY_PREFIX_DOC,
     max_upload_mb: maxMb,
     allowed_types: [...ALLOWED_IMAGE_TYPES],
-    upload: 'POST /api/sites/:id/media (multipart field file, Bearer)',
+    recommended_image_max_edge_px: RECOMMENDED_IMAGE_MAX_EDGE_PX,
+    upload:
+      'POST /api/sites/:id/media (multipart field file veya image; Bearer JWT veya site access_token)',
     public_url_pattern: 'GET /api/media/raw/:base64urlKey',
   });
 });
@@ -213,10 +234,13 @@ app.post('/api/auth/register', async (c) => {
       return c.json({ error: 'Geçerli bir e-posta adresi girin.' }, 400);
     }
 
-    const allowed = parseAllowedEmailSet(c.env.ALLOWED_EMAILS);
+    const allowed = await resolveEffectiveAllowedEmailSet(c.env, c.env.DB);
     if (!isEmailAllowed(normalizedEmail, allowed)) {
       return c.json(
-        { error: 'Bu e-posta ile kayıt şu an kapalı. Davetli kullanıcı listesinde değilsiniz.' },
+        {
+          error: 'Bu e-posta ile kayıt şu an kapalı. Davetli kullanıcı listesinde değilsiniz.',
+          detail: 'İzin listesi: Worker ALLOWED_EMAILS ve/veya D1 allowed_emails.',
+        },
         403
       );
     }
@@ -227,7 +251,13 @@ app.post('/api/auth/register', async (c) => {
     ).bind(normalizedEmail).first();
     
     if (existing) {
-      return c.json({ error: 'Email already registered' }, 409);
+      return c.json(
+        {
+          error: 'Bu e-posta zaten kayıtlı',
+          detail: 'Giriş yapın veya başka bir adres kullanın.',
+        },
+        409
+      );
     }
     
     // Hash password (trim: tarayıcı / kopyala-yapıştır ile gelen görünmez boşlukları önler)
@@ -279,10 +309,13 @@ app.post('/api/auth/login', async (c) => {
       return c.json({ error: 'Geçerli bir e-posta adresi girin.' }, 400);
     }
 
-    const allowed = parseAllowedEmailSet(c.env.ALLOWED_EMAILS);
+    const allowed = await resolveEffectiveAllowedEmailSet(c.env, c.env.DB);
     if (!isEmailAllowed(normalizedEmail, allowed)) {
       return c.json(
-        { error: 'Bu e-posta ile giriş kapalı. Davetli kullanıcı listesinde değilsiniz.' },
+        {
+          error: 'Bu e-posta ile giriş kapalı. Davetli kullanıcı listesinde değilsiniz.',
+          detail: 'İzin listesi: Worker ALLOWED_EMAILS ve/veya D1 allowed_emails.',
+        },
         403
       );
     }
@@ -343,9 +376,9 @@ app.get('/api/auth/me', async (c) => {
       return c.json({ error: 'User not found' }, 404);
     }
 
-    const denied = rejectIfNotWhitelisted(c, String(user.email));
+    const denied = await rejectIfNotWhitelisted(c, String(user.email));
     if (denied) return denied;
-    
+
     return c.json({
       user: {
         id: user.id,
@@ -368,7 +401,7 @@ app.post('/api/provision', async (c) => {
   const user = await verifyAuth(c);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
-  const deniedProvision = rejectIfNotWhitelisted(c, user.email);
+  const deniedProvision = await rejectIfNotWhitelisted(c, user.email);
   if (deniedProvision) return deniedProvision;
 
   const maxSites = parseMaxSitesPerUser(c.env.MAX_SITES_PER_USER);
@@ -393,6 +426,19 @@ app.post('/api/provision', async (c) => {
     return c.json({ error: 'site_name required (lowercase alphanumeric + hyphens only)' }, 400);
   }
 
+  const dup = await c.env.DB.prepare('SELECT id FROM sites WHERE user_id = ? AND site_name = ?')
+    .bind(user.userId, site_name)
+    .first<{ id: number }>();
+  if (dup) {
+    return c.json(
+      {
+        error: 'Bu blog adı zaten kullanılıyor',
+        detail: `Başka bir site_name deneyin (mevcut: ${site_name}).`,
+      },
+      409
+    );
+  }
+
   const token = c.env.CF_API_TOKEN;
   const accountId = c.env.CF_ACCOUNT_ID;
 
@@ -402,11 +448,13 @@ app.post('/api/provision', async (c) => {
   const shellName = `${prefix}-shell`;
   const dashboardName = `${prefix}-dash`;
   const accessToken = crypto.randomUUID();
+  const dashboardAdminPassword = generateDashboardAdminPassword();
 
   // Rollback tracking
   let databaseId: string | null = null;
   let shellCreated = false;
   let dashboardCreated = false;
+  let siteRowId: number | null = null;
 
   try {
     // 3. Create D1 database
@@ -417,11 +465,49 @@ app.post('/api/provision', async (c) => {
     console.log(`[provision] Executing schema on ${databaseId}`);
     await executeD1SQL(databaseId, BLOG_SCHEMA_SQL, token, accountId);
 
+    const shellProdUrl = `https://${shellName}.pages.dev`;
+    const dashProdUrl = `https://${dashboardName}.pages.dev`;
+
+    const inserted = await c.env.DB.prepare(
+      `INSERT INTO sites (user_id, site_name, d1_database_id, shell_project_name, shell_url, 
+       dashboard_project_name, dashboard_url, access_token, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')
+       RETURNING id`
+    )
+      .bind(
+        user.userId,
+        site_name,
+        databaseId,
+        shellName,
+        shellProdUrl,
+        dashboardName,
+        dashProdUrl,
+        accessToken
+      )
+      .first<{ id: number }>();
+
+    siteRowId = inserted?.id != null ? Number(inserted.id) : null;
+    if (siteRowId == null || !Number.isFinite(siteRowId)) {
+      throw new Error('provision: site row insert failed');
+    }
+
+    const apiPublicBase =
+      (c.env.SNAPPOST_API_PUBLIC_URL?.trim()) || new URL(c.req.url).origin;
+
     // 5. Create shell project + set binding BEFORE deploy
     console.log(`[provision] Creating shell project: ${shellName}`);
     await createPagesProject(shellName, token, accountId);
     shellCreated = true;
-    await setPagesBinding(shellName, { d1DatabaseId: databaseId, d1DatabaseName: dbName }, token, accountId);
+    await setPagesBinding(
+      shellName,
+      {
+        d1DatabaseId: databaseId,
+        d1DatabaseName: dbName,
+        envVars: { SITE_URL: shellProdUrl },
+      },
+      token,
+      accountId
+    );
 
     // 6. Deploy shell
     const shellTemplate = await prepareShellTemplate();
@@ -437,7 +523,12 @@ app.post('/api/provision', async (c) => {
       {
         d1DatabaseId: databaseId,
         d1DatabaseName: dbName,
-        envVars: { ACCESS_TOKEN: accessToken },
+        envVars: {
+          ACCESS_TOKEN: accessToken,
+          SNAPPOST_API_URL: apiPublicBase.replace(/\/$/, ''),
+          SNAPPOST_SITE_ID: String(siteRowId),
+          ADMIN_PASSWORD: dashboardAdminPassword,
+        },
       },
       token,
       accountId
@@ -448,26 +539,12 @@ app.post('/api/provision', async (c) => {
     const dashUrl = await uploadToPages(dashboardName, dashTemplate, token, accountId);
     console.log(`[provision] Dashboard deployed: ${dashUrl}`);
 
-    // 9. Production URLs
-    const shellProdUrl = `https://${shellName}.pages.dev`;
-    const dashProdUrl = `https://${dashboardName}.pages.dev`;
-
-    // 10. Save to sites table
-    await c.env.DB.prepare(
-      `INSERT INTO sites (user_id, site_name, d1_database_id, shell_project_name, shell_url, 
-       dashboard_project_name, dashboard_url, access_token, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')`
-    ).bind(
-      user.userId, site_name, databaseId,
-      shellName, shellProdUrl,
-      dashboardName, dashProdUrl,
-      accessToken
-    ).run();
-
     return c.json({
       shell_url: shellProdUrl,
       dashboard_url: dashProdUrl,
       access_token: accessToken,
+      // Dashboard /login — bir kez gösterilir; kayıp halinde Pages → ADMIN_PASSWORD güncellenir
+      dashboard_password: dashboardAdminPassword,
     });
   } catch (error) {
     console.error('[provision] Error:', error);
@@ -477,8 +554,24 @@ app.post('/api/provision', async (c) => {
       if (dashboardCreated) await deletePagesProject(dashboardName, token, accountId);
       if (shellCreated) await deletePagesProject(shellName, token, accountId);
       if (databaseId) await deleteD1Database(databaseId, token, accountId);
+      if (siteRowId != null) {
+        await c.env.DB.prepare('DELETE FROM sites WHERE id = ?').bind(siteRowId).run();
+      }
     } catch (rollbackErr) {
       console.error('[provision] Rollback error:', rollbackErr);
+    }
+
+    const errStr = error instanceof Error ? error.message : String(error);
+    if (
+      /UNIQUE|constraint|SQLITE_CONSTRAINT|idx_sites_user_id_site_name/i.test(errStr)
+    ) {
+      return c.json(
+        {
+          error: 'Bu blog adı zaten kullanılıyor',
+          detail: 'Çakışma veya eşzamanlı istek; başka bir site_name deneyin.',
+        },
+        409
+      );
     }
 
     return c.json({ error: 'Provisioning failed', detail: String(error) }, 500);
@@ -489,7 +582,7 @@ app.get('/api/sites', async (c) => {
   const user = await verifyAuth(c);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
-  const denied = rejectIfNotWhitelisted(c, user.email);
+  const denied = await rejectIfNotWhitelisted(c, user.email);
   if (denied) return denied;
 
   const { results } = await c.env.DB.prepare(
@@ -505,7 +598,7 @@ app.get('/api/sites/:id', async (c) => {
   const user = await verifyAuth(c);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
-  const denied = rejectIfNotWhitelisted(c, user.email);
+  const denied = await rejectIfNotWhitelisted(c, user.email);
   if (denied) return denied;
 
   const site = await c.env.DB.prepare(
@@ -516,22 +609,49 @@ app.get('/api/sites/:id', async (c) => {
   return c.json({ site });
 });
 
-/** Multipart `file` — jpeg/png/webp/gif; Bearer + site sahipliği (B2) */
+/**
+ * Multipart `file` veya @editorjs/image alanı `image` — jpeg/png/webp/gif.
+ * Bearer: JWT (whitelist + site sahibi) veya site `access_token` (dashboard proxy; whitelist yok).
+ */
 app.post('/api/sites/:id/media', async (c) => {
-  const user = await verifyAuth(c);
-  if (!user) return c.json({ error: 'Unauthorized' }, 401);
-
-  const denied = rejectIfNotWhitelisted(c, user.email);
-  if (denied) return denied;
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+  const bearer = authHeader.substring(7).trim();
+  if (!bearer) return c.json({ error: 'Unauthorized' }, 401);
 
   const siteIdParam = c.req.param('id');
-  const site = await c.env.DB.prepare('SELECT id, user_id FROM sites WHERE id = ? AND user_id = ?')
-    .bind(siteIdParam, user.userId)
-    .first<{ id: number; user_id: number }>();
 
-  if (!site) return c.json({ error: 'Site not found' }, 404);
+  const jwtUser = await verifyJwtBearer(bearer, c.env.JWT_SECRET);
+  let ownerUserId: number;
+  let siteId: number;
 
-  const siteId = Number(site.id);
+  if (jwtUser) {
+    const denied = await rejectIfNotWhitelisted(c, jwtUser.email);
+    if (denied) return denied;
+
+    const site = await c.env.DB.prepare('SELECT id, user_id FROM sites WHERE id = ? AND user_id = ?')
+      .bind(siteIdParam, jwtUser.userId)
+      .first<{ id: number; user_id: number }>();
+
+    if (!site) return c.json({ error: 'Site not found' }, 404);
+
+    ownerUserId = site.user_id;
+    siteId = Number(site.id);
+  } else {
+    const site = await c.env.DB.prepare(
+      'SELECT id, user_id FROM sites WHERE id = ? AND access_token = ?'
+    )
+      .bind(siteIdParam, bearer)
+      .first<{ id: number; user_id: number }>();
+
+    if (!site) return c.json({ error: 'Unauthorized' }, 401);
+
+    ownerUserId = site.user_id;
+    siteId = Number(site.id);
+  }
+
   if (!Number.isFinite(siteId)) {
     return c.json({ error: 'Site not found' }, 404);
   }
@@ -543,9 +663,9 @@ app.post('/api/sites/:id/media', async (c) => {
     return c.json({ error: 'Geçersiz form gövdesi' }, 400);
   }
 
-  const file = form['file'];
+  const file = form['file'] ?? form['image'];
   if (!(file instanceof File)) {
-    return c.json({ error: 'multipart alanı file gerekli' }, 400);
+    return c.json({ error: 'multipart alanı file veya image gerekli' }, 400);
   }
 
   const maxBytes = maxUploadBytes(c.env.MAX_MEDIA_UPLOAD_MB);
@@ -562,7 +682,7 @@ app.post('/api/sites/:id/media', async (c) => {
   }
 
   const objectId = crypto.randomUUID();
-  const key = buildMediaObjectKey(user.userId, siteId, objectId, file.name);
+  const key = buildMediaObjectKey(ownerUserId, siteId, objectId, file.name);
 
   try {
     await c.env.MEDIA_BUCKET.put(key, file.stream(), {
@@ -577,7 +697,7 @@ app.post('/api/sites/:id/media', async (c) => {
   }
 
   const enc = encodeKeyForUrlPath(key);
-  const origin = new URL(c.req.url).origin;
+  const origin = apiPublicOrigin(c.env, c.req.url);
   const url = `${origin}/api/media/raw/${enc}`;
 
   return c.json({
@@ -592,7 +712,7 @@ app.post('/api/sites/:id/media', async (c) => {
 app.post('/api/sites/:id/domain', async (c) => {
   const user = await verifyAuth(c);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
-  const denied = rejectIfNotWhitelisted(c, user.email);
+  const denied = await rejectIfNotWhitelisted(c, user.email);
   if (denied) return denied;
 
   const siteId = c.req.param('id');
@@ -668,7 +788,7 @@ app.post('/api/sites/:id/domain', async (c) => {
 app.delete('/api/sites/:id/domain', async (c) => {
   const user = await verifyAuth(c);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
-  const denied = rejectIfNotWhitelisted(c, user.email);
+  const denied = await rejectIfNotWhitelisted(c, user.email);
   if (denied) return denied;
 
   const siteId = c.req.param('id');
@@ -717,7 +837,7 @@ app.delete('/api/sites/:id', async (c) => {
   const user = await verifyAuth(c);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
-  const denied = rejectIfNotWhitelisted(c, user.email);
+  const denied = await rejectIfNotWhitelisted(c, user.email);
   if (denied) return denied;
 
   const siteId = c.req.param('id');

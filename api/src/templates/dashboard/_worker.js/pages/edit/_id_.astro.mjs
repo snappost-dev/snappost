@@ -1,7 +1,8 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 /* empty css                                   */
 import { c as createComponent, r as renderTemplate, d as defineScriptVars, a as addAttribute, b as renderHead, e as createAstro } from '../../chunks/astro/server_CZTmva32.mjs';
-import { r as renderEditorJSToHTML } from '../../chunks/editor_D5VKCT9K.mjs';
+/* empty css                                    */
+import { r as renderEditorJSToHTML } from '../../chunks/editor_BQ9TeuhA.mjs';
 export { renderers } from '../../renderers.mjs';
 
 var __freeze = Object.freeze;
@@ -48,7 +49,7 @@ const $$id = createComponent(async ($$result, $$props, $$slots) => {
       error = "Error updating post: " + e.message;
     }
   }
-  return renderTemplate(_a || (_a = __template(['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Edit: ', ' - Dashboard</title><link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.css" rel="stylesheet"><script src="https://cdn.tailwindcss.com"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/quote.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0/dist/code.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"><\/script><script src="/dashboard/alert-block.js"><\/script><style>\n    .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }\n    .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }\n    .editor-main { overflow-y: auto; }\n    .nav-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }\n    .nav-item:hover { background: #e2e8f0; }\n    .nav-item.active { background: #dbeafe; color: #1d4ed8; }\n    .ce-block--focused { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 4px; }\n    #editorjs { min-height: 400px; }\n    .codex-editor__redactor { padding-bottom: 200px !important; }\n  </style>', '</head> <body class="bg-gray-50" data-theme="corporate"> ', " ", ' <form method="POST" id="save-form"> <input type="hidden" name="content" id="hidden-content"> <input type="hidden" name="title" id="hidden-title"> <input type="hidden" name="slug" id="hidden-slug"> <input type="hidden" name="description" id="hidden-description"> <input type="hidden" name="published" id="hidden-published" value="0"> </form> <div class="editor-grid"> <!-- SIDEBAR --> <aside class="sidebar flex flex-col"> <div class="p-4 border-b border-gray-200"> <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to Posts</a> </div> <div class="p-4 flex-1"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Blocks</h3> <div id="block-list" class="space-y-1"> <div class="text-sm text-gray-400 italic">Loading...</div> </div> <p class="text-xs text-gray-400 mt-3 leading-relaxed">Add blocks with the <strong>+</strong> in the editor.</p> </div> <div class="border-t border-gray-200 p-4"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Properties</h3> <div id="properties-content"> <p class="text-sm text-gray-400 italic">Select a block</p> </div> </div> </aside> <!-- MAIN PANEL --> <main class="editor-main"> <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3"> <div class="max-w-3xl mx-auto flex items-center gap-3"> <input id="post-title" type="text"', ' placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg"> <input id="post-slug" type="text"', ' placeholder="slug" class="input input-bordered input-sm w-40 text-xs font-mono"> <label class="flex items-center gap-1.5 text-sm cursor-pointer"> <input type="checkbox" id="post-published" class="checkbox checkbox-sm checkbox-primary"', '> <span>Publish</span> </label> <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button> <button id="save-btn" class="btn btn-primary btn-sm">Save</button> </div> <div class="max-w-3xl mx-auto mt-2"> <input id="post-description" type="text"', ' placeholder="Short description (optional)" class="input input-bordered input-xs w-full"> </div> </div> <div class="max-w-3xl mx-auto px-6 py-8"> <div id="editorjs"></div> </div> </main> </div> <script>(function(){', `
+  return renderTemplate(_a || (_a = __template(['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Edit: ', " - Dashboard</title><style>\n    .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }\n    .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }\n    .editor-main { overflow-y: auto; }\n    .nav-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }\n    .nav-item:hover { background: #e2e8f0; }\n    .nav-item.active { background: #dbeafe; color: #1d4ed8; }\n    .ce-block--focused { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 4px; }\n    #editorjs { min-height: 400px; }\n    .codex-editor__redactor { padding-bottom: 200px !important; }\n  </style>", '</head> <body class="bg-gray-50" data-theme="corporate"> ', " ", ' <form method="POST" id="save-form"> <input type="hidden" name="content" id="hidden-content"> <input type="hidden" name="title" id="hidden-title"> <input type="hidden" name="slug" id="hidden-slug"> <input type="hidden" name="description" id="hidden-description"> <input type="hidden" name="published" id="hidden-published" value="0"> </form> <div class="editor-grid"> <!-- SIDEBAR --> <aside class="sidebar flex flex-col"> <div class="p-4 border-b border-gray-200"> <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to Posts</a> </div> <div class="p-4 flex-1"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Blocks</h3> <div id="block-list" class="space-y-1"> <div class="text-sm text-gray-400 italic">Loading...</div> </div> <p class="text-xs text-gray-400 mt-3 leading-relaxed">Add blocks with the <strong>+</strong> in the editor.</p> </div> <div class="border-t border-gray-200 p-4"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Properties</h3> <div id="properties-content"> <p class="text-sm text-gray-400 italic">Select a block</p> </div> </div> </aside> <!-- MAIN PANEL --> <main class="editor-main"> <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3"> <div class="max-w-3xl mx-auto flex items-center gap-3"> <input id="post-title" type="text"', ' placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg"> <input id="post-slug" type="text"', ' placeholder="slug" class="input input-bordered input-sm w-40 text-xs font-mono"> <label class="flex items-center gap-1.5 text-sm cursor-pointer"> <input type="checkbox" id="post-published" class="checkbox checkbox-sm checkbox-primary"', '> <span>Publish</span> </label> <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button> <button id="save-btn" class="btn btn-primary btn-sm">Save</button> </div> <div class="max-w-3xl mx-auto mt-2"> <input id="post-description" type="text"', ' placeholder="Short description (optional)" class="input input-bordered input-xs w-full"> </div> </div> <div class="max-w-3xl mx-auto px-6 py-8"> <div id="editorjs"></div> </div> </main> </div> <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/quote.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0/dist/code.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0/dist/image.umd.js"><\/script> <script src="/dashboard/alert-block.js"><\/script> <script>(function(){', `
 let editor, activeBlockIndex = null, navigatorDebounce = null, editorBootStarted = false;
 const existingData = editorDataJson !== 'null' ? JSON.parse(editorDataJson) : null;
 
@@ -64,6 +65,7 @@ function boot() {
     typeof Quote === 'undefined' ||
     typeof CodeTool === 'undefined' ||
     typeof Delimiter === 'undefined' ||
+    typeof ImageTool === 'undefined' ||
     typeof window.SnappostAlertBlock === 'undefined'
   ) {
     setTimeout(boot, 50);
@@ -80,6 +82,13 @@ function boot() {
       quote: { class: Quote, inlineToolbar: true },
       code: { class: CodeTool },
       delimiter: { class: Delimiter },
+      image: {
+        class: ImageTool,
+        config: {
+          endpoints: { byFile: '/api/upload-media' },
+          field: 'file',
+        },
+      },
       alert: { class: window.SnappostAlertBlock },
     },
     placeholder: 'Start writing...',
@@ -100,7 +109,7 @@ function boot() {
 }
 document.addEventListener('DOMContentLoaded', boot);
 
-const ICONS = { header:'\u{1F4F0}', paragraph:'\u{1F4DD}', list:'\u{1F4CB}', alert:'\u26A0\uFE0F', quote:'\u{1F4AC}', code:'\u{1F4BB}', delimiter:'\u2796' };
+const ICONS = { header:'\u{1F4F0}', paragraph:'\u{1F4DD}', list:'\u{1F4CB}', alert:'\u26A0\uFE0F', quote:'\u{1F4AC}', code:'\u{1F4BB}', delimiter:'\u2796', image:'\u{1F5BC}\uFE0F' };
 function getBlockLabel(block) {
   switch (block.type) {
     case 'header': return block.data.text || 'Empty header \u2014 click to edit';
@@ -110,6 +119,7 @@ function getBlockLabel(block) {
     case 'quote': return (block.data.text||'').replace(/<[^>]*>/g,'').substring(0,28) || 'Quote \u2014 click to edit';
     case 'code': return 'Code'+((block.data.code||'').length ? ' ('+Math.min((block.data.code||'').length,999)+' chars)' : '');
     case 'delimiter': return 'Divider';
+    case 'image': return 'Image';
     default: return block.type;
   }
 }
@@ -221,6 +231,13 @@ async function openPreview() {
       case 'quote': return '<blockquote style="border-left:4px solid #cbd5e1;padding:0.75rem 1rem;margin:1rem 0;color:#475569;font-style:italic">'+escapePrev(block.data.text)+(block.data.caption?'<cite style="display:block;font-size:0.875rem;margin-top:0.5rem">\u2014 '+escapePrev(block.data.caption)+'</cite>':'')+'</blockquote>';
       case 'code': return '<pre style="background:#1e293b;color:#e2e8f0;padding:1rem;border-radius:0.5rem;overflow-x:auto;font-family:monospace;font-size:0.875rem;margin:1rem 0"><code>'+escapePrev(block.data.code)+'</code></pre>';
       case 'delimiter': return '<hr style="border:none;border-top:2px solid #e2e8f0;margin:2rem 0" />';
+      case 'image': {
+        const u = (block.data.file && block.data.file.url) || block.data.url || '';
+        const cap = block.data.caption ? String(block.data.caption) : '';
+        if (!u) return '';
+        return '<figure style="margin:1rem 0"><img src="'+escapePrev(u)+'" alt="'+escapePrev(cap)+'" loading="lazy" style="max-width:100%;height:auto;display:block" />'+
+          (cap?'<figcaption style="font-size:0.875rem;color:#64748b;margin-top:0.5rem">'+escapePrev(cap)+'</figcaption>':'')+'</figure>';
+      }
       default: return '';
     }
   }).join('\\n');
@@ -228,7 +245,7 @@ async function openPreview() {
   win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Preview: '+title+'</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;color:#1a1a1a;line-height:1.7}h1,h2,h3,h4{margin-top:1.5em;margin-bottom:0.5em}p{margin:0.75em 0}ul,ol{padding-left:1.5em}</style></head><body><h1>'+title+'</h1>'+html+'</body></html>');
   win.document.close();
 }
-})();<\/script> </body> </html>`], ['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Edit: ', ' - Dashboard</title><link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.css" rel="stylesheet"><script src="https://cdn.tailwindcss.com"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/quote.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0/dist/code.umd.js"><\/script><script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"><\/script><script src="/dashboard/alert-block.js"><\/script><style>\n    .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }\n    .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }\n    .editor-main { overflow-y: auto; }\n    .nav-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }\n    .nav-item:hover { background: #e2e8f0; }\n    .nav-item.active { background: #dbeafe; color: #1d4ed8; }\n    .ce-block--focused { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 4px; }\n    #editorjs { min-height: 400px; }\n    .codex-editor__redactor { padding-bottom: 200px !important; }\n  </style>', '</head> <body class="bg-gray-50" data-theme="corporate"> ', " ", ' <form method="POST" id="save-form"> <input type="hidden" name="content" id="hidden-content"> <input type="hidden" name="title" id="hidden-title"> <input type="hidden" name="slug" id="hidden-slug"> <input type="hidden" name="description" id="hidden-description"> <input type="hidden" name="published" id="hidden-published" value="0"> </form> <div class="editor-grid"> <!-- SIDEBAR --> <aside class="sidebar flex flex-col"> <div class="p-4 border-b border-gray-200"> <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to Posts</a> </div> <div class="p-4 flex-1"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Blocks</h3> <div id="block-list" class="space-y-1"> <div class="text-sm text-gray-400 italic">Loading...</div> </div> <p class="text-xs text-gray-400 mt-3 leading-relaxed">Add blocks with the <strong>+</strong> in the editor.</p> </div> <div class="border-t border-gray-200 p-4"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Properties</h3> <div id="properties-content"> <p class="text-sm text-gray-400 italic">Select a block</p> </div> </div> </aside> <!-- MAIN PANEL --> <main class="editor-main"> <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3"> <div class="max-w-3xl mx-auto flex items-center gap-3"> <input id="post-title" type="text"', ' placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg"> <input id="post-slug" type="text"', ' placeholder="slug" class="input input-bordered input-sm w-40 text-xs font-mono"> <label class="flex items-center gap-1.5 text-sm cursor-pointer"> <input type="checkbox" id="post-published" class="checkbox checkbox-sm checkbox-primary"', '> <span>Publish</span> </label> <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button> <button id="save-btn" class="btn btn-primary btn-sm">Save</button> </div> <div class="max-w-3xl mx-auto mt-2"> <input id="post-description" type="text"', ' placeholder="Short description (optional)" class="input input-bordered input-xs w-full"> </div> </div> <div class="max-w-3xl mx-auto px-6 py-8"> <div id="editorjs"></div> </div> </main> </div> <script>(function(){', `
+})();<\/script> </body> </html>`], ['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Edit: ', " - Dashboard</title><style>\n    .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }\n    .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }\n    .editor-main { overflow-y: auto; }\n    .nav-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }\n    .nav-item:hover { background: #e2e8f0; }\n    .nav-item.active { background: #dbeafe; color: #1d4ed8; }\n    .ce-block--focused { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 4px; }\n    #editorjs { min-height: 400px; }\n    .codex-editor__redactor { padding-bottom: 200px !important; }\n  </style>", '</head> <body class="bg-gray-50" data-theme="corporate"> ', " ", ' <form method="POST" id="save-form"> <input type="hidden" name="content" id="hidden-content"> <input type="hidden" name="title" id="hidden-title"> <input type="hidden" name="slug" id="hidden-slug"> <input type="hidden" name="description" id="hidden-description"> <input type="hidden" name="published" id="hidden-published" value="0"> </form> <div class="editor-grid"> <!-- SIDEBAR --> <aside class="sidebar flex flex-col"> <div class="p-4 border-b border-gray-200"> <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to Posts</a> </div> <div class="p-4 flex-1"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Blocks</h3> <div id="block-list" class="space-y-1"> <div class="text-sm text-gray-400 italic">Loading...</div> </div> <p class="text-xs text-gray-400 mt-3 leading-relaxed">Add blocks with the <strong>+</strong> in the editor.</p> </div> <div class="border-t border-gray-200 p-4"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Properties</h3> <div id="properties-content"> <p class="text-sm text-gray-400 italic">Select a block</p> </div> </div> </aside> <!-- MAIN PANEL --> <main class="editor-main"> <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3"> <div class="max-w-3xl mx-auto flex items-center gap-3"> <input id="post-title" type="text"', ' placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg"> <input id="post-slug" type="text"', ' placeholder="slug" class="input input-bordered input-sm w-40 text-xs font-mono"> <label class="flex items-center gap-1.5 text-sm cursor-pointer"> <input type="checkbox" id="post-published" class="checkbox checkbox-sm checkbox-primary"', '> <span>Publish</span> </label> <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button> <button id="save-btn" class="btn btn-primary btn-sm">Save</button> </div> <div class="max-w-3xl mx-auto mt-2"> <input id="post-description" type="text"', ' placeholder="Short description (optional)" class="input input-bordered input-xs w-full"> </div> </div> <div class="max-w-3xl mx-auto px-6 py-8"> <div id="editorjs"></div> </div> </main> </div> <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/quote.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0/dist/code.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0/dist/image.umd.js"><\/script> <script src="/dashboard/alert-block.js"><\/script> <script>(function(){', `
 let editor, activeBlockIndex = null, navigatorDebounce = null, editorBootStarted = false;
 const existingData = editorDataJson !== 'null' ? JSON.parse(editorDataJson) : null;
 
@@ -244,6 +261,7 @@ function boot() {
     typeof Quote === 'undefined' ||
     typeof CodeTool === 'undefined' ||
     typeof Delimiter === 'undefined' ||
+    typeof ImageTool === 'undefined' ||
     typeof window.SnappostAlertBlock === 'undefined'
   ) {
     setTimeout(boot, 50);
@@ -260,6 +278,13 @@ function boot() {
       quote: { class: Quote, inlineToolbar: true },
       code: { class: CodeTool },
       delimiter: { class: Delimiter },
+      image: {
+        class: ImageTool,
+        config: {
+          endpoints: { byFile: '/api/upload-media' },
+          field: 'file',
+        },
+      },
       alert: { class: window.SnappostAlertBlock },
     },
     placeholder: 'Start writing...',
@@ -280,7 +305,7 @@ function boot() {
 }
 document.addEventListener('DOMContentLoaded', boot);
 
-const ICONS = { header:'\u{1F4F0}', paragraph:'\u{1F4DD}', list:'\u{1F4CB}', alert:'\u26A0\uFE0F', quote:'\u{1F4AC}', code:'\u{1F4BB}', delimiter:'\u2796' };
+const ICONS = { header:'\u{1F4F0}', paragraph:'\u{1F4DD}', list:'\u{1F4CB}', alert:'\u26A0\uFE0F', quote:'\u{1F4AC}', code:'\u{1F4BB}', delimiter:'\u2796', image:'\u{1F5BC}\uFE0F' };
 function getBlockLabel(block) {
   switch (block.type) {
     case 'header': return block.data.text || 'Empty header \u2014 click to edit';
@@ -290,6 +315,7 @@ function getBlockLabel(block) {
     case 'quote': return (block.data.text||'').replace(/<[^>]*>/g,'').substring(0,28) || 'Quote \u2014 click to edit';
     case 'code': return 'Code'+((block.data.code||'').length ? ' ('+Math.min((block.data.code||'').length,999)+' chars)' : '');
     case 'delimiter': return 'Divider';
+    case 'image': return 'Image';
     default: return block.type;
   }
 }
@@ -401,6 +427,13 @@ async function openPreview() {
       case 'quote': return '<blockquote style="border-left:4px solid #cbd5e1;padding:0.75rem 1rem;margin:1rem 0;color:#475569;font-style:italic">'+escapePrev(block.data.text)+(block.data.caption?'<cite style="display:block;font-size:0.875rem;margin-top:0.5rem">\u2014 '+escapePrev(block.data.caption)+'</cite>':'')+'</blockquote>';
       case 'code': return '<pre style="background:#1e293b;color:#e2e8f0;padding:1rem;border-radius:0.5rem;overflow-x:auto;font-family:monospace;font-size:0.875rem;margin:1rem 0"><code>'+escapePrev(block.data.code)+'</code></pre>';
       case 'delimiter': return '<hr style="border:none;border-top:2px solid #e2e8f0;margin:2rem 0" />';
+      case 'image': {
+        const u = (block.data.file && block.data.file.url) || block.data.url || '';
+        const cap = block.data.caption ? String(block.data.caption) : '';
+        if (!u) return '';
+        return '<figure style="margin:1rem 0"><img src="'+escapePrev(u)+'" alt="'+escapePrev(cap)+'" loading="lazy" style="max-width:100%;height:auto;display:block" />'+
+          (cap?'<figcaption style="font-size:0.875rem;color:#64748b;margin-top:0.5rem">'+escapePrev(cap)+'</figcaption>':'')+'</figure>';
+      }
       default: return '';
     }
   }).join('\\\\n');
