@@ -376,6 +376,8 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 | Şablon | `templates/*` `dev:local` + ortak D1 persist (README’ler) |
 | CF | API + landing deploy; whitelist ve `MAX_SITES_PER_USER` env doğrulama |
 
+**Not (2026-04-12):** Uçtan uca manuel akış OK; panel WAF ve T8–T10 ek kontrolleri operatör sonraya bıraktı.
+
 #### Faz D — kalan borç (sonraki plan)
 
 - Panel WAF/rate rules (isteğe bağlı ek katman); enumeration / abuse için CAPTCHA vb.

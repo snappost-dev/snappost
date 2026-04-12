@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { cors } from 'hono/cors';
 import { sign, verify } from 'hono/jwt';
 import bcrypt from 'bcryptjs';
@@ -63,6 +63,14 @@ type Bindings = {
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
+
+type AppCtx = Context<{ Bindings: Bindings }>;
+
+/** Worker rate limit penceresi 60 sn; istemciler için RFC 7231 */
+function jsonTooManyRequests(c: AppCtx, body: { error: string; detail: string }) {
+  c.header('Retry-After', '60');
+  return c.json(body, 429);
+}
 
 /** Basit FQDN e-posta formatı (MVP); tam RFC doğrulaması değil */
 function isValidEmailFormat(email: string): boolean {
@@ -225,13 +233,10 @@ app.get('/api/media/raw/:enc', async (c) => {
 app.post('/api/auth/register', async (c) => {
   try {
     if (!(await tryRateLimit(c.env.RL_AUTH_REGISTER, `reg:${rateLimitClientKey(c)}`))) {
-      return c.json(
-        {
-          error: 'Çok fazla kayıt denemesi.',
-          detail: 'Bir dakika sonra tekrar deneyin.',
-        },
-        429
-      );
+      return jsonTooManyRequests(c, {
+        error: 'Çok fazla kayıt denemesi.',
+        detail: 'Bir dakika sonra tekrar deneyin.',
+      });
     }
     const { email, password } = await c.req.json();
 
@@ -309,13 +314,10 @@ app.post('/api/auth/register', async (c) => {
 app.post('/api/auth/login', async (c) => {
   try {
     if (!(await tryRateLimit(c.env.RL_AUTH_LOGIN, `login:${rateLimitClientKey(c)}`))) {
-      return c.json(
-        {
-          error: 'Çok fazla giriş denemesi.',
-          detail: 'Bir dakika sonra tekrar deneyin.',
-        },
-        429
-      );
+      return jsonTooManyRequests(c, {
+        error: 'Çok fazla giriş denemesi.',
+        detail: 'Bir dakika sonra tekrar deneyin.',
+      });
     }
     const { email, password } = await c.req.json();
 
@@ -425,13 +427,10 @@ app.post('/api/provision', async (c) => {
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
   if (!(await tryRateLimit(c.env.RL_PROVISION, `prov:${user.userId}`))) {
-    return c.json(
-      {
-        error: 'Çok fazla blog oluşturma isteği.',
-        detail: 'Kısa süre bekleyip tekrar deneyin (dakika başına sınırlı).',
-      },
-      429
-    );
+    return jsonTooManyRequests(c, {
+      error: 'Çok fazla blog oluşturma isteği.',
+      detail: 'Kısa süre bekleyip tekrar deneyin (dakika başına sınırlı).',
+    });
   }
 
   const deniedProvision = await rejectIfNotWhitelisted(c, user.email);

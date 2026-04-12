@@ -43,6 +43,11 @@ Cloudflare hesabınızda API Worker’ınızın geldiği hostname’i kullanın 
 **Test kabuğu kapanış cümlesi (kopyala-yapıştır):**  
 *Snappost test kabuğu: auth + provision + landing dashboard; whitelist/limit/CORS env tabanlı; production’da `/test/*` kapalı; CF panelde rate limit kuralları tanımlandı (veya bilinçli erteleme notu düşüldü); duman testleri geçti. Sonraki kod sprint’i: blog içerik + SEO + R2 medya.*
 
+### Operatör notu — 2026-04-12
+
+- **Manuel:** Landing → kayıt/giriş → dashboard akışı **doğrulandı** (çalışıyor).
+- **Ertelenen (bilinçli):** §A2 **Cloudflare panel** ek rate/WAF kuralları; §C1 **T8–T10** (limit/CORS/silme) ek elle test — ileride.
+
 ---
 
 ## B — Sonraki sprint: SEO dostu blog + medya (R2)
