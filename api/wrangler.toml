@@ -15,6 +15,32 @@ database_id = "d8c8583f-e604-44f0-8ead-7b0d53b4f151"
 binding = "MEDIA_BUCKET"
 bucket_name = "snappost-media"
 
+# Worker içi rate limit (CF Rate Limit API; wrangler ≥ 4.36). PoP başına; IP paylaşımlı ağlarda dikkat.
+# namespace_id: hesap içinde benzersiz tamsayı string. Panel WAF kuralları ile birlikte veya yedek olarak kullanılabilir.
+[[ratelimits]]
+name = "RL_AUTH_REGISTER"
+namespace_id = "8849101"
+
+[ratelimits.simple]
+limit = 5
+period = 60
+
+[[ratelimits]]
+name = "RL_AUTH_LOGIN"
+namespace_id = "8849102"
+
+[ratelimits.simple]
+limit = 10
+period = 60
+
+[[ratelimits]]
+name = "RL_PROVISION"
+namespace_id = "8849103"
+
+[ratelimits.simple]
+limit = 3
+period = 60
+
 [vars]
 CF_ACCOUNT_ID = "1094e722fe9d2b939e94a8ceb124d21b"
 # Opsiyonel — virgülle ayrılmış e-postalar; boş veya satır yok = kayıt/giriş herkese açık

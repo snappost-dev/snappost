@@ -22,6 +22,6 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240208.0",
     "@types/bcryptjs": "^2.4.6",
-    "wrangler": "^3.28.0"
+    "wrangler": "^4.36.0"
   }
 }

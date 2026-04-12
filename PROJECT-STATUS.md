@@ -293,7 +293,7 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 | # | Konu | Detay |
 |---|------|-------|
 | 1 | Test endpoint'leri | `/test/*` yalnız `ALLOW_TEST_ROUTES=true` (ör. yerel `.dev.vars`); production’da tanımlanmaz → **404** |
-| 2 | Rate limiting | **Worker kodu yok**; kötüye kullanımı kesmek için [Cloudflare Dashboard](https://dash.cloudflare.com) üzerinde API route’larına **IP bazlı rate limit / WAF** önerilir — adımlar: [docs/SPRINT-PLAN.md](docs/SPRINT-PLAN.md) §A2. İsteğe bağlı sonraki faz: Worker + KV/D1 sayaç. |
+| 2 | Rate limiting | **Worker:** `wrangler.toml` Rate Limit binding — register 5/dk, login 10/dk, provision 3/dk (PoP başına; bkz. §A2). **Panel:** Ek olarak route bazlı WAF/rate rules önerilir ([SPRINT-PLAN](docs/SPRINT-PLAN.md) §A2). |
 | 3 | ~~Site silme yok~~ | **Kaldırıldı:** `DELETE /api/sites/:id` + landing **Delete blog** (§4). |
 | 4 | Blog custom domain | Shell Pages için API + landing kartı (CNAME tablosu); dashboard yalnız `*.pages.dev`. |
 | 5 | ~~Dashboard default password~~ | **İyileştirildi:** Provision rastgele `ADMIN_PASSWORD` üretir (Pages env) + API `dashboard_password`; landing bir kez gösterir. Eski siteler / yerel `wrangler.toml` için `changeme` riski kalabilir |
@@ -321,7 +321,7 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 
 - `/test/*`: `ALLOW_TEST_ROUTES=true` ile açılır (varsayılan kapalı — yapıldı)
 - ~~CORS sabit liste~~ → **`CORS_ORIGINS` env** (boş = varsayılanlar); özel landing domain için Dashboard’da genişlet
-- Rate limiting → **önce CF Dashboard** (WAF / rate rules; bkz. [docs/SPRINT-PLAN.md](docs/SPRINT-PLAN.md) §A2); Worker içi sayaç sonraki faz
+- Rate limiting → **Worker binding** (`api/wrangler.toml`) + **CF Dashboard** (WAF / rate rules; bkz. [docs/SPRINT-PLAN.md](docs/SPRINT-PLAN.md) §A2)
 - ~~Dashboard password'ü provision sırasında set etme~~ → **Yapıldı** (`ADMIN_PASSWORD` + `dashboard_password` yanıtı)
 - ~~Provision sırasında loading/progress UI~~ → **Kısmen yapıldı** (landing buton durumu + metin); gerçek ilerleme çubuğu yok
 - ~~Email validation (format)~~ → **Basit format** register/login’de; doğrulama e-postası / uniqueness DB’de zaten
@@ -378,7 +378,7 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 
 #### Faz D — kalan borç (sonraki plan)
 
-- Rate limiting + enumeration riski
+- Panel WAF/rate rules (isteğe bağlı ek katman); enumeration / abuse için CAPTCHA vb.
 
 #### Tanım (MVP) tamamlandı
 

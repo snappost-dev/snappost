@@ -15,11 +15,13 @@
 3. **`CORS_ORIGINS`:** Özel landing alanı kullanıyorsanız, Worker’da bu değişkende **yeni `https://…` origin’ini**, ihtiyaç duyduğunuz **mevcut origin’leri birlikte** verin. Boş bırakırsanız kod içi varsayılan liste kullanılır; özel alan listede yoksa tarayıcı CORS hatası verir.
 4. **`ALLOWED_EMAILS`:** Davetli beta için dolu; herkese açık test için boş/tanımsız — kararı tek ortam politikası olarak netleştirin.
 
-### A2 — Rate limiting (Cloudflare Dashboard, Worker kodu yok)
+### A2 — Rate limiting (Dashboard + Worker binding)
 
 **API hostname kararı:** Özel API domain’i **zorunlu değil**; Snappost şu an **`*.workers.dev`** ile devam ediyor — bu yeterli. İleride marka, müşteri beklentisi veya zone üzerinden WAF/rate limit yazmayı kolaylaştırmak isterseniz Worker’a `api.example.com` gibi bir route eklenebilir.
 
-**Öneri:** Önce panel/WAF (hesap/planınıza göre `workers.dev` veya ileride eklenen zone hostname için); Worker içi sayaç (KV/D1 veya [Rate Limit binding](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)) **sonraki faz**.
+**Worker (repoda):** `wrangler.toml` içinde [Rate Limit binding](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/) — kayıt **5/dk**, giriş **10/dk**, provision **3/dk** (PoP başına; anahtar: kayıt/girişte IP, provision’da `userId`). **Wrangler ≥ 4.36** gerekir (`api/package.json`). Limitler yalnızca `wrangler.toml` ile değişir; binding yoksa kod atlar (`RL_*` opsiyonel).
+
+**Panel (öneri):** Hesap/planınıza göre `workers.dev` veya zone hostname için WAF / rate rules — Worker limitleriyle **birlikte** veya ek katman olarak.
 
 Cloudflare hesabınızda API Worker’ınızın geldiği hostname’i kullanın (ör. `https://snappost-api.<subdomain>.workers.dev`). Tam menü adları plana göre değişebilir; genel akış:
 
@@ -30,7 +32,7 @@ Cloudflare hesabınızda API Worker’ınızın geldiği hostname’i kullanın 
    - `POST` path içinde `/api/auth/login` — örn. **10 istek / dakika / IP**
    - `POST` path içinde `/api/provision` — örn. **3 istek / dakika / IP** (provision pahalıdır)
 4. Kural eşlemesinde **URI Path** veya **HTTP Request URI** koşullarını kullanın; metodu `POST` ile sınırlayın.
-5. **Not:** Bu adımlar Worker’a yeni env eklemez; ücretli özellikler planınıza bağlıdır. Worker kaynak kodunda rate limit **bu sprintte yazılmaz**.
+5. **Not:** Panel kuralları ücretli özelliklere bağlı olabilir. Worker tarafı `api/wrangler.toml` `[[ratelimits]]` ile ayrıca uygulanır.
 
 ### A3 — Production hijyen
 

@@ -121,6 +121,10 @@ Ardından **`wrangler deploy`**. Commit’e **`api/src/templates/*`** ve **`api/
 
 Operasyon notları: [docs/SPRINT-PLAN.md](../docs/SPRINT-PLAN.md) **§B7**, [PROJECT-STATUS.md](../PROJECT-STATUS.md) **§7**.
 
+## Rate limit (Worker)
+
+`wrangler.toml` içinde **`[[ratelimits]]`** ([CF Rate Limit API](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)): kayıt **5/dk**, giriş **10/dk**, provision **3/dk** (60 sn penceresi, PoP başına). Aşımda **429** + `error` / `detail`. `RL_*` binding’leri yoksa kod limit uygulamaz. Deploy için **Wrangler 4.36+** (`npm install` ile `api` klasöründe). Ek sıkılaştırma: [SPRINT-PLAN §A2](../docs/SPRINT-PLAN.md) panel kuralları.
+
 ## Production secrets
 
 ```bash

@@ -31,11 +31,16 @@ import {
   isEmailAllowed,
   resolveEffectiveAllowedEmailSet,
 } from './lib/allowed-emails';
+import { rateLimitClientKey, tryRateLimit, type CfRateLimiter } from './lib/cf-rate-limit';
 
 type Bindings = {
   DB: D1Database;
   /** R2 — kiracı görselleri (B1); B2’de upload bu binding ile yazacak */
   MEDIA_BUCKET: R2Bucket;
+  /** Opsiyonel — tanımsızsa atlanır (eski wrangler / yerel ortam) */
+  RL_AUTH_REGISTER?: CfRateLimiter;
+  RL_AUTH_LOGIN?: CfRateLimiter;
+  RL_PROVISION?: CfRateLimiter;
   CF_API_TOKEN: string;
   CF_ACCOUNT_ID: string;
   JWT_SECRET: string;
@@ -219,6 +224,15 @@ app.get('/api/media/raw/:enc', async (c) => {
 // Register new user
 app.post('/api/auth/register', async (c) => {
   try {
+    if (!(await tryRateLimit(c.env.RL_AUTH_REGISTER, `reg:${rateLimitClientKey(c)}`))) {
+      return c.json(
+        {
+          error: 'Çok fazla kayıt denemesi.',
+          detail: 'Bir dakika sonra tekrar deneyin.',
+        },
+        429
+      );
+    }
     const { email, password } = await c.req.json();
 
     const passwordPlain = typeof password === 'string' ? password.trim() : '';
@@ -294,6 +308,15 @@ app.post('/api/auth/register', async (c) => {
 // Login
 app.post('/api/auth/login', async (c) => {
   try {
+    if (!(await tryRateLimit(c.env.RL_AUTH_LOGIN, `login:${rateLimitClientKey(c)}`))) {
+      return c.json(
+        {
+          error: 'Çok fazla giriş denemesi.',
+          detail: 'Bir dakika sonra tekrar deneyin.',
+        },
+        429
+      );
+    }
     const { email, password } = await c.req.json();
 
     const passwordPlain = typeof password === 'string' ? password.trim() : '';
@@ -400,6 +423,16 @@ app.post('/api/provision', async (c) => {
   // 1. Auth
   const user = await verifyAuth(c);
   if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
+  if (!(await tryRateLimit(c.env.RL_PROVISION, `prov:${user.userId}`))) {
+    return c.json(
+      {
+        error: 'Çok fazla blog oluşturma isteği.',
+        detail: 'Kısa süre bekleyip tekrar deneyin (dakika başına sınırlı).',
+      },
+      429
+    );
+  }
 
   const deniedProvision = await rejectIfNotWhitelisted(c, user.email);
   if (deniedProvision) return deniedProvision;
