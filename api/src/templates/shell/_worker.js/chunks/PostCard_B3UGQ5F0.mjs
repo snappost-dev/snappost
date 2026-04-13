@@ -11,7 +11,7 @@ const $$PostCard = createComponent(($$result, $$props, $$slots) => {
     month: "long",
     day: "numeric"
   });
-  return renderTemplate`${maybeRenderHead()}<article class="bg-white rounded-lg border p-6 hover:shadow-md transition"> <a${addAttribute(`/blog/${post.slug}`, "href")} class="block"> <h2 class="text-2xl font-bold mb-2 hover:text-blue-600">${post.title}</h2> <p class="text-gray-600 mb-4">${post.description}</p> <time class="text-sm text-gray-500">${date}</time> </a> </article>`;
+  return renderTemplate`${maybeRenderHead()}<article class="card bg-base-100 border border-base-300 transition hover:shadow-md"> <a${addAttribute(`/blog/${post.slug}`, "href")} class="card-body block"> <h2 class="card-title text-2xl mb-2 hover:text-primary">${post.title}</h2> <p class="mb-4 text-base-content/80">${post.description}</p> <time class="text-sm text-base-content/60">${date}</time> </a> </article>`;
 }, "/home/aurora/snappost/templates/shell/src/components/PostCard.astro", void 0);
 
 export { $$PostCard as $ };

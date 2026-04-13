@@ -1,7 +1,7 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 /* empty css                                     */
 import { c as createComponent, d as renderComponent, r as renderTemplate, b as createAstro, m as maybeRenderHead, a as addAttribute, u as unescapeHTML } from '../../chunks/astro/server_BmAI9ip8.mjs';
-import { $ as $$Base } from '../../chunks/Base_CwbDtz0B.mjs';
+import { $ as $$Base } from '../../chunks/Base_CMbi37jA.mjs';
 import { l as loadBlogConfig } from '../../chunks/site-url_BzCZPAzq.mjs';
 export { renderers } from '../../renderers.mjs';
 
@@ -2577,7 +2577,7 @@ const $$slug = createComponent(async ($$result, $$props, $$slots) => {
   const bodyHtml = shellPostBodyHtml(post);
   const pageTitle = `${title} \u2013 ${config.site_title}`;
   const canonicalPath = `/blog/${String(slug ?? "")}`;
-  return renderTemplate`${renderComponent($$result, "Base", $$Base, { "config": config, "title": pageTitle, "description": description, "canonicalPath": canonicalPath, "ogType": "article", "publishedTime": new Date(createdAt).toISOString(), "modifiedTime": new Date(updatedAt).toISOString() }, { "default": async ($$result2) => renderTemplate` ${maybeRenderHead()}<article class="prose prose-lg prose-slate max-w-none prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-a:text-blue-600 prose-pre:max-w-full prose-img:max-w-full prose-img:h-auto prose-figure:my-8 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-gray-600"> <h1>${title}</h1> <time class="not-prose text-gray-500 text-sm block mb-6"${addAttribute(createdAt, "datetime")}>${date}</time> <div class="post-body">${unescapeHTML(bodyHtml)}</div> </article> ` })}`;
+  return renderTemplate`${renderComponent($$result, "Base", $$Base, { "config": config, "title": pageTitle, "description": description, "canonicalPath": canonicalPath, "ogType": "article", "publishedTime": new Date(createdAt).toISOString(), "modifiedTime": new Date(updatedAt).toISOString() }, { "default": async ($$result2) => renderTemplate` ${maybeRenderHead()}<article class="prose prose-lg max-w-none prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-a:text-primary prose-pre:max-w-full prose-img:max-w-full prose-img:h-auto prose-figure:my-8 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-base-content/60"> <h1>${title}</h1> <time class="not-prose text-base-content/60 text-sm block mb-6"${addAttribute(createdAt, "datetime")}>${date}</time> <div class="post-body">${unescapeHTML(bodyHtml)}</div> </article> ` })}`;
 }, "/home/aurora/snappost/templates/shell/src/pages/blog/[slug].astro", void 0);
 
 const $$file = "/home/aurora/snappost/templates/shell/src/pages/blog/[slug].astro";
