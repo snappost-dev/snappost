@@ -2434,19 +2434,48 @@ _Lexer.lex;
 function escapeHtml(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
+function renderListItems(items, listStyle) {
+  if (!Array.isArray(items) || items.length === 0) return "";
+  const nestedTag = listStyle === "ordered" ? "ol" : "ul";
+  return items.map((item) => {
+    if (typeof item === "string") {
+      return `<li>${item}</li>`;
+    }
+    if (item && typeof item === "object" && item !== null) {
+      const o = item;
+      const content = typeof o.content === "string" ? o.content : "";
+      const subItems = Array.isArray(o.items) ? o.items : [];
+      const sub = subItems.length > 0 ? `<${nestedTag}>${renderListItems(subItems, listStyle)}</${nestedTag}>` : "";
+      return `<li>${content}${sub}</li>`;
+    }
+    return "";
+  }).join("");
+}
+function renderListBlock(data) {
+  const style = data.style === "ordered" ? "ordered" : "unordered";
+  const tag = style === "ordered" ? "ol" : "ul";
+  const items = Array.isArray(data.items) ? data.items : [];
+  return `<${tag}>${renderListItems(items, style)}</${tag}>`;
+}
 function renderEditorJSToHTML(json) {
-  if (!json || !json.blocks) return "";
+  if (!json || !Array.isArray(json.blocks)) return "";
   return json.blocks.map((block) => {
-    switch (block.type) {
-      case "header":
-        return `<h${block.data.level}>${block.data.text}</h${block.data.level}>`;
-      case "paragraph":
-        return `<p>${block.data.text}</p>`;
-      case "list": {
-        const tag = block.data.style === "ordered" ? "ol" : "ul";
-        const items = block.data.items.map((i) => `<li>${i}</li>`).join("");
-        return `<${tag}>${items}</${tag}>`;
+    if (!block || typeof block !== "object") return "";
+    const b = block;
+    const type = b.type;
+    const data = b.data ?? {};
+    switch (type) {
+      case "header": {
+        const level = Math.min(6, Math.max(1, Number(data.level) || 2));
+        const text = typeof data.text === "string" ? data.text : "";
+        return `<h${level}>${text}</h${level}>`;
       }
+      case "paragraph": {
+        const text = typeof data.text === "string" ? data.text : "";
+        return `<p>${text}</p>`;
+      }
+      case "list":
+        return renderListBlock(data);
       case "alert": {
         const cls = {
           info: "background:#dbeafe;border-left:4px solid #3b82f6",
@@ -2454,19 +2483,25 @@ function renderEditorJSToHTML(json) {
           success: "background:#d1fae5;border-left:4px solid #10b981",
           error: "background:#fee2e2;border-left:4px solid #ef4444"
         };
-        return `<div style="${cls[block.data.type] || cls.info};padding:1rem;margin:1rem 0;border-radius:0.5rem">${block.data.text}</div>`;
+        const t = typeof data.type === "string" ? data.type : "info";
+        const body = typeof data.text === "string" ? data.text : "";
+        return `<div style="${cls[t] || cls.info};padding:1rem;margin:1rem 0;border-radius:0.5rem">${body}</div>`;
       }
-      case "quote":
-        return `<blockquote style="border-left:4px solid #cbd5e1;padding:0.75rem 1rem;margin:1rem 0;color:#475569;font-style:italic">${escapeHtml(block.data.text || "")}${block.data.caption ? `<cite style="display:block;font-size:0.875rem;margin-top:0.5rem">— ${escapeHtml(block.data.caption)}</cite>` : ""}</blockquote>`;
+      case "quote": {
+        const qText = typeof data.text === "string" ? data.text : "";
+        const cap = typeof data.caption === "string" ? data.caption : "";
+        return `<blockquote style="border-left:4px solid #cbd5e1;padding:0.75rem 1rem;margin:1rem 0;color:#475569;font-style:italic">${qText}${cap ? `<cite style="display:block;font-size:0.875rem;margin-top:0.5rem;font-style:normal">— ${escapeHtml(cap)}</cite>` : ""}</blockquote>`;
+      }
       case "code":
         return `<pre style="background:#1e293b;color:#e2e8f0;padding:1rem;border-radius:0.5rem;overflow-x:auto;font-family:monospace;font-size:0.875rem;margin:1rem 0"><code>${escapeHtml(
-          block.data.code || ""
+          typeof data.code === "string" ? data.code : ""
         )}</code></pre>`;
       case "delimiter":
         return `<hr style="border:none;border-top:2px solid #e2e8f0;margin:2rem 0" />`;
       case "image": {
-        const url = String(block.data?.file?.url ?? block.data?.url ?? "").trim();
-        const caption = String(block.data?.caption ?? "").trim();
+        const file = data.file;
+        const url = String(file?.url ?? data.url ?? "").trim();
+        const caption = String(data.caption ?? "").trim();
         if (!url) return "";
         const alt = escapeHtml(caption);
         const cap = caption ? `<figcaption style="font-size:0.875rem;color:#64748b;margin-top:0.5rem">${escapeHtml(caption)}</figcaption>` : "";
@@ -2542,7 +2577,7 @@ const $$slug = createComponent(async ($$result, $$props, $$slots) => {
   const bodyHtml = shellPostBodyHtml(post);
   const pageTitle = `${title} \u2013 ${config.site_title}`;
   const canonicalPath = `/blog/${String(slug ?? "")}`;
-  return renderTemplate`${renderComponent($$result, "Base", $$Base, { "config": config, "title": pageTitle, "description": description, "canonicalPath": canonicalPath, "ogType": "article", "publishedTime": new Date(createdAt).toISOString(), "modifiedTime": new Date(updatedAt).toISOString() }, { "default": async ($$result2) => renderTemplate` ${maybeRenderHead()}<article class="prose prose-lg prose-slate max-w-none prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-pre:max-w-full prose-img:max-w-full prose-img:h-auto prose-figure:my-8 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-gray-600"> <h1>${title}</h1> <time class="not-prose text-gray-500 text-sm block mb-6"${addAttribute(createdAt, "datetime")}>${date}</time> <div class="post-body">${unescapeHTML(bodyHtml)}</div> </article> ` })}`;
+  return renderTemplate`${renderComponent($$result, "Base", $$Base, { "config": config, "title": pageTitle, "description": description, "canonicalPath": canonicalPath, "ogType": "article", "publishedTime": new Date(createdAt).toISOString(), "modifiedTime": new Date(updatedAt).toISOString() }, { "default": async ($$result2) => renderTemplate` ${maybeRenderHead()}<article class="prose prose-lg prose-slate max-w-none prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-a:text-blue-600 prose-pre:max-w-full prose-img:max-w-full prose-img:h-auto prose-figure:my-8 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-gray-600"> <h1>${title}</h1> <time class="not-prose text-gray-500 text-sm block mb-6"${addAttribute(createdAt, "datetime")}>${date}</time> <div class="post-body">${unescapeHTML(bodyHtml)}</div> </article> ` })}`;
 }, "/home/aurora/snappost/templates/shell/src/pages/blog/[slug].astro", void 0);
 
 const $$file = "/home/aurora/snappost/templates/shell/src/pages/blog/[slug].astro";

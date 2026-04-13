@@ -124,8 +124,10 @@ if (Astro.request.method === 'POST') {
 </div>
 
 <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"></script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/paragraph@2.11.7/dist/paragraph.umd.js"></script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/nested-list@1.4.3/dist/nested-list.umd.js"></script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/@sotaproject/strikethrough@1.0.1/dist/bundle.js"></script>
 <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"></script>
-<script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.js"></script>
 <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/quote.umd.js"></script>
 <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0/dist/code.umd.js"></script>
 <script is:inline src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"></script>
@@ -149,10 +151,12 @@ window.addEventListener('pageshow', (e) => {
 // Editor.js Init
 // ==========================================
 function boot() {
+  const StrikethroughTool = window.Strikethrough && (window.Strikethrough.default || window.Strikethrough);
   if (
     typeof EditorJS === 'undefined' ||
+    typeof Paragraph === 'undefined' ||
+    typeof NestedList === 'undefined' ||
     typeof Header === 'undefined' ||
-    typeof List === 'undefined' ||
     typeof Quote === 'undefined' ||
     typeof CodeTool === 'undefined' ||
     typeof Delimiter === 'undefined' ||
@@ -165,23 +169,45 @@ function boot() {
   if (editorBootStarted) return;
   editorBootStarted = true;
 
+  const inlineToolbar = ['bold', 'italic', 'link'];
+  if (StrikethroughTool) inlineToolbar.push('strikethrough');
+
+  const tools = {
+    paragraph: {
+      class: Paragraph,
+      inlineToolbar,
+      config: { placeholder: 'Paragraph — bold, italic, link from toolbar' },
+    },
+    header: {
+      class: Header,
+      inlineToolbar,
+      config: { placeholder: 'Heading', levels: [1, 2, 3, 4], defaultLevel: 2 },
+    },
+    list: {
+      class: NestedList,
+      inlineToolbar,
+      config: { defaultStyle: 'unordered' },
+    },
+    quote: { class: Quote, inlineToolbar },
+    code: { class: CodeTool },
+    delimiter: { class: Delimiter },
+    image: {
+      class: ImageTool,
+      config: {
+        endpoints: { byFile: '/api/upload-media' },
+        field: 'file',
+      },
+    },
+    alert: { class: window.SnappostAlertBlock },
+  };
+  if (StrikethroughTool) {
+    tools.strikethrough = { class: StrikethroughTool };
+  }
+
   editor = new EditorJS({
     holder: 'editorjs',
-    tools: {
-      header: { class: Header, inlineToolbar: true, config: { placeholder: 'Heading', levels: [1,2,3,4], defaultLevel: 2 } },
-      list:   { class: List, inlineToolbar: true },
-      quote:  { class: Quote, inlineToolbar: true },
-      code:   { class: CodeTool },
-      delimiter: { class: Delimiter },
-      image: {
-        class: ImageTool,
-        config: {
-          endpoints: { byFile: '/api/upload-media' },
-          field: 'file',
-        },
-      },
-      alert:  { class: window.SnappostAlertBlock },
-    },
+    inlineToolbar,
+    tools,
     placeholder: 'Start writing your post...',
     autofocus: true,
     onChange: () => {
@@ -369,58 +395,47 @@ async function savePost() {
 }
 
 // ==========================================
-// Preview
+// Preview (sunucu = kayıt ile aynı renderEditorJSToHTML)
 // ==========================================
-async function openPreview() {
-  let data;
-  try { data = await editor.save(); } catch { return; }
-  const title = document.getElementById('post-title').value || 'Untitled';
-  const html = renderPreviewHTML(data);
-
-  const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Preview: ${title}</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;color:#1a1a1a;line-height:1.7}h1,h2,h3,h4{margin-top:1.5em;margin-bottom:0.5em}p{margin:0.75em 0}ul,ol{padding-left:1.5em}li{margin:0.25em 0}code{background:#f3f4f6;padding:0.2em 0.4em;border-radius:3px;font-size:0.9em}</style></head><body><h1>${title}</h1>${html}</body></html>`);
-  win.document.close();
-}
-
-function escapePrev(s) {
-  if (!s) return '';
+function escapePreviewTitle(s) {
   return String(s)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
 
-function renderPreviewHTML(content) {
-  return content.blocks.map(block => {
-    switch (block.type) {
-      case 'header':    return '<h' + block.data.level + '>' + block.data.text + '</h' + block.data.level + '>';
-      case 'paragraph': return '<p>' + block.data.text + '</p>';
-      case 'list': {
-        const tag = block.data.style === 'ordered' ? 'ol' : 'ul';
-        return '<' + tag + '>' + block.data.items.map(i => '<li>' + i + '</li>').join('') + '</' + tag + '>';
-      }
-      case 'alert': {
-        const s = { info:'background:#dbeafe;border-left:4px solid #3b82f6', warning:'background:#fef3c7;border-left:4px solid #f59e0b', success:'background:#d1fae5;border-left:4px solid #10b981', error:'background:#fee2e2;border-left:4px solid #ef4444' };
-        return '<div style="' + (s[block.data.type]||s.info) + ';padding:1rem;margin:1rem 0;border-radius:0.5rem">' + block.data.text + '</div>';
-      }
-      case 'quote':
-        return '<blockquote style="border-left:4px solid #cbd5e1;padding:0.75rem 1rem;margin:1rem 0;color:#475569;font-style:italic">' + escapePrev(block.data.text) +
-          (block.data.caption ? '<cite style="display:block;font-size:0.875rem;margin-top:0.5rem">— ' + escapePrev(block.data.caption) + '</cite>' : '') + '</blockquote>';
-      case 'code':
-        return '<pre style="background:#1e293b;color:#e2e8f0;padding:1rem;border-radius:0.5rem;overflow-x:auto;font-family:monospace;font-size:0.875rem;margin:1rem 0"><code>' + escapePrev(block.data.code) + '</code></pre>';
-      case 'delimiter':
-        return '<hr style="border:none;border-top:2px solid #e2e8f0;margin:2rem 0" />';
-      case 'image': {
-        const u = (block.data.file && block.data.file.url) || block.data.url || '';
-        const cap = block.data.caption ? String(block.data.caption) : '';
-        if (!u) return '';
-        return '<figure style="margin:1rem 0"><img src="' + escapePrev(u) + '" alt="' + escapePrev(cap) + '" loading="lazy" style="max-width:100%;height:auto;display:block" />' +
-          (cap ? '<figcaption style="font-size:0.875rem;color:#64748b;margin-top:0.5rem">' + escapePrev(cap) + '</figcaption>' : '') + '</figure>';
-      }
-      default: return '';
+async function openPreview() {
+  let data;
+  try { data = await editor.save(); } catch { return; }
+  const titleRaw = document.getElementById('post-title').value || 'Untitled';
+  const title = escapePreviewTitle(titleRaw);
+  try {
+    const res = await fetch('/api/preview-html', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      alert('Preview failed: ' + res.status);
+      return;
     }
-  }).join('\n');
+    const payload = await res.json();
+    const html = payload.html || '';
+    const win = window.open('', '_blank');
+    win.document.write(
+      '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Preview: ' +
+        title +
+        '</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;color:#1a1a1a;line-height:1.7}h1,h2,h3,h4{margin-top:1.5em;margin-bottom:0.5em}p{margin:0.75em 0}ul,ol{padding-left:1.5em}li{margin:0.25em 0}a{color:#2563eb}code{background:#f3f4f6;padding:0.2em 0.4em;border-radius:3px;font-size:0.9em}s,.cdx-strikethrough{text-decoration:line-through}</style></head><body><h1>' +
+        title +
+        '</h1>' +
+        html +
+        '</body></html>'
+    );
+    win.document.close();
+  } catch (e) {
+    alert('Preview failed: ' + (e && e.message ? e.message : String(e)));
+  }
 }
 </script>
 </body>
