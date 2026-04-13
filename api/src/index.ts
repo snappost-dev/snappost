@@ -69,6 +69,8 @@ type Bindings = {
    * Varsayılan: true. Kapatmak için açıkça "false" verin.
    */
   PAGES_INLINE_ASSET_FALLBACK?: string;
+  /** Admin operasyon endpoint'leri için shared secret (x-admin-secret). */
+  ADMIN_SECRET?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -628,6 +630,107 @@ app.post('/api/provision', async (c) => {
 
     return c.json({ error: 'Provisioning failed', detail: String(error) }, 500);
   }
+});
+
+app.post('/api/admin/redeploy-all', async (c) => {
+  const adminSecret = c.env.ADMIN_SECRET;
+  if (!adminSecret || adminSecret.trim() === '') {
+    return c.json({ error: 'ADMIN_SECRET is not configured' }, 503);
+  }
+
+  const provided = c.req.header('x-admin-secret');
+  if (provided !== adminSecret) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const token = c.env.CF_API_TOKEN;
+  const accountId = c.env.CF_ACCOUNT_ID;
+
+  const shellTemplate = await prepareShellTemplate();
+  const dashTemplate = await prepareDashboardTemplate();
+
+  const { results: rows } = await c.env.DB.prepare(
+    `SELECT id, shell_project_name, dashboard_project_name, d1_database_id, access_token
+     FROM sites
+     ORDER BY id ASC`
+  ).all<{
+    id: number | string;
+    shell_project_name: string | null;
+    dashboard_project_name: string | null;
+    d1_database_id: string | null;
+    access_token: string | null;
+  }>();
+
+  type RedeployResult = {
+    siteId: string;
+    shellOk: boolean;
+    shellError?: string;
+    dashOk: boolean;
+    dashError?: string;
+  };
+
+  const redeployResults: RedeployResult[] = [];
+  let success = 0;
+  let failed = 0;
+
+  for (const site of rows) {
+    const siteId = String(site.id);
+    let shellOk = false;
+    let dashOk = false;
+    let shellError: string | undefined;
+    let dashError: string | undefined;
+
+    if (!site.shell_project_name) {
+      shellError = 'shell_project_name missing';
+      console.error(`[admin/redeploy-all] site=${siteId} shell skip: ${shellError}`);
+    } else {
+      try {
+        await uploadToPages(site.shell_project_name, shellTemplate, token, accountId, {
+          inlineAssetFallback: pagesInlineAssetFallbackEnabled(c.env),
+        });
+        shellOk = true;
+        console.log(`[admin/redeploy-all] site=${siteId} shell redeploy ok: ${site.shell_project_name}`);
+      } catch (e) {
+        shellError = e instanceof Error ? e.message : String(e);
+        console.error(`[admin/redeploy-all] site=${siteId} shell redeploy failed: ${shellError}`);
+      }
+    }
+
+    if (!site.dashboard_project_name) {
+      dashError = 'dashboard_project_name missing';
+      console.error(`[admin/redeploy-all] site=${siteId} dashboard skip: ${dashError}`);
+    } else {
+      try {
+        await uploadToPages(site.dashboard_project_name, dashTemplate, token, accountId, {
+          inlineAssetFallback: pagesInlineAssetFallbackEnabled(c.env),
+        });
+        dashOk = true;
+        console.log(`[admin/redeploy-all] site=${siteId} dashboard redeploy ok: ${site.dashboard_project_name}`);
+      } catch (e) {
+        dashError = e instanceof Error ? e.message : String(e);
+        console.error(`[admin/redeploy-all] site=${siteId} dashboard redeploy failed: ${dashError}`);
+      }
+    }
+
+    const result: RedeployResult = {
+      siteId,
+      shellOk,
+      ...(shellError ? { shellError } : {}),
+      dashOk,
+      ...(dashError ? { dashError } : {}),
+    };
+    redeployResults.push(result);
+
+    if (shellOk && dashOk) success++;
+    else failed++;
+  }
+
+  return c.json({
+    total: rows.length,
+    success,
+    failed,
+    results: redeployResults,
+  });
 });
 
 app.get('/api/sites', async (c) => {
