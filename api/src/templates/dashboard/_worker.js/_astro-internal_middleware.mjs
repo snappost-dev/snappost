@@ -1,6 +1,6 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
-import { d as defineMiddleware, s as sequence } from './chunks/index_9inaxI72.mjs';
-import './chunks/astro-designed-error-pages_DfsRyqyG.mjs';
+import { d as defineMiddleware, s as sequence } from './chunks/index_B7h2LYDg.mjs';
+import './chunks/astro-designed-error-pages_D2EHk5Hr.mjs';
 
 const PUBLIC_ROUTES = ["/login"];
 const onRequest$2 = defineMiddleware(async (context, next) => {

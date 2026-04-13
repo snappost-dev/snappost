@@ -1,6 +1,6 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 /* empty css                                */
-import { c as createComponent, e as createAstro } from '../chunks/astro/server_CZTmva32.mjs';
+import { c as createComponent, e as createAstro } from '../chunks/astro/server_CO8Dftjj.mjs';
 export { renderers } from '../renderers.mjs';
 
 const $$Astro = createAstro();
