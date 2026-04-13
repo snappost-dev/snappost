@@ -35,10 +35,11 @@ const rssHref = absoluteUrl(origin, '/rss.xml');
 const metaDescRaw = (description ?? config.site_description ?? '').trim();
 const metaDesc =
   metaDescRaw.length > 160 ? `${metaDescRaw.slice(0, 157)}…` : metaDescRaw;
+const theme = (config.site_theme || 'light').trim() || 'light';
 ---
 
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme={theme}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">

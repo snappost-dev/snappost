@@ -6,10 +6,15 @@ interface Props {
 }
 
 const { title } = Astro.props;
+const themeRow = await Astro.locals.runtime.env.DB
+  .prepare('SELECT value FROM config WHERE key = ? LIMIT 1')
+  .bind('site_theme')
+  .first<{ value: string }>();
+const theme = (themeRow?.value || 'light').trim() || 'light';
 ---
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme={theme}>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,6 +27,7 @@ const { title } = Astro.props;
       <nav class="flex gap-4">
         <a href="/" class="hover:text-blue-600">Posts</a>
         <a href="/new" class="hover:text-blue-600">New Post</a>
+        <a href="/settings" class="hover:text-blue-600">Settings</a>
         <form method="POST" action="/logout" class="inline">
           <button type="submit" class="text-red-600 hover:text-red-700">Logout</button>
         </form>

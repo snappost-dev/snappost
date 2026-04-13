@@ -1,0 +1,109 @@
+---
+import Dashboard from '../layouts/Dashboard.astro';
+
+const THEMES = [
+  'light',
+  'dark',
+  'cupcake',
+  'bumblebee',
+  'emerald',
+  'corporate',
+  'synthwave',
+  'retro',
+  'cyberpunk',
+  'valentine',
+  'halloween',
+  'garden',
+  'forest',
+  'aqua',
+  'lofi',
+  'pastel',
+  'fantasy',
+  'wireframe',
+  'black',
+  'luxury',
+  'dracula',
+  'cmyk',
+  'autumn',
+  'business',
+  'acid',
+  'lemonade',
+  'night',
+  'coffee',
+  'winter',
+  'dim',
+  'nord',
+  'sunset',
+] as const;
+
+const themeRow = await Astro.locals.runtime.env.DB
+  .prepare('SELECT value FROM config WHERE key = ? LIMIT 1')
+  .bind('site_theme')
+  .first<{ value: string }>();
+
+const currentThemeRaw = (themeRow?.value || 'light').trim();
+const currentTheme = (THEMES as readonly string[]).includes(currentThemeRaw)
+  ? currentThemeRaw
+  : 'light';
+---
+
+<Dashboard title="Settings">
+  <section class="max-w-xl">
+    <h1 class="text-3xl font-bold mb-2">Theme Settings</h1>
+    <p class="text-sm text-base-content/70 mb-6">
+      Choose a DaisyUI theme for both dashboard and shell rendering.
+    </p>
+
+    <form id="theme-form" class="space-y-4">
+      <div class="form-control">
+        <label class="label" for="site-theme">
+          <span class="label-text font-medium">Site Theme</span>
+        </label>
+        <select id="site-theme" class="select select-bordered w-full" name="theme">
+          {THEMES.map((theme) => (
+            <option value={theme} selected={theme === currentTheme}>
+              {theme}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Save Theme</button>
+      <p id="theme-message" class="text-sm"></p>
+    </form>
+  </section>
+</Dashboard>
+
+<script is:inline>
+  const form = document.getElementById('theme-form');
+  const select = document.getElementById('site-theme');
+  const message = document.getElementById('theme-message');
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const value = select && 'value' in select ? select.value : 'light';
+
+    try {
+      const response = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ key: 'site_theme', value }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Theme save failed');
+      }
+
+      if (message) {
+        message.textContent = 'Saved. Reloading...';
+      }
+      window.location.reload();
+    } catch (err) {
+      if (message) {
+        message.textContent = 'Could not save theme. Try again.';
+      }
+      console.error(err);
+    }
+  });
+</script>
