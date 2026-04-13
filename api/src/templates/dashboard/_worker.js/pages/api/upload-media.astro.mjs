@@ -13,11 +13,35 @@ const POST = async ({ request, locals }) => {
       { status: 503, headers: { "Content-Type": "application/json" } }
     );
   }
-  let body;
+  let incoming;
   try {
-    body = await request.formData();
+    incoming = await request.formData();
   } catch {
     return new Response(JSON.stringify({ success: 0, error: "Geçersiz form" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+  const field = incoming.get("file") ?? incoming.get("image");
+  if (!field || typeof field === "string") {
+    return new Response(
+      JSON.stringify({ success: 0, error: "multipart alanı file veya image gerekli" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  const outbound = new FormData();
+  try {
+    if (field instanceof File) {
+      const buf = await field.arrayBuffer();
+      const blob = new Blob([buf], {
+        type: field.type || "application/octet-stream"
+      });
+      outbound.append("file", blob, field.name || "upload.jpg");
+    } else {
+      outbound.append("file", field, "upload.jpg");
+    }
+  } catch {
+    return new Response(JSON.stringify({ success: 0, error: "Dosya okunamadı" }), {
       status: 400,
       headers: { "Content-Type": "application/json" }
     });
@@ -25,7 +49,7 @@ const POST = async ({ request, locals }) => {
   const upstream = await fetch(`${apiUrl}/api/sites/${encodeURIComponent(siteId)}/media`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
-    body
+    body: outbound
   });
   const text = await upstream.text();
   let payload;
@@ -38,10 +62,16 @@ const POST = async ({ request, locals }) => {
     });
   }
   if (!upstream.ok || !payload.url) {
-    return new Response(text, {
-      status: upstream.status,
-      headers: { "Content-Type": "application/json" }
-    });
+    return new Response(
+      JSON.stringify({
+        success: 0,
+        error: payload.error || `Yükleme başarısız (${upstream.status})`
+      }),
+      {
+        status: upstream.status,
+        headers: { "Content-Type": "application/json" }
+      }
+    );
   }
   return new Response(JSON.stringify({ success: 1, file: { url: payload.url } }), {
     status: 200,

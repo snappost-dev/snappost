@@ -205,8 +205,26 @@ function boot() {
     image: {
       class: ImageTool,
       config: {
-        endpoints: { byFile: '/api/upload-media' },
-        field: 'file',
+        uploader: {
+          uploadByFile(file) {
+            const body = new FormData();
+            body.append('file', file, file.name);
+            return fetch('/api/upload-media', {
+              method: 'POST',
+              body,
+              credentials: 'same-origin',
+            }).then(async (res) => {
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok || data.success !== 1 || !data.file?.url) {
+                throw new Error(data.error || `Upload failed (${res.status})`);
+              }
+              return data;
+            });
+          },
+          uploadByUrl() {
+            return Promise.reject(new Error('URL ile görsel ekleme henüz kapalı'));
+          },
+        },
       },
     },
     alert: { class: window.SnappostAlertBlock },
