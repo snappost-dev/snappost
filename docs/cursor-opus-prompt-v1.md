@@ -1,6 +1,7 @@
 > **Arşiv — erken tasarım spesifikasyonu**  
 > Uygulanmış revize plan için bkz. [`archive-editorjs-v2-plan.md`](./archive-editorjs-v2-plan.md).  
 > Aktif özet: repo kökünde `PROJECT-STATUS.md`.
+> Bu belge **legacy** kabul edilir; aktif implementasyon kararlari icin `PROJECT-STATUS.md` ve ilgili README dosyalarini kullan.
 
 ---
 

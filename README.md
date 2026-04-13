@@ -12,7 +12,7 @@ Launch your blog in 15 seconds. Email/password ile kayıt ol, blog adını seç,
 api/        → Provisioning API (Hono / CF Workers)
 landing/    → Landing page (Astro SSR / CF Pages)
 templates/  → Blog + Dashboard Astro projeleri
-docs/       → Eski dokümanlar (arşiv)
+docs/       → Operasyon + sprint + env checklist + arşiv
 ```
 
 ## Detaylı Bilgi
@@ -20,6 +20,13 @@ docs/       → Eski dokümanlar (arşiv)
 Tüm mimari, endpoint'ler, schema'lar, deploy bilgisi ve yol haritası için:
 
 **[PROJECT-STATUS.md](./PROJECT-STATUS.md)**
+
+## Dokumantasyon Hiyerarsisi
+
+- Aktif kaynaklar: `PROJECT-STATUS.md`, `README.md`, `api/README.md`, `landing/README.md`
+- Operasyonel rehberler: `docs/SPRINT-PLAN.md`, `docs/ENV-VARIABLES-CHECKLIST.md`
+- Template calisma rehberleri: `templates/shell/README.md`, `templates/dashboard/README.md`
+- Legacy/arsiv belgeleri yalnizca tarihsel baglam icindir; karar verirken aktif kaynaklar esas alinmalidir.
 
 ## Local Geliştirme
 

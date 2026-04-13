@@ -1,3 +1,8 @@
+> **ARCHIVE / LEGACY**
+> Bu belge tarihsel handoff notudur; aktif karar kaynagi olarak kullanmayin.
+> Guncel referanslar: `PROJECT-STATUS.md`, `README.md`, `api/README.md`, `landing/README.md`.
+> Sonraki operasyon adimlari icin: `docs/SPRINT-PLAN.md` ve `docs/ENV-VARIABLES-CHECKLIST.md`.
+
 # SNAPPOST - PHASE 2 HANDOFF
 
 ## PROJECT STATE (April 3, 2026)

@@ -16,8 +16,9 @@
     "r2:create": "wrangler r2 bucket create snappost-media"
   },
   "dependencies": {
-    "hono": "^4.0.0",
-    "bcryptjs": "^2.4.3"
+    "@noble/hashes": "^1.8.0",
+    "bcryptjs": "^2.4.3",
+    "hono": "^4.0.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240208.0",

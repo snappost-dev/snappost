@@ -19,6 +19,7 @@
 | [ ] | `CORS_ORIGINS` | Plain | Hayır | Virgülle tam Origin URL’leri (`https://…`); özel landing alanı eklerken **mutlaka** buraya + varsayılanları birlikte yazın. Boş = kod içi varsayılan liste. Kiracı `sp-*-dash.pages.dev` upload için kodda ayrıca izinli |
 | [ ] | `MAX_MEDIA_UPLOAD_MB` | Plain | Hayır | Görsel yükleme üst sınırı (0.5–20), varsayılan 5 |
 | [ ] | `SNAPPOST_API_PUBLIC_URL` | Plain | Hayır | Kamuya açık API kökü (`https://…`, sondaki `/` olmadan). **Önerilir:** production’da tanımlayın; medya `url` yanıtı ve provision’da dashboard’a yazılan `SNAPPOST_API_URL` bununla hizalanır. Boş bırakılırsa isteğin `Origin`’i kullanılır (yerel `wrangler dev` ile oluşan dashboard’da upload URL’leri yanlış olabilir) |
+| [ ] | `PAGES_INLINE_ASSET_FALLBACK` | Plain | Hayır | Varsayılan açık (`true`). `pages/assets/upload` 500/1101 olduğunda CSS/JS’i `_worker.js` içine inline edip provision’ı düşürmeden devam eder. Kapatmak için açıkça `false` |
 
 \* Worker’da binding olarak da kullanılıyorsa Dashboard’da plain var olarak görünmeli.
 
@@ -70,7 +71,7 @@ SSR’da `Astro.locals.runtime.env.API_URL` okunur; **Production** (ve gerekirse
 
 | Dosya | İçerik özeti |
 |--------|----------------|
-| `api/.dev.vars` | `CF_API_TOKEN`, `CF_ACCOUNT_ID`, `JWT_SECRET`, isteğe bağlı `ALLOWED_EMAILS`, `MAX_SITES_PER_USER`, `ALLOW_TEST_ROUTES` |
+| `api/.dev.vars` | `CF_API_TOKEN`, `CF_ACCOUNT_ID`, `JWT_SECRET`, isteğe bağlı `ALLOWED_EMAILS`, `MAX_SITES_PER_USER`, `PAGES_INLINE_ASSET_FALLBACK`, `ALLOW_TEST_ROUTES` |
 | `landing/.dev.vars` | `API_URL=http://localhost:8787` (veya tünel URL’niz) |
 
 ---
@@ -82,5 +83,5 @@ SSR’da `Astro.locals.runtime.env.API_URL` okunur; **Production** (ve gerekirse
 - [ ] Whitelist kullanacaksanız: `ALLOWED_EMAILS` hem **doğru ortamda** hem liste güncel
 - [ ] Blog limiti istiyorsanız: `MAX_SITES_PER_USER` sayı string (örn. `3`)
 - [ ] Özel landing domain: tarayıcıdan API’ye istek atılıyorsa `CORS_ORIGINS` içinde o `https://…` origin’i de var (veya tam listeyi CF’de güncellediniz)
-- [ ] Duman testleri: `SMOKE_API_URL=… cd api && npm run smoke` (isteğe bağlı `SMOKE_EMAIL` / `SMOKE_PASSWORD`) — [SPRINT-PLAN.md](./SPRINT-PLAN.md) §C
+- [ ] Duman testleri: `SMOKE_API_URL=… cd api && npm run smoke` (isteğe bağlı `SMOKE_EMAIL` / `SMOKE_PASSWORD` / `SMOKE_DUP_SITE_NAME` / `SMOKE_SITE_ID` / `SMOKE_ACCESS_TOKEN`) — [SPRINT-PLAN.md](./SPRINT-PLAN.md) §C
 - [ ] Kiracı **shell/dashboard** şablonunu değiştirdiyseniz: `cd api && npm run templates:ship`, ardından **`wrangler deploy`** ve `api/src/templates/*` + `api/src/generated/*` commit — [SPRINT-PLAN.md](./SPRINT-PLAN.md) §B7, [PROJECT-STATUS.md](../PROJECT-STATUS.md) §7

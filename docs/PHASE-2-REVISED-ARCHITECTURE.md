@@ -1,3 +1,8 @@
+> **ARCHIVE / LEGACY**
+> Bu belge tarihsel mimari revizyon notudur; aktif karar kaynagi degildir.
+> Guncel mimari ve akış icin: `PROJECT-STATUS.md`.
+> Uygulama/operasyon detaylari icin: `README.md`, `api/README.md`, `docs/SPRINT-PLAN.md`.
+
 # SNAPPOST PHASE 2 - REVİZE MİMARİ
 
 **Tarih:** 4 Nisan 2026  

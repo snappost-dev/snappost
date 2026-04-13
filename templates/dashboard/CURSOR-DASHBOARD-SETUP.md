@@ -1,3 +1,8 @@
+> **ARCHIVE / LEGACY**
+> Bu dosya ilk dashboard kurulum donemine ait tarihsel Cursor setup notudur.
+> Aktif dashboard rehberi: `templates/dashboard/README.md`.
+> Genel sistem baglami: `PROJECT-STATUS.md`.
+
 # SNAPPOST DASHBOARD TEMPLATE - CURSOR SETUP GUIDE
 
 Sen bir AI asistansın ve dashboard template'ini kuruyorsun. Her adımı sırayla takip et.

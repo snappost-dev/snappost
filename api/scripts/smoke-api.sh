@@ -4,6 +4,7 @@
 # İsteğe bağlı: SMOKE_EMAIL, SMOKE_PASSWORD — login + GET /api/sites.
 # İsteğe bağlı: SMOKE_DUP_SITE_NAME — yukarıdakilerle birlikte; bu hesapta *zaten var olan*
 #   site_name ile POST /api/provision → beklenen 409 (SPRINT-PLAN §C1 T7a). Yeni blog oluşturmaz.
+# İsteğe bağlı: SMOKE_SITE_ID + SMOKE_ACCESS_TOKEN — /api/sites/:id/media için küçük PNG upload testi.
 
 set -euo pipefail
 
@@ -112,6 +113,35 @@ fi
 
 if [[ -n "${SMOKE_DUP_SITE_NAME:-}" && ( -z "${SMOKE_EMAIL:-}" || -z "${SMOKE_PASSWORD:-}" ) ]]; then
   echo "SKIP  SMOKE_DUP_SITE_NAME tanımlı ama SMOKE_EMAIL/SMOKE_PASSWORD yok — dup provision testi atlandı" >&2
+fi
+
+# Opsiyonel: medya upload smoke (site access_token ile)
+if [[ -n "${SMOKE_SITE_ID:-}" || -n "${SMOKE_ACCESS_TOKEN:-}" ]]; then
+  if [[ -z "${SMOKE_SITE_ID:-}" || -z "${SMOKE_ACCESS_TOKEN:-}" ]]; then
+    fail "SMOKE_SITE_ID ve SMOKE_ACCESS_TOKEN birlikte verilmelidir"
+  fi
+
+  tmp_png="$(mktemp /tmp/snappost-smoke-img-XXXXXX.png)"
+  cleanup_tmp() { rm -f "$tmp_png"; }
+  trap cleanup_tmp EXIT
+
+  # 1x1 PNG (70 byte civarı)
+  printf 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO2pW8kAAAAASUVORK5CYII=' \
+    | base64 -d > "$tmp_png"
+
+  media_status="$(curl -sS -o /tmp/snappost-smoke-media.json -w '%{http_code}' \
+    -X POST "$BASE/api/sites/${SMOKE_SITE_ID}/media" \
+    -H "Authorization: Bearer ${SMOKE_ACCESS_TOKEN}" \
+    -F "file=@${tmp_png};type=image/png")"
+
+  [[ "$media_status" == "200" ]] || fail "POST /api/sites/${SMOKE_SITE_ID}/media beklenen 200, gelen: $media_status"
+  node -e "
+    const fs = require('fs');
+    let j;
+    try { j = JSON.parse(fs.readFileSync('/tmp/snappost-smoke-media.json', 'utf8')); } catch (e) { process.exit(1); }
+    if (!j.url || typeof j.url !== 'string') process.exit(1);
+  " || fail "Medya upload JSON parse/url doğrulaması başarısız"
+  pass "POST /api/sites/${SMOKE_SITE_ID}/media (access_token) -> 200 + url"
 fi
 
 echo "== Tüm duman testleri tamam"

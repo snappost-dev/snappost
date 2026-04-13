@@ -1,3 +1,8 @@
+> **ARCHIVE / LEGACY**
+> Bu belge iptal edilen OAuth donemine aittir ve aktif sistemi temsil etmez.
+> Snappost'ta aktif auth modeli email+sifre + JWT'dir.
+> Guncel auth/provision dokumani icin: `PROJECT-STATUS.md`, `api/README.md`, `landing/README.md`.
+
 # SNAPPOST - PHASE 2 SKELETON
 
 Bu skeleton Phase 1'den sonra eklenmesi gereken yeni klasörleri içeriyor.

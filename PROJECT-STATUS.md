@@ -1,10 +1,16 @@
 # SNAPPOST — Project Status (V1 MVP + dashboard editörü)
 
-**Son güncelleme:** 2026-04-06  
+**Son güncelleme:** 2026-04-13  
 **Repo:** https://github.com/snappost-dev/snappost  
 **Branch:** main
 
 **MVP V1 (bu repodaki kapsam):** Kayıt/giriş, provision (blog + dashboard + kiracı D1), landing dashboard (site listesi, custom domain DNS yardımı, blog silme), dashboard’da Editor.js yazı editörü, opsiyonel e-posta whitelist ve opsiyonel kullanıcı başına blog sayısı sınırı. **Operasyon + sonraki sprint özeti:** [docs/SPRINT-PLAN.md](docs/SPRINT-PLAN.md) (test kabuğu kapanışı, CF panel rate limit rehberi, duman testleri, blog+R2+SEO planı). **Sonraki kod** için ayrıca: dashboard şifre yönetimi, mimari ölçekleme (§9.3), ürün büyümesi (§9.4).
+
+**Dokumantasyon hiyerarsisi (aktif -> legacy):**
+- Aktif karar kaynagi: `PROJECT-STATUS.md`
+- Uygulama/operasyon: `README.md`, `api/README.md`, `landing/README.md`, `docs/SPRINT-PLAN.md`, `docs/ENV-VARIABLES-CHECKLIST.md`
+- Template lokal gelistirme: `templates/shell/README.md`, `templates/dashboard/README.md`
+- Legacy/arsiv belgeler: PHASE-2 ve ilk Cursor setup dokumanlari (yalnizca tarihsel baglam)
 
 ---
 
@@ -198,7 +204,7 @@ config (key, value)
 | Landing | Astro 4 SSR, Tailwind, @astrojs/cloudflare |
 | Templates (dashboard) | Astro 4 SSR, Tailwind, D1, **Editor.js** (CDN), DaisyUI (sadece new/edit sayfaları); sunucuda JSON→HTML |
 | Templates (shell) | Astro 4 SSR, Tailwind, D1; `marked` bağımlılığı şemada/kodda legacy için kalabilir |
-| Deploy mekanizması | CF Pages Direct Upload API (upload-token → bucket upload → upsert-hashes → FormData deployment with _worker.js bundle) |
+| Deploy mekanizması | CF Pages Direct Upload API (upload-token → check-missing → bucket upload/retry → upsert-hashes → FormData deployment with _worker.js bundle; 500/1101’de opsiyonel inline fallback) |
 | Template embedding | Build time esbuild bundle → base64 encoded TS modules |
 | Session | httpOnly cookie (`auth_token`), JWT Bearer token |
 
@@ -277,6 +283,8 @@ ALLOWED_EMAILS=...
 # CORS_ORIGINS=https://snappost.dev,https://snappost-landing.pages.dev
 # Opsiyonel; görsel yükleme MB üst sınırı (0.5–20), varsayılan 5
 # MAX_MEDIA_UPLOAD_MB=5
+# Opsiyonel; Pages assets upload arızasında CSS/JS'in _worker.js içine inline edilerek provision'ın devam etmesi (varsayılan true). Kapatmak için "false"
+# PAGES_INLINE_ASSET_FALLBACK=true
 # Yerelde /test/* kullanacaksanız:
 ALLOW_TEST_ROUTES=true
 
@@ -306,6 +314,7 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 | 12 | Template güncelleme mekanizması yok | Template değişince mevcut siteler eski versiyonda kalıyor |
 | 13 | Site başına 2× Pages + 1× D1 ölçeklenmesi | CF Pages proje limitleri; tek hesapta çok müşteri sürdürülebilir değil — multi-tenant veya az yüzey mimarisi gerekir |
 | 14 | E-posta whitelist | **Uygulandı:** `ALLOWED_EMAILS` (opsiyonel); boş/tanımsız = kısıt yok. Uçlar: register, login, me, sites, site detay, provision, domain, site silme — **§9.5 (kapatıldı)**. |
+| 15 | Pages assets upload 500/1101 | Bazı hesap/projelerde `POST /pages/assets/upload` tek dosyada bile 500 dönebiliyor. Provision akışında `check-missing` + bölmeli retry + opsiyonel `PAGES_INLINE_ASSET_FALLBACK` (varsayılan açık) ile devam edilir. |
 
 ---
 

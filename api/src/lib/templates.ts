@@ -1,3 +1,5 @@
+import { blake3 } from '@noble/hashes/blake3';
+import { utf8ToBytes } from '@noble/hashes/utils';
 import { shellFiles, shellWorkerBundle, shellRoutesJson, type TemplateFile } from '../generated/shell-template';
 import { dashboardFiles, dashboardWorkerBundle, dashboardRoutesJson } from '../generated/dashboard-template';
 
@@ -30,18 +32,37 @@ export type PreparedFile = {
   hash: string;
 };
 
+/** Wrangler `path.extname(filepath).substring(1)` — BLAKE3 girdisi için uzantı (noktasız). */
+function fileExtension(filePath: string): string {
+  const base = filePath.split('/').pop() ?? '';
+  const dot = base.lastIndexOf('.');
+  if (dot <= 0) return '';
+  return base.slice(dot + 1);
+}
+
+/** Cloudflare Pages asset anahtarı: `blake3-wasm` ile aynı — blake3(base64 + ext).hex.slice(0, 32). */
 async function hashFile(base64: string, path: string): Promise<string> {
-  const raw = atob(base64);
-  const combined = raw + path;
-  const data = new TextEncoder().encode(combined);
-  const hashBuffer = await crypto.subtle.digest('MD5', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const ext = fileExtension(path);
+  const digest = blake3(utf8ToBytes(base64 + ext));
+  const first16 = digest.subarray(0, 16);
+  return [...first16].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Wrangler pages/validate.ts IGNORE_LIST — bunlar hashed asset olarak upload edilmez;
+ * `_routes.json` yalnızca deployment FormData ile gider. İkisini birden göndermek CF'de upload hatasına yol açabiliyor.
+ */
+function isNotHashedPagesAsset(path: string): boolean {
+  const p = path.replace(/^\/+/, '');
+  if (p === '_routes.json' || p === '_redirects' || p === '_headers') return true;
+  if (p.startsWith('functions/')) return true;
+  return false;
 }
 
 async function prepareFiles(files: TemplateFile[]): Promise<PreparedFile[]> {
+  const staticFiles = files.filter((f) => !isNotHashedPagesAsset(f.path));
   return Promise.all(
-    files.map(async (f) => ({
+    staticFiles.map(async (f) => ({
       path: f.path,
       base64: f.base64,
       size: f.size,

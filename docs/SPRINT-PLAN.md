@@ -6,6 +6,15 @@
 
 ---
 
+## MVP Freeze (kapanış modu)
+
+- Yeni feature alımı durur; yalnızca **P0/P1** stabilizasyon işi alınır.
+- Refactor sadece bug fix için zorunluysa yapılır.
+- Geçici workaround yerine kalıcı fix + test kanıtı zorunludur.
+- P2/P3 maddeler backlog’a taşınır; MVP kapanışına dahil edilmez.
+
+---
+
 ## A — Test kabuğu kapanışı (operasyon + güvenlik)
 
 ### A1 — Env checklist
@@ -149,6 +158,9 @@ export SMOKE_API_URL="https://snappost-api.<subdomain>.workers.dev"
 # export SMOKE_PASSWORD="yourpassword"
 # İsteğe bağlı — T7a: bu hesapta zaten kayıtlı bir site_name (yeni provision oluşturmaz):
 # export SMOKE_DUP_SITE_NAME="my-blog"
+# İsteğe bağlı — medya upload smoke (site access_token ile):
+# export SMOKE_SITE_ID="123"
+# export SMOKE_ACCESS_TOKEN="..."
 cd api && npm run smoke
 ```
 

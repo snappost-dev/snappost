@@ -1,3 +1,8 @@
+> **ARCHIVE / LEGACY**
+> Bu dosya ilk kurulum donemine ait tarihsel Cursor setup notudur.
+> Aktif shell rehberi: `templates/shell/README.md`.
+> Genel sistem baglami: `PROJECT-STATUS.md`.
+
 # SNAPPOST SHELL TEMPLATE - CURSOR SETUP GUIDE
 
 Sen bir AI asistansın ve bu projeyi sıfırdan kuruyorsun. Her adımı sırayla takip et.

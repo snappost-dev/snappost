@@ -3,7 +3,11 @@ import { cors } from 'hono/cors';
 import { sign, verify } from 'hono/jwt';
 import bcrypt from 'bcryptjs';
 import {
-  createD1Database, executeD1SQL, createPagesProject, uploadToPages,
+  createD1Database,
+  deleteD1DatabasesByName,
+  executeD1SQL,
+  createPagesProject,
+  uploadToPages,
   setPagesBinding, deletePagesProject, deleteD1Database,
   addPagesCustomDomain, removePagesCustomDomain,
 } from './lib/cloudflare';
@@ -60,6 +64,11 @@ type Bindings = {
    * istek origin’i kullanılır; gerçek kiracı dashboard’ları için production’da tanımlanmalıdır.
    */
   SNAPPOST_API_PUBLIC_URL?: string;
+  /**
+   * Pages asset upload hattı (pages/assets/upload) fail olduğunda CSS/JS'i _worker.js içine gömerek devam et.
+   * Varsayılan: true. Kapatmak için açıkça "false" verin.
+   */
+  PAGES_INLINE_ASSET_FALLBACK?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -106,6 +115,10 @@ async function rejectIfNotWhitelisted(
 
 function testRoutesAllowed(env: Bindings): boolean {
   return env.ALLOW_TEST_ROUTES === 'true';
+}
+
+function pagesInlineAssetFallbackEnabled(env: Bindings): boolean {
+  return env.PAGES_INLINE_ASSET_FALLBACK !== 'false';
 }
 
 async function verifyJwtBearer(
@@ -489,7 +502,10 @@ app.post('/api/provision', async (c) => {
   let siteRowId: number | null = null;
 
   try {
-    // 3. Create D1 database
+    // 3. D1: aynı isimde kalan eski DB'yi sil (başarısız rollback / tekrar deneme)
+    console.log(`[provision] Removing orphan D1 by name if any: ${dbName}`);
+    await deleteD1DatabasesByName(dbName, token, accountId);
+
     console.log(`[provision] Creating D1: ${dbName}`);
     databaseId = await createD1Database(dbName, token, accountId);
 
@@ -543,7 +559,9 @@ app.post('/api/provision', async (c) => {
 
     // 6. Deploy shell
     const shellTemplate = await prepareShellTemplate();
-    const shellUrl = await uploadToPages(shellName, shellTemplate, token, accountId);
+    const shellUrl = await uploadToPages(shellName, shellTemplate, token, accountId, {
+      inlineAssetFallback: pagesInlineAssetFallbackEnabled(c.env),
+    });
     console.log(`[provision] Shell deployed: ${shellUrl}`);
 
     // 7. Create dashboard project + set binding BEFORE deploy
@@ -568,7 +586,9 @@ app.post('/api/provision', async (c) => {
 
     // 8. Deploy dashboard
     const dashTemplate = await prepareDashboardTemplate();
-    const dashUrl = await uploadToPages(dashboardName, dashTemplate, token, accountId);
+    const dashUrl = await uploadToPages(dashboardName, dashTemplate, token, accountId, {
+      inlineAssetFallback: pagesInlineAssetFallbackEnabled(c.env),
+    });
     console.log(`[provision] Dashboard deployed: ${dashUrl}`);
 
     return c.json({

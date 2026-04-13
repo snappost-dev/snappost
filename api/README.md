@@ -36,6 +36,8 @@ ALLOWED_EMAILS=alice@example.com,bob@example.com
 # CORS_ORIGINS=http://localhost:4321,http://localhost:4322
 # Opsiyonel — görsel yükleme üst sınırı (MB)
 # MAX_MEDIA_UPLOAD_MB=5
+# Opsiyonel — Pages assets upload (500/1101) başarısız olursa CSS/JS'i _worker.js içine gömerek provision'ın devam etmesi (varsayılan true). Kapatmak için "false"
+# PAGES_INLINE_ASSET_FALLBACK=true
 # Yerelde /test/* açmak için (production’da kullanmayın)
 ALLOW_TEST_ROUTES=true
 ```
@@ -49,6 +51,8 @@ ALLOW_TEST_ROUTES=true
 **Kiracı dashboard (B2):** `https://sp-{userId}-{site_name}-dash.pages.dev` origin’leri **ekstra env gerekmeden** CORS’ta kabul edilir (multipart upload için).
 
 **MAX_MEDIA_UPLOAD_MB:** Opsiyonel; görsel yükleme üst sınırı megabayt (0.5–20, varsayılan 5).
+
+**PAGES_INLINE_ASSET_FALLBACK:** Opsiyonel; varsayılan davranış **açık** (`true`). `POST /pages/assets/upload` Cloudflare tarafında 500/1101 verdiğinde provision akışı shell/dashboard static asset URL’lerini `_worker.js` içine inline ederek deploy’u düşürmeden devam eder. Kapatmak için açıkça `false` verin.
 
 **ALLOW_TEST_ROUTES:** Yalnızca tam olarak `true` iken `/test/*` yanıt verir. Tanımsız veya başka değer → **404** (production’da tanımlamayın).
 
@@ -151,6 +155,9 @@ export SMOKE_API_URL="https://snappost-api.<subdomain>.workers.dev"
 # export SMOKE_PASSWORD="..."
 # İsteğe bağlı — aynı kullanıcıda mevcut site_name ile provision → 409 (T7a):
 # export SMOKE_DUP_SITE_NAME="mevcut-blog-adiniz"
+# İsteğe bağlı — medya upload smoke (site access_token ile):
+# export SMOKE_SITE_ID="123"
+# export SMOKE_ACCESS_TOKEN="..."
 npm run smoke
 ```
 
