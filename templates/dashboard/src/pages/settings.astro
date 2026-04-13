@@ -36,39 +36,60 @@ const THEMES = [
   'sunset',
 ] as const;
 
-const themeRow = await Astro.locals.runtime.env.DB
+const siteThemeRow = await Astro.locals.runtime.env.DB
   .prepare('SELECT value FROM config WHERE key = ? LIMIT 1')
   .bind('site_theme')
   .first<{ value: string }>();
 
-const currentThemeRaw = (themeRow?.value || 'light').trim();
-const currentTheme = (THEMES as readonly string[]).includes(currentThemeRaw)
-  ? currentThemeRaw
+const dashboardThemeRow = await Astro.locals.runtime.env.DB
+  .prepare('SELECT value FROM config WHERE key = ? LIMIT 1')
+  .bind('dashboard_theme')
+  .first<{ value: string }>();
+
+const currentSiteThemeRaw = (siteThemeRow?.value || 'light').trim();
+const currentSiteTheme = (THEMES as readonly string[]).includes(currentSiteThemeRaw)
+  ? currentSiteThemeRaw
+  : 'light';
+
+const currentDashboardThemeRaw = (dashboardThemeRow?.value || 'light').trim();
+const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDashboardThemeRaw)
+  ? currentDashboardThemeRaw
   : 'light';
 ---
 
 <Dashboard title="Settings">
   <section class="max-w-xl">
     <h1 class="text-3xl font-bold mb-2">Theme Settings</h1>
-    <p class="text-sm text-base-content/70 mb-6">
-      Choose a DaisyUI theme for both dashboard and shell rendering.
-    </p>
+    <p class="text-sm text-base-content/70 mb-6">Manage blog and dashboard themes independently.</p>
 
     <form id="theme-form" class="space-y-4">
       <div class="form-control">
-        <label class="label" for="site-theme">
-          <span class="label-text font-medium">Site Theme</span>
+        <label class="label" for="blog-theme">
+          <span class="label-text font-medium">Blog Theme</span>
         </label>
-        <select id="site-theme" class="select select-bordered w-full" name="theme">
+        <select id="blog-theme" class="select select-bordered w-full" name="blog-theme">
           {THEMES.map((theme) => (
-            <option value={theme} selected={theme === currentTheme}>
+            <option value={theme} selected={theme === currentSiteTheme}>
               {theme}
             </option>
           ))}
         </select>
       </div>
 
-      <button type="submit" class="btn btn-primary">Save Theme</button>
+      <div class="form-control">
+        <label class="label" for="dashboard-theme">
+          <span class="label-text font-medium">Dashboard Theme</span>
+        </label>
+        <select id="dashboard-theme" class="select select-bordered w-full" name="dashboard-theme">
+          {THEMES.map((theme) => (
+            <option value={theme} selected={theme === currentDashboardTheme}>
+              {theme}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Save Themes</button>
       <p id="theme-message" class="text-sm"></p>
     </form>
   </section>
@@ -76,24 +97,33 @@ const currentTheme = (THEMES as readonly string[]).includes(currentThemeRaw)
 
 <script is:inline>
   const form = document.getElementById('theme-form');
-  const select = document.getElementById('site-theme');
+  const blogThemeSelect = document.getElementById('blog-theme');
+  const dashboardThemeSelect = document.getElementById('dashboard-theme');
   const message = document.getElementById('theme-message');
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const value = select && 'value' in select ? select.value : 'light';
+    const blogTheme = blogThemeSelect && 'value' in blogThemeSelect ? blogThemeSelect.value : 'light';
+    const dashboardTheme =
+      dashboardThemeSelect && 'value' in dashboardThemeSelect ? dashboardThemeSelect.value : 'light';
 
     try {
-      const response = await fetch('/api/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ key: 'site_theme', value }),
-      });
+      const requests = await Promise.all([
+        fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ key: 'site_theme', value: blogTheme }),
+        }),
+        fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ key: 'dashboard_theme', value: dashboardTheme }),
+        }),
+      ]);
 
-      if (!response.ok) {
-        throw new Error('Theme save failed');
-      }
+      if (requests.some((response) => !response.ok)) throw new Error('Theme save failed');
 
       if (message) {
         message.textContent = 'Saved. Reloading...';
