@@ -46,6 +46,22 @@ const dashboardThemeRow = await Astro.locals.runtime.env.DB
   .bind('dashboard_theme')
   .first<{ value: string }>();
 
+const siteConfigRows = await Astro.locals.runtime.env.DB
+  .prepare(
+    `SELECT key, value FROM config
+     WHERE key IN ('site_title', 'site_description', 'author_name', 'author_bio')`
+  )
+  .all<{ key: string; value: string }>();
+
+const siteConfig = Object.fromEntries(
+  (siteConfigRows.results || []).map((row) => [row.key, row.value])
+) as Record<string, string>;
+
+const siteTitle = (siteConfig.site_title || '').trim();
+const siteDescription = (siteConfig.site_description || '').trim();
+const authorName = (siteConfig.author_name || '').trim();
+const authorBio = (siteConfig.author_bio || '').trim();
+
 const currentSiteThemeRaw = (siteThemeRow?.value || 'light').trim();
 const currentSiteTheme = (THEMES as readonly string[]).includes(currentSiteThemeRaw)
   ? currentSiteThemeRaw
@@ -59,6 +75,47 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
 
 <Dashboard title="Settings">
   <section class="max-w-xl">
+    <h1 class="text-3xl font-bold mb-2">Site Settings</h1>
+    <p class="text-sm text-base-content/70 mb-6">Update core blog metadata and theme preferences.</p>
+
+    <form id="site-config-form" class="space-y-4 mb-10">
+      <div class="form-control">
+        <label class="label" for="site-title">
+          <span class="label-text font-medium">Site Basligi</span>
+        </label>
+        <input id="site-title" name="site_title" class="input input-bordered w-full" value={siteTitle} />
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="site-description">
+          <span class="label-text font-medium">Site Aciklamasi</span>
+        </label>
+        <input
+          id="site-description"
+          name="site_description"
+          class="input input-bordered w-full"
+          value={siteDescription}
+        />
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="author-name">
+          <span class="label-text font-medium">Yazar Adi</span>
+        </label>
+        <input id="author-name" name="author_name" class="input input-bordered w-full" value={authorName} />
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="author-bio">
+          <span class="label-text font-medium">Yazar Biyografisi</span>
+        </label>
+        <textarea id="author-bio" name="author_bio" class="textarea textarea-bordered w-full" rows="4">{authorBio}</textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Kaydet</button>
+      <p id="site-config-message" class="text-sm"></p>
+    </form>
+
     <h1 class="text-3xl font-bold mb-2">Theme Settings</h1>
     <p class="text-sm text-base-content/70 mb-6">Manage blog and dashboard themes independently.</p>
 
@@ -96,6 +153,46 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
 </Dashboard>
 
 <script is:inline>
+  const siteConfigForm = document.getElementById('site-config-form');
+  const siteConfigMessage = document.getElementById('site-config-message');
+
+  siteConfigForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const titleInput = document.getElementById('site-title');
+    const descriptionInput = document.getElementById('site-description');
+    const authorNameInput = document.getElementById('author-name');
+    const authorBioInput = document.getElementById('author-bio');
+
+    const updates = [
+      { key: 'site_title', value: titleInput && 'value' in titleInput ? titleInput.value : '' },
+      {
+        key: 'site_description',
+        value: descriptionInput && 'value' in descriptionInput ? descriptionInput.value : '',
+      },
+      { key: 'author_name', value: authorNameInput && 'value' in authorNameInput ? authorNameInput.value : '' },
+      { key: 'author_bio', value: authorBioInput && 'value' in authorBioInput ? authorBioInput.value : '' },
+    ];
+
+    try {
+      const responses = await Promise.all(
+        updates.map((update) =>
+          fetch('/api/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(update),
+          })
+        )
+      );
+      if (responses.some((response) => !response.ok)) throw new Error('Settings save failed');
+      if (siteConfigMessage) siteConfigMessage.textContent = 'Saved. Reloading...';
+      window.location.reload();
+    } catch (err) {
+      if (siteConfigMessage) siteConfigMessage.textContent = 'Could not save settings. Try again.';
+      console.error(err);
+    }
+  });
+
   const form = document.getElementById('theme-form');
   const blogThemeSelect = document.getElementById('blog-theme');
   const dashboardThemeSelect = document.getElementById('dashboard-theme');

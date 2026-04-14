@@ -134,7 +134,8 @@ function boot() {
     holder: 'editorjs',
     inlineToolbar,
     tools,
-    placeholder: 'Start writing...',
+    placeholder: 'Start writing your post...',
+    autofocus: true,
     onChange: () => { clearTimeout(navigatorDebounce); navigatorDebounce = setTimeout(updateNavigator, 150); },
   };
   if (existingData) editorConfig.data = existingData;
@@ -365,7 +366,8 @@ function boot() {
     holder: 'editorjs',
     inlineToolbar,
     tools,
-    placeholder: 'Start writing...',
+    placeholder: 'Start writing your post...',
+    autofocus: true,
     onChange: () => { clearTimeout(navigatorDebounce); navigatorDebounce = setTimeout(updateNavigator, 150); },
   };
   if (existingData) editorConfig.data = existingData;
