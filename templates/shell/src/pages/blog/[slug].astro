@@ -32,6 +32,20 @@ const bodyHtml = shellPostBodyHtml(post as { content_html?: string | null; conte
 
 const pageTitle = `${title} – ${config.site_title}`;
 const canonicalPath = `/blog/${String(slug ?? '')}`;
+
+const prevPost = await db
+  .prepare(
+    'SELECT slug, title FROM posts WHERE published = 1 AND created_at < ? ORDER BY created_at DESC LIMIT 1'
+  )
+  .bind(createdAt)
+  .first<{ slug: string; title: string }>();
+
+const nextPost = await db
+  .prepare(
+    'SELECT slug, title FROM posts WHERE published = 1 AND created_at > ? ORDER BY created_at ASC LIMIT 1'
+  )
+  .bind(createdAt)
+  .first<{ slug: string; title: string }>();
 ---
 
 <Base
@@ -50,4 +64,25 @@ const canonicalPath = `/blog/${String(slug ?? '')}`;
     <time class="not-prose text-base-content/60 text-sm block mb-6" datetime={createdAt}>{date}</time>
     <div class="post-body" set:html={bodyHtml} />
   </article>
+
+  {(prevPost || nextPost) && (
+    <nav class="not-prose mt-8 flex justify-between">
+      <div class="join">
+        {prevPost ? (
+          <a href={`/blog/${prevPost.slug}`} class="btn btn-outline btn-sm join-item" title={prevPost.title}>
+            ← Onceki
+          </a>
+        ) : (
+          <span class="btn btn-outline btn-sm join-item btn-disabled">← Onceki</span>
+        )}
+        {nextPost ? (
+          <a href={`/blog/${nextPost.slug}`} class="btn btn-outline btn-sm join-item" title={nextPost.title}>
+            Sonraki →
+          </a>
+        ) : (
+          <span class="btn btn-outline btn-sm join-item btn-disabled">Sonraki →</span>
+        )}
+      </div>
+    </nav>
+  )}
 </Base>

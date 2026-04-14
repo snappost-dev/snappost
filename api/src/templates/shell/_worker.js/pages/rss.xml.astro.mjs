@@ -9,7 +9,7 @@ function escapeXml(s) {
 const GET = async ({ locals, url }) => {
   const db = locals.runtime.env.DB;
   const config = await loadBlogConfig(db);
-  const postsResult = await db.prepare("SELECT * FROM posts WHERE published = 1 ORDER BY created_at DESC LIMIT 20").all();
+  const postsResult = await db.prepare("SELECT * FROM posts WHERE published = 1 ORDER BY created_at DESC").all();
   const posts = postsResult.results;
   const origin = resolveSiteOrigin(locals.runtime.env, url.href);
   const homeUrl = absoluteUrl(origin, "/");

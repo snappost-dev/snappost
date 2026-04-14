@@ -44,6 +44,10 @@ const theme = (config.site_theme || 'light').trim() || 'light';
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content={metaDesc} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={metaDesc} />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
   <meta name="theme-color" content={config.theme_color} />
   <title>{title}</title>
   <SeoHead

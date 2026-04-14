@@ -8,7 +8,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
   const config = await loadBlogConfig(db);
 
   const postsResult = await db
-    .prepare('SELECT * FROM posts WHERE published = 1 ORDER BY created_at DESC LIMIT 20')
+    .prepare('SELECT * FROM posts WHERE published = 1 ORDER BY created_at DESC')
     .all();
 
   const posts = postsResult.results as {
