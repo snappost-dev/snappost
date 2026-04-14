@@ -1,8 +1,8 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 /* empty css                                  */
 import { c as createComponent, d as renderComponent, r as renderTemplate, b as createAstro, m as maybeRenderHead } from '../chunks/astro/server_BmAI9ip8.mjs';
-import { $ as $$Base } from '../chunks/Base_CMbi37jA.mjs';
-import { $ as $$PostCard } from '../chunks/PostCard_B3UGQ5F0.mjs';
+import { $ as $$Base } from '../chunks/Base_Cv1aCeMA.mjs';
+import { $ as $$PostCard } from '../chunks/PostCard_BHf8mjmI.mjs';
 import { l as loadBlogConfig } from '../chunks/site-url_BzCZPAzq.mjs';
 export { renderers } from '../renderers.mjs';
 
@@ -12,9 +12,9 @@ const $$Index = createComponent(async ($$result, $$props, $$slots) => {
   Astro2.self = $$Index;
   const db = Astro2.locals.runtime.env.DB;
   const config = await loadBlogConfig(db);
-  const postsResult = await db.prepare("SELECT * FROM posts WHERE published = 1 ORDER BY created_at DESC LIMIT 5").all();
+  const postsResult = await db.prepare("SELECT * FROM posts WHERE published = 1 ORDER BY created_at DESC LIMIT 3").all();
   const posts = postsResult.results;
-  return renderTemplate`${renderComponent($$result, "Base", $$Base, { "config": config, "title": config.site_title, "description": config.site_description, "canonicalPath": "/" }, { "default": async ($$result2) => renderTemplate` ${maybeRenderHead()}<div class="text-center mb-12"> <h1 class="text-4xl font-bold mb-4">${config.site_title}</h1> <p class="text-xl text-base-content/70">${config.site_description}</p> </div> <div class="space-y-6"> ${posts.map((post) => renderTemplate`${renderComponent($$result2, "PostCard", $$PostCard, { "post": post })}`)} </div> ` })}`;
+  return renderTemplate`${renderComponent($$result, "Base", $$Base, { "config": config, "title": config.site_title, "description": config.site_description, "canonicalPath": "/" }, { "default": async ($$result2) => renderTemplate` ${maybeRenderHead()}<section class="mb-10 rounded-box border border-base-300 bg-base-100 p-6 text-center"> <h1 class="text-4xl font-bold mb-4">${config.site_title}</h1> <p class="text-xl text-base-content/70">${config.site_description}</p> <div class="mt-6"> <a href="/blog" class="link link-primary text-sm font-medium">Tum yazilar &rarr;</a> </div> </section> <div class="space-y-6"> ${posts.map((post) => renderTemplate`${renderComponent($$result2, "PostCard", $$PostCard, { "post": post })}`)} </div> ` })}`;
 }, "/home/aurora/snappost/templates/shell/src/pages/index.astro", void 0);
 
 const $$file = "/home/aurora/snappost/templates/shell/src/pages/index.astro";

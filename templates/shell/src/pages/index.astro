@@ -7,17 +7,20 @@ const db = Astro.locals.runtime.env.DB;
 const config = await loadBlogConfig(db);
 
 const postsResult = await db
-  .prepare('SELECT * FROM posts WHERE published = 1 ORDER BY created_at DESC LIMIT 5')
+  .prepare('SELECT * FROM posts WHERE published = 1 ORDER BY created_at DESC LIMIT 3')
   .all();
 
 const posts = postsResult.results;
 ---
 
 <Base config={config} title={config.site_title} description={config.site_description} canonicalPath="/">
-  <div class="text-center mb-12">
+  <section class="mb-10 rounded-box border border-base-300 bg-base-100 p-6 text-center">
     <h1 class="text-4xl font-bold mb-4">{config.site_title}</h1>
     <p class="text-xl text-base-content/70">{config.site_description}</p>
-  </div>
+    <div class="mt-6">
+      <a href="/blog" class="link link-primary text-sm font-medium">Tum yazilar &rarr;</a>
+    </div>
+  </section>
 
   <div class="space-y-6">
     {posts.map((post: any) => (
