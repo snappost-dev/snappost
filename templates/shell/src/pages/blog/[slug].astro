@@ -29,6 +29,8 @@ const date = new Date(createdAt).toLocaleDateString('tr-TR', {
 });
 
 const bodyHtml = shellPostBodyHtml(post as { content_html?: string | null; content?: string | null });
+const authorName = String(config.author_name ?? '').trim();
+const authorBio = String(config.author_bio ?? '').trim();
 
 const pageTitle = `${title} – ${config.site_title}`;
 const canonicalPath = `/blog/${String(slug ?? '')}`;
@@ -64,6 +66,18 @@ const nextPost = await db
     <time class="not-prose text-base-content/60 text-sm block mb-6" datetime={createdAt}>{date}</time>
     <div class="post-body" set:html={bodyHtml} />
   </article>
+
+  {authorBio && (
+    <section class="not-prose mt-8">
+      <div class="card border border-base-300 bg-base-100">
+        <div class="card-body gap-2">
+          <h2 class="card-title text-base-content">Yazar Hakkinda</h2>
+          {authorName && <p class="font-medium text-base-content">{authorName}</p>}
+          <p class="text-base-content/80">{authorBio}</p>
+        </div>
+      </div>
+    </section>
+  )}
 
   {(prevPost || nextPost) && (
     <nav class="not-prose mt-8 flex justify-between">
