@@ -60,6 +60,14 @@ const posts = postsResult.results;
                   </a>
                   <button
                     type="button"
+                    class={`btn btn-xs ${post.published ? 'btn-warning' : 'btn-success'}`}
+                    data-publish-post-id={String(post.id)}
+                    data-next-published={post.published ? '0' : '1'}
+                  >
+                    {post.published ? 'Unpublish' : 'Publish'}
+                  </button>
+                  <button
+                    type="button"
                     class="btn btn-error btn-xs"
                     data-delete-post-id={String(post.id)}
                   >
@@ -77,6 +85,7 @@ const posts = postsResult.results;
 
 <script is:inline>
   const deleteButtons = document.querySelectorAll('[data-delete-post-id]');
+  const publishButtons = document.querySelectorAll('[data-publish-post-id]');
 
   deleteButtons.forEach((button) => {
     button.addEventListener('click', async () => {
@@ -98,6 +107,31 @@ const posts = postsResult.results;
       } catch (error) {
         console.error(error);
         window.alert('Yazı silinemedi. Lütfen tekrar deneyin.');
+      }
+    });
+  });
+
+  publishButtons.forEach((button) => {
+    button.addEventListener('click', async () => {
+      const postId = button.getAttribute('data-publish-post-id');
+      const nextPublishedRaw = button.getAttribute('data-next-published');
+      const nextPublished = nextPublishedRaw === '1' ? 1 : 0;
+      if (!postId) return;
+
+      try {
+        const response = await fetch(`/api/posts/${postId}/publish`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ published: nextPublished }),
+        });
+        if (!response.ok) {
+          throw new Error(`Publish toggle failed (${response.status})`);
+        }
+        window.location.reload();
+      } catch (error) {
+        console.error(error);
+        window.alert('Yayin durumu guncellenemedi. Lutfen tekrar deneyin.');
       }
     });
   });
