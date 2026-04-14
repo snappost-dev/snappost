@@ -51,12 +51,21 @@ const posts = postsResult.results;
                 {new Date(post.created_at).toLocaleDateString()}
               </td>
               <td class="p-4 text-right">
-                <a 
-                  href={`/edit/${post.id}`}
-                  class="text-blue-600 hover:text-blue-700 text-sm"
-                >
-                  Edit
-                </a>
+                <div class="inline-flex items-center gap-2">
+                  <a 
+                    href={`/edit/${post.id}`}
+                    class="text-blue-600 hover:text-blue-700 text-sm"
+                  >
+                    Edit
+                  </a>
+                  <button
+                    type="button"
+                    class="btn btn-error btn-xs"
+                    data-delete-post-id={String(post.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
@@ -65,3 +74,31 @@ const posts = postsResult.results;
     )}
   </div>
 </Dashboard>
+
+<script is:inline>
+  const deleteButtons = document.querySelectorAll('[data-delete-post-id]');
+
+  deleteButtons.forEach((button) => {
+    button.addEventListener('click', async () => {
+      const postId = button.getAttribute('data-delete-post-id');
+      if (!postId) return;
+
+      const confirmed = window.confirm('Bu yazıyı silmek istediğinizden emin misiniz?');
+      if (!confirmed) return;
+
+      try {
+        const response = await fetch(`/api/posts/${postId}`, {
+          method: 'DELETE',
+          credentials: 'same-origin',
+        });
+        if (!response.ok) {
+          throw new Error(`Delete failed (${response.status})`);
+        }
+        window.location.reload();
+      } catch (error) {
+        console.error(error);
+        window.alert('Yazı silinemedi. Lütfen tekrar deneyin.');
+      }
+    });
+  });
+</script>
