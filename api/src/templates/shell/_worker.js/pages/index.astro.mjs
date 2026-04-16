@@ -1,9 +1,9 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 /* empty css                                  */
 import { c as createComponent, d as renderComponent, r as renderTemplate, b as createAstro, m as maybeRenderHead } from '../chunks/astro/server_BmAI9ip8.mjs';
-import { $ as $$Base } from '../chunks/Base_COs3nb4A.mjs';
+import { $ as $$Base } from '../chunks/Base_BZcKSgcg.mjs';
 import { $ as $$PostCard } from '../chunks/PostCard_BHf8mjmI.mjs';
-import { l as loadBlogConfig } from '../chunks/site-url_BzCZPAzq.mjs';
+import { l as loadBlogConfig } from '../chunks/blog-config_8QCYqaqZ.mjs';
 export { renderers } from '../renderers.mjs';
 
 const $$Astro = createAstro();

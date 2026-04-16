@@ -37,7 +37,11 @@ const posts = postsResult.results;
         <tbody>
           {posts.map((post: any) => (
             <tr class="border-b hover:bg-gray-50">
-              <td class="p-4 font-medium">{post.title}</td>
+              <td class="p-4 font-medium">
+                <a href={`/blog/${post.slug}`} target="_blank" class="link link-hover">
+                  {post.title}
+                </a>
+              </td>
               <td class="p-4">
                 <span class={`px-2 py-1 rounded text-xs ${
                   post.published 

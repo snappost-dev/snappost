@@ -1,11 +1,4 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
-async function loadBlogConfig(db) {
-  const configResult = await db.prepare("SELECT key, value FROM config").all();
-  return Object.fromEntries(
-    configResult.results.map((r) => [r.key, r.value])
-  );
-}
-
 function resolveSiteOrigin(env, requestUrl) {
   const raw = env.SITE_URL?.trim();
   if (raw) {
@@ -22,4 +15,4 @@ function absoluteUrl(origin, pathnameAndSearch) {
   return `${o}${p}`;
 }
 
-export { absoluteUrl as a, loadBlogConfig as l, resolveSiteOrigin as r };
+export { absoluteUrl as a, resolveSiteOrigin as r };

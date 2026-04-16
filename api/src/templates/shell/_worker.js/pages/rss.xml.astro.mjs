@@ -1,10 +1,8 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
-import { l as loadBlogConfig, r as resolveSiteOrigin, a as absoluteUrl } from '../chunks/site-url_BzCZPAzq.mjs';
+import { l as loadBlogConfig } from '../chunks/blog-config_8QCYqaqZ.mjs';
+import { r as resolveSiteOrigin, a as absoluteUrl } from '../chunks/site-url_DbiFQCpv.mjs';
+import { e as escapeXml } from '../chunks/xml-escape_B3aNQUL_.mjs';
 export { renderers } from '../renderers.mjs';
-
-function escapeXml(s) {
-  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
-}
 
 const GET = async ({ locals, url }) => {
   const db = locals.runtime.env.DB;

@@ -123,16 +123,36 @@ if (Astro.request.method === 'POST') {
     <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3">
       <div class="max-w-3xl mx-auto flex items-center gap-3">
         <input id="post-title" type="text" value={String(post.title ?? '')} placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg" />
-        <input id="post-slug" type="text" value={String(post.slug ?? '')} placeholder="slug" class="input input-bordered input-sm w-40 text-xs font-mono" />
-        <label class="flex items-center gap-1.5 text-sm cursor-pointer">
-          <input type="checkbox" id="post-published" class="checkbox checkbox-sm checkbox-primary" checked={post.published === 1} />
-          <span>Publish</span>
-        </label>
+        {post.published === 1 ? (
+          <input
+            id="post-slug"
+            type="text"
+            value={String(post.slug ?? '')}
+            placeholder="slug"
+            readonly
+            class="input input-bordered input-sm w-40 text-xs font-mono input-disabled opacity-70 cursor-not-allowed"
+          />
+        ) : (
+          <div class="flex flex-col">
+            <input
+              id="post-slug"
+              type="text"
+              value={String(post.slug ?? '')}
+              placeholder="slug"
+              class="input input-bordered input-sm w-40 text-xs font-mono"
+            />
+            <p class="mt-1 text-xs text-base-content/50">Orijinal slug: {String(post.slug ?? '')}</p>
+          </div>
+        )}
         <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button>
-        <button id="save-btn" class="btn btn-primary btn-sm">Save</button>
+        <button id="save-draft-btn" class="btn btn-outline btn-sm">Save Draft</button>
+        <button id="publish-btn" class="btn btn-primary btn-sm">{post.published === 1 ? 'Update' : 'Publish'}</button>
       </div>
       <div class="max-w-3xl mx-auto mt-2">
         <input id="post-description" type="text" value={String(post.description ?? '')} placeholder="Short description (optional)" class="input input-bordered input-xs w-full" />
+        {post.published === 1 && (
+          <p class="mt-1 text-xs text-warning">Slug degistirilemez.</p>
+        )}
       </div>
     </div>
 
@@ -246,12 +266,9 @@ function boot() {
   editor = new EditorJS(editorConfig);
   editor.isReady.then(() => updateNavigator());
 
-  document.getElementById('save-btn').addEventListener('click', savePost);
+  document.getElementById('save-draft-btn').addEventListener('click', () => savePost(0));
+  document.getElementById('publish-btn').addEventListener('click', () => savePost(1));
   document.getElementById('preview-btn').addEventListener('click', openPreview);
-  document.getElementById('post-title').addEventListener('input', (e) => {
-    const slug = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    document.getElementById('post-slug').value = slug;
-  });
   document.addEventListener('alert-selected', (e) => { showAlertToolProperties(e.detail); });
 }
 document.addEventListener('DOMContentLoaded', boot);
@@ -348,7 +365,7 @@ function showAlertToolProperties(alertInst) {
     updateNavigator();
   });
 }
-async function savePost() {
+async function savePost(publishedValue) {
   const title = document.getElementById('post-title').value.trim();
   const slug = document.getElementById('post-slug').value.trim();
   if (!title) { alert('Title is required'); return; }
@@ -359,7 +376,7 @@ async function savePost() {
   document.getElementById('hidden-slug').value = slug;
   document.getElementById('hidden-description').value = document.getElementById('post-description').value.trim();
   document.getElementById('hidden-content').value = JSON.stringify(data);
-  document.getElementById('hidden-published').value = document.getElementById('post-published').checked ? '1' : '0';
+  document.getElementById('hidden-published').value = String(publishedValue);
   document.getElementById('save-form').submit();
 }
 function escapePreviewTitle(s) {

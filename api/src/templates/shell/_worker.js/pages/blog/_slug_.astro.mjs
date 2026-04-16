@@ -1,8 +1,8 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 /* empty css                                     */
 import { c as createComponent, d as renderComponent, r as renderTemplate, b as createAstro, m as maybeRenderHead, a as addAttribute, u as unescapeHTML } from '../../chunks/astro/server_BmAI9ip8.mjs';
-import { $ as $$Base } from '../../chunks/Base_COs3nb4A.mjs';
-import { l as loadBlogConfig } from '../../chunks/site-url_BzCZPAzq.mjs';
+import { $ as $$Base } from '../../chunks/Base_BZcKSgcg.mjs';
+import { l as loadBlogConfig } from '../../chunks/blog-config_8QCYqaqZ.mjs';
 export { renderers } from '../../renderers.mjs';
 
 /**
@@ -2577,6 +2577,9 @@ const $$slug = createComponent(async ($$result, $$props, $$slots) => {
   const bodyHtml = shellPostBodyHtml(post);
   const authorName = String(config.author_name ?? "").trim();
   const authorBio = String(config.author_bio ?? "").trim();
+  const plainText = bodyHtml.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  const wordCount = plainText.length > 0 ? plainText.split(" ").length : 0;
+  const readingMinutes = Math.ceil(wordCount / 200);
   const pageTitle = `${title} \u2013 ${config.site_title}`;
   const canonicalPath = `/blog/${String(slug ?? "")}`;
   const prevPost = await db.prepare(
@@ -2585,7 +2588,7 @@ const $$slug = createComponent(async ($$result, $$props, $$slots) => {
   const nextPost = await db.prepare(
     "SELECT slug, title FROM posts WHERE published = 1 AND created_at > ? ORDER BY created_at ASC LIMIT 1"
   ).bind(createdAt).first();
-  return renderTemplate`${renderComponent($$result, "Base", $$Base, { "config": config, "title": pageTitle, "description": description, "canonicalPath": canonicalPath, "ogType": "article", "publishedTime": new Date(createdAt).toISOString(), "modifiedTime": new Date(updatedAt).toISOString() }, { "default": async ($$result2) => renderTemplate` ${maybeRenderHead()}<article class="prose prose-lg max-w-none prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-a:text-primary prose-pre:max-w-full prose-img:max-w-full prose-img:h-auto prose-figure:my-8 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-base-content/60"> <h1>${title}</h1> <time class="not-prose text-base-content/60 text-sm block mb-6"${addAttribute(createdAt, "datetime")}>${date}</time> <div class="post-body">${unescapeHTML(bodyHtml)}</div> </article> ${authorBio && renderTemplate`<section class="not-prose mt-8"> <div class="card border border-base-300 bg-base-100"> <div class="card-body gap-2"> <h2 class="card-title text-base-content">Yazar Hakkinda</h2> ${authorName && renderTemplate`<p class="font-medium text-base-content">${authorName}</p>`} <p class="text-base-content/80">${authorBio}</p> </div> </div> </section>`}${(prevPost || nextPost) && renderTemplate`<nav class="not-prose mt-8 flex justify-between"> <div class="join"> ${prevPost ? renderTemplate`<a${addAttribute(`/blog/${prevPost.slug}`, "href")} class="btn btn-outline btn-sm join-item"${addAttribute(prevPost.title, "title")}>
+  return renderTemplate`${renderComponent($$result, "Base", $$Base, { "config": config, "title": pageTitle, "description": description, "canonicalPath": canonicalPath, "ogType": "article", "publishedTime": new Date(createdAt).toISOString(), "modifiedTime": new Date(updatedAt).toISOString() }, { "default": async ($$result2) => renderTemplate` ${maybeRenderHead()}<article class="prose prose-lg max-w-none prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-a:text-primary prose-pre:max-w-full prose-img:max-w-full prose-img:h-auto prose-figure:my-8 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-base-content/60"> <h1>${title}</h1> <p class="not-prose text-base-content/60 text-sm mb-6"> <time${addAttribute(createdAt, "datetime")}>${date}</time> <span> &middot; ${readingMinutes} dk okuma</span> </p> <div class="post-body">${unescapeHTML(bodyHtml)}</div> </article> ${authorBio && renderTemplate`<section class="not-prose mt-8"> <div class="card border border-base-300 bg-base-100"> <div class="card-body gap-2"> <h2 class="card-title text-base-content">Yazar Hakkinda</h2> ${authorName && renderTemplate`<p class="font-medium text-base-content">${authorName}</p>`} <p class="text-base-content/80">${authorBio}</p> </div> </div> </section>`}${(prevPost || nextPost) && renderTemplate`<nav class="not-prose mt-8 flex justify-between"> <div class="join"> ${prevPost ? renderTemplate`<a${addAttribute(`/blog/${prevPost.slug}`, "href")} class="btn btn-outline btn-sm join-item"${addAttribute(prevPost.title, "title")}>
 ← Onceki
 </a>` : renderTemplate`<span class="btn btn-outline btn-sm join-item btn-disabled">← Onceki</span>`} ${nextPost ? renderTemplate`<a${addAttribute(`/blog/${nextPost.slug}`, "href")} class="btn btn-outline btn-sm join-item"${addAttribute(nextPost.title, "title")}>
 Sonraki →

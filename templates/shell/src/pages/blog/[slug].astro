@@ -31,6 +31,12 @@ const date = new Date(createdAt).toLocaleDateString('tr-TR', {
 const bodyHtml = shellPostBodyHtml(post as { content_html?: string | null; content?: string | null });
 const authorName = String(config.author_name ?? '').trim();
 const authorBio = String(config.author_bio ?? '').trim();
+const plainText = bodyHtml
+  .replace(/<[^>]*>/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+const wordCount = plainText.length > 0 ? plainText.split(' ').length : 0;
+const readingMinutes = Math.ceil(wordCount / 200);
 
 const pageTitle = `${title} – ${config.site_title}`;
 const canonicalPath = `/blog/${String(slug ?? '')}`;
@@ -63,7 +69,10 @@ const nextPost = await db
     class="prose prose-lg max-w-none prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-a:text-primary prose-pre:max-w-full prose-img:max-w-full prose-img:h-auto prose-figure:my-8 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-base-content/60"
   >
     <h1>{title}</h1>
-    <time class="not-prose text-base-content/60 text-sm block mb-6" datetime={createdAt}>{date}</time>
+    <p class="not-prose text-base-content/60 text-sm mb-6">
+      <time datetime={createdAt}>{date}</time>
+      <span> &middot; {readingMinutes} dk okuma</span>
+    </p>
     <div class="post-body" set:html={bodyHtml} />
   </article>
 
