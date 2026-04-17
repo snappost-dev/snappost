@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import PostCard from '../components/PostCard.astro';
+import { getDateLocale, loadTranslations, normalizeLanguage } from '../i18n';
 import { loadBlogConfig } from '../lib/blog-config';
 
 type PostRow = {
@@ -13,6 +14,9 @@ type PostRow = {
 
 const db = Astro.locals.runtime.env.DB;
 const config = await loadBlogConfig(db);
+const siteLang = normalizeLanguage(config.site_lang || 'en');
+const t = loadTranslations(siteLang);
+const dateLocale = getDateLocale(siteLang);
 
 const postsResult = await db
   .prepare('SELECT * FROM posts WHERE published = 1 ORDER BY created_at DESC LIMIT 3')
@@ -26,7 +30,7 @@ const featuredPost = blogLayout === 'featured' ? posts[0] : null;
 const remainingPosts = blogLayout === 'featured' ? posts.slice(1) : posts;
 
 const featuredDate = featuredPost
-  ? new Date(featuredPost.created_at).toLocaleDateString('tr-TR', {
+  ? new Date(featuredPost.created_at).toLocaleDateString(dateLocale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -42,14 +46,14 @@ const featuredThumbnail = featuredImgMatch?.[1] ?? null;
     <h1 class="text-4xl font-bold mb-4">{config.site_title}</h1>
     <p class="text-xl text-base-content/70">{config.site_description}</p>
     <div class="mt-6">
-      <a href="/blog" class="link link-primary text-sm font-medium">Tum yazilar &rarr;</a>
+      <a href="/blog" class="link link-primary text-sm font-medium">{t.all_posts_link}</a>
     </div>
   </section>
 
   {blogLayout === 'grid' ? (
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
       {posts.map((post: any) => (
-        <PostCard post={post} />
+        <PostCard post={post} locale={dateLocale} />
       ))}
     </div>
   ) : blogLayout === 'featured' ? (
@@ -71,7 +75,7 @@ const featuredThumbnail = featuredImgMatch?.[1] ?? null;
       {remainingPosts.length > 0 && (
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
           {remainingPosts.map((post: PostRow) => (
-            <PostCard post={post} />
+            <PostCard post={post} locale={dateLocale} />
           ))}
         </div>
       )}
@@ -79,7 +83,7 @@ const featuredThumbnail = featuredImgMatch?.[1] ?? null;
   ) : (
     <div class="space-y-6">
       {posts.map((post: any) => (
-        <PostCard post={post} />
+        <PostCard post={post} locale={dateLocale} />
       ))}
     </div>
   )}

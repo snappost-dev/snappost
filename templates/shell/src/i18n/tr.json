@@ -1,0 +1,18 @@
+{
+  "nav_home": "Ana Sayfa",
+  "nav_blog": "Blog",
+  "all_posts": "Tüm Yazılar",
+  "all_posts_link": "Tum yazilar →",
+  "author_about": "Yazar Hakkında",
+  "page_not_found": "Sayfa bulunamadı",
+  "page_not_found_desc": "Aradığınız içerik taşınmış veya silinmiş olabilir.",
+  "back_home": "Ana sayfaya dön",
+  "reading_time": "dk okuma",
+  "share": "Paylaş",
+  "copy_link": "Linki Kopyala",
+  "copied": "Kopyalandı!",
+  "prev_post": "Önceki",
+  "next_post": "Sonraki",
+  "draft": "Taslak",
+  "published": "Yayında"
+}

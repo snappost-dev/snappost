@@ -1,7 +1,7 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 /* empty css                                     */
-import { c as createComponent, r as renderTemplate, e as defineScriptVars, d as renderComponent, b as createAstro, m as maybeRenderHead, a as addAttribute, u as unescapeHTML } from '../../chunks/astro/server_C7eUu1_9.mjs';
-import { $ as $$Base } from '../../chunks/Base_BVvlZA7g.mjs';
+import { c as createComponent, r as renderTemplate, f as defineScriptVars, d as renderComponent, b as createAstro, m as maybeRenderHead, a as addAttribute, u as unescapeHTML } from '../../chunks/astro/server_RcnIsM-u.mjs';
+import { n as normalizeLanguage, l as loadTranslations, g as getDateLocale, $ as $$Base } from '../../chunks/Base_D3D5EMzo.mjs';
 import { l as loadBlogConfig } from '../../chunks/blog-config_8QCYqaqZ.mjs';
 import { a as absoluteUrl, r as resolveSiteOrigin } from '../../chunks/site-url_DbiFQCpv.mjs';
 export { renderers } from '../../renderers.mjs';
@@ -2570,11 +2570,14 @@ const $$slug = createComponent(async ($$result, $$props, $$slots) => {
     return Astro2.redirect("/404");
   }
   const config = await loadBlogConfig(db);
+  const siteLang = normalizeLanguage(config.site_lang || "en");
+  const t = loadTranslations(siteLang);
+  const dateLocale = getDateLocale(siteLang);
   const title = String(post.title ?? "");
   const description = post.description != null ? String(post.description) : void 0;
   const createdAt = String(post.created_at ?? "");
   const updatedAt = post.updated_at != null ? String(post.updated_at) : createdAt;
-  const date = new Date(createdAt).toLocaleDateString("tr-TR", {
+  const date = new Date(createdAt).toLocaleDateString(dateLocale, {
     year: "numeric",
     month: "long",
     day: "numeric"
@@ -2613,7 +2616,7 @@ const $$slug = createComponent(async ($$result, $$props, $$slots) => {
   const nextPost = await db.prepare(
     "SELECT slug, title FROM posts WHERE published = 1 AND created_at > ? ORDER BY created_at ASC LIMIT 1"
   ).bind(createdAt).first();
-  return renderTemplate(_a || (_a = __template(["", " <script>(function(){", "\n  const copyLinkBtn = document.getElementById('copy-link-btn');\n  copyLinkBtn?.addEventListener('click', async () => {\n    if (!copyLinkBtn) return;\n    const defaultLabel = copyLinkBtn.getAttribute('data-default-label') || 'Linki Kopyala';\n    try {\n      await navigator.clipboard.writeText(postUrl);\n      copyLinkBtn.textContent = 'Kopyalandi!';\n      window.setTimeout(() => {\n        copyLinkBtn.textContent = defaultLabel;\n      }, 2000);\n    } catch (error) {\n      console.error(error);\n    }\n  });\n})();<\/script>"])), renderComponent($$result, "Base", $$Base, { "config": config, "title": pageTitle, "description": description, "canonicalPath": canonicalPath, "ogType": "article", "publishedTime": new Date(createdAt).toISOString(), "modifiedTime": new Date(updatedAt).toISOString() }, { "default": async ($$result2) => renderTemplate` ${maybeRenderHead()}<article class="prose prose-lg max-w-none prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-a:text-primary prose-pre:max-w-full prose-img:max-w-full prose-img:h-auto prose-figure:my-8 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-base-content/60"> <h1>${title}</h1> <p class="not-prose text-base-content/60 text-sm mb-6"> <time${addAttribute(createdAt, "datetime")}>${date}</time> <span> &middot; ${readingMinutes} dk okuma</span> </p> <div class="post-body">${unescapeHTML(bodyHtml)}</div> </article> ${authorBio && renderTemplate`<section class="not-prose mt-8"> <div class="card border border-base-300 bg-base-100"> <div class="card-body gap-2"> <h2 class="card-title text-base-content">Yazar Hakkinda</h2> ${authorName && renderTemplate`<p class="font-medium text-base-content">${authorName}</p>`} <p class="text-base-content/80">${authorBio}</p> </div> </div> </section>`}${hasShareButtons && renderTemplate`<section class="not-prose mt-6"> <div class="flex flex-wrap items-center gap-2"> <span class="text-sm text-base-content/70">Paylas:</span> ${shareTwitter && renderTemplate`<a${addAttribute(twitterShareUrl, "href")} target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+  return renderTemplate(_a || (_a = __template(["", " <script>(function(){", "\n  const copyLinkBtn = document.getElementById('copy-link-btn');\n  copyLinkBtn?.addEventListener('click', async () => {\n    if (!copyLinkBtn) return;\n    const defaultLabel = copyLinkBtn.getAttribute('data-default-label') || copyLinkLabel;\n    try {\n      await navigator.clipboard.writeText(postUrl);\n      copyLinkBtn.textContent = copiedLabel;\n      window.setTimeout(() => {\n        copyLinkBtn.textContent = defaultLabel;\n      }, 2000);\n    } catch (error) {\n      console.error(error);\n    }\n  });\n})();<\/script>"])), renderComponent($$result, "Base", $$Base, { "config": config, "title": pageTitle, "description": description, "canonicalPath": canonicalPath, "ogType": "article", "publishedTime": new Date(createdAt).toISOString(), "modifiedTime": new Date(updatedAt).toISOString() }, { "default": async ($$result2) => renderTemplate` ${maybeRenderHead()}<article class="prose prose-lg max-w-none prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-a:text-primary prose-pre:max-w-full prose-img:max-w-full prose-img:h-auto prose-figure:my-8 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-base-content/60"> <h1>${title}</h1> <p class="not-prose text-base-content/60 text-sm mb-6"> <time${addAttribute(createdAt, "datetime")}>${date}</time> <span> &middot; ${readingMinutes} ${t.reading_time}</span> </p> <div class="post-body">${unescapeHTML(bodyHtml)}</div> </article> ${authorBio && renderTemplate`<section class="not-prose mt-8"> <div class="card border border-base-300 bg-base-100"> <div class="card-body gap-2"> <h2 class="card-title text-base-content">${t.author_about}</h2> ${authorName && renderTemplate`<p class="font-medium text-base-content">${authorName}</p>`} <p class="text-base-content/80">${authorBio}</p> </div> </div> </section>`}${hasShareButtons && renderTemplate`<section class="not-prose mt-6"> <div class="flex flex-wrap items-center gap-2"> <span class="text-sm text-base-content/70">${t.share}:</span> ${shareTwitter && renderTemplate`<a${addAttribute(twitterShareUrl, "href")} target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
 Twitter
 </a>`} ${shareLinkedin && renderTemplate`<a${addAttribute(linkedinShareUrl, "href")} target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
 LinkedIn
@@ -2621,13 +2624,9 @@ LinkedIn
 Facebook
 </a>`} ${shareWhatsapp && renderTemplate`<a${addAttribute(whatsappShareUrl, "href")} target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
 WhatsApp
-</a>`} ${shareCopy && renderTemplate`<button id="copy-link-btn" type="button" class="btn btn-outline btn-sm" data-default-label="Linki Kopyala">
-Linki Kopyala
-</button>`} </div> </section>`}${(prevPost || nextPost) && renderTemplate`<nav class="not-prose mt-8 flex justify-between"> <div class="join"> ${prevPost ? renderTemplate`<a${addAttribute(`/blog/${prevPost.slug}`, "href")} class="btn btn-outline btn-sm join-item"${addAttribute(prevPost.title, "title")}>
-← Onceki
-</a>` : renderTemplate`<span class="btn btn-outline btn-sm join-item btn-disabled">← Onceki</span>`} ${nextPost ? renderTemplate`<a${addAttribute(`/blog/${nextPost.slug}`, "href")} class="btn btn-outline btn-sm join-item"${addAttribute(nextPost.title, "title")}>
-Sonraki →
-</a>` : renderTemplate`<span class="btn btn-outline btn-sm join-item btn-disabled">Sonraki →</span>`} </div> </nav>`}` }), defineScriptVars({ postUrl }));
+</a>`} ${shareCopy && renderTemplate`<button id="copy-link-btn" type="button" class="btn btn-outline btn-sm"${addAttribute(t.copy_link, "data-default-label")}> ${t.copy_link} </button>`} </div> </section>`}${(prevPost || nextPost) && renderTemplate`<nav class="not-prose mt-8 flex justify-between"> <div class="join"> ${prevPost ? renderTemplate`<a${addAttribute(`/blog/${prevPost.slug}`, "href")} class="btn btn-outline btn-sm join-item"${addAttribute(prevPost.title, "title")}>
+← ${t.prev_post} </a>` : renderTemplate`<span class="btn btn-outline btn-sm join-item btn-disabled">← ${t.prev_post}</span>`} ${nextPost ? renderTemplate`<a${addAttribute(`/blog/${nextPost.slug}`, "href")} class="btn btn-outline btn-sm join-item"${addAttribute(nextPost.title, "title")}> ${t.next_post} →
+</a>` : renderTemplate`<span class="btn btn-outline btn-sm join-item btn-disabled">${t.next_post} →</span>`} </div> </nav>`}` }), defineScriptVars({ postUrl, copiedLabel: t.copied, copyLinkLabel: t.copy_link }));
 }, "/home/aurora/snappost/templates/shell/src/pages/blog/[slug].astro", void 0);
 
 const $$file = "/home/aurora/snappost/templates/shell/src/pages/blog/[slug].astro";

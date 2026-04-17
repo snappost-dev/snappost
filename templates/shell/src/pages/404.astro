@@ -1,20 +1,23 @@
 ---
 import Base from '../layouts/Base.astro';
+import { loadTranslations, normalizeLanguage } from '../i18n';
 import { loadBlogConfig } from '../lib/blog-config';
 
 const db = Astro.locals.runtime.env.DB;
 const config = await loadBlogConfig(db);
+const siteLang = normalizeLanguage(config.site_lang || 'en');
+const t = loadTranslations(siteLang);
 ---
 
 <Base
   config={config}
-  title={`Sayfa bulunamadi - ${config.site_title}`}
-  description="Istediginiz sayfa bulunamadi."
+  title={`${t.page_not_found} - ${config.site_title}`}
+  description={t.page_not_found_desc}
   canonicalPath="/404"
 >
   <section class="rounded-box border border-base-300 bg-base-100 p-8 text-center">
-    <h1 class="text-3xl font-bold mb-3">Sayfa bulunamadi</h1>
-    <p class="text-base-content/70 mb-6">Aradiginiz icerik tasinmis veya silinmis olabilir.</p>
-    <a href="/" class="btn btn-primary btn-sm">Ana sayfaya don</a>
+    <h1 class="text-3xl font-bold mb-3">{t.page_not_found}</h1>
+    <p class="text-base-content/70 mb-6">{t.page_not_found_desc}</p>
+    <a href="/" class="btn btn-primary btn-sm">{t.back_home}</a>
   </section>
 </Base>

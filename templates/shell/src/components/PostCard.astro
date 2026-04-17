@@ -7,10 +7,11 @@ interface Props {
     content_html?: string | null;
     created_at: string;
   };
+  locale?: string;
 }
 
-const { post } = Astro.props;
-const date = new Date(post.created_at).toLocaleDateString('tr-TR', {
+const { post, locale = 'en-US' } = Astro.props;
+const date = new Date(post.created_at).toLocaleDateString(locale, {
   year: 'numeric',
   month: 'long',
   day: 'numeric'

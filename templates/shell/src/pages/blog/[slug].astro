@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import { getDateLocale, loadTranslations, normalizeLanguage } from '../../i18n';
 import { loadBlogConfig } from '../../lib/blog-config';
 import { shellPostBodyHtml } from '../../lib/post-body';
 import { absoluteUrl, resolveSiteOrigin } from '../../lib/site-url';
@@ -17,13 +18,16 @@ if (!post) {
 }
 
 const config = await loadBlogConfig(db);
+const siteLang = normalizeLanguage(config.site_lang || 'en');
+const t = loadTranslations(siteLang);
+const dateLocale = getDateLocale(siteLang);
 
 const title = String(post.title ?? '');
 const description = post.description != null ? String(post.description) : undefined;
 const createdAt = String(post.created_at ?? '');
 const updatedAt = post.updated_at != null ? String(post.updated_at) : createdAt;
 
-const date = new Date(createdAt).toLocaleDateString('tr-TR', {
+const date = new Date(createdAt).toLocaleDateString(dateLocale, {
   year: 'numeric',
   month: 'long',
   day: 'numeric'
@@ -92,7 +96,7 @@ const nextPost = await db
     <h1>{title}</h1>
     <p class="not-prose text-base-content/60 text-sm mb-6">
       <time datetime={createdAt}>{date}</time>
-      <span> &middot; {readingMinutes} dk okuma</span>
+      <span> &middot; {readingMinutes} {t.reading_time}</span>
     </p>
     <div class="post-body" set:html={bodyHtml} />
   </article>
@@ -101,7 +105,7 @@ const nextPost = await db
     <section class="not-prose mt-8">
       <div class="card border border-base-300 bg-base-100">
         <div class="card-body gap-2">
-          <h2 class="card-title text-base-content">Yazar Hakkinda</h2>
+          <h2 class="card-title text-base-content">{t.author_about}</h2>
           {authorName && <p class="font-medium text-base-content">{authorName}</p>}
           <p class="text-base-content/80">{authorBio}</p>
         </div>
@@ -112,7 +116,7 @@ const nextPost = await db
   {hasShareButtons && (
     <section class="not-prose mt-6">
       <div class="flex flex-wrap items-center gap-2">
-        <span class="text-sm text-base-content/70">Paylas:</span>
+        <span class="text-sm text-base-content/70">{t.share}:</span>
         {shareTwitter && (
           <a href={twitterShareUrl} target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
             Twitter
@@ -134,8 +138,8 @@ const nextPost = await db
           </a>
         )}
         {shareCopy && (
-          <button id="copy-link-btn" type="button" class="btn btn-outline btn-sm" data-default-label="Linki Kopyala">
-            Linki Kopyala
+          <button id="copy-link-btn" type="button" class="btn btn-outline btn-sm" data-default-label={t.copy_link}>
+            {t.copy_link}
           </button>
         )}
       </div>
@@ -147,31 +151,31 @@ const nextPost = await db
       <div class="join">
         {prevPost ? (
           <a href={`/blog/${prevPost.slug}`} class="btn btn-outline btn-sm join-item" title={prevPost.title}>
-            ← Onceki
+            ← {t.prev_post}
           </a>
         ) : (
-          <span class="btn btn-outline btn-sm join-item btn-disabled">← Onceki</span>
+          <span class="btn btn-outline btn-sm join-item btn-disabled">← {t.prev_post}</span>
         )}
         {nextPost ? (
           <a href={`/blog/${nextPost.slug}`} class="btn btn-outline btn-sm join-item" title={nextPost.title}>
-            Sonraki →
+            {t.next_post} →
           </a>
         ) : (
-          <span class="btn btn-outline btn-sm join-item btn-disabled">Sonraki →</span>
+          <span class="btn btn-outline btn-sm join-item btn-disabled">{t.next_post} →</span>
         )}
       </div>
     </nav>
   )}
 </Base>
 
-<script is:inline define:vars={{ postUrl }}>
+<script is:inline define:vars={{ postUrl, copiedLabel: t.copied, copyLinkLabel: t.copy_link }}>
   const copyLinkBtn = document.getElementById('copy-link-btn');
   copyLinkBtn?.addEventListener('click', async () => {
     if (!copyLinkBtn) return;
-    const defaultLabel = copyLinkBtn.getAttribute('data-default-label') || 'Linki Kopyala';
+    const defaultLabel = copyLinkBtn.getAttribute('data-default-label') || copyLinkLabel;
     try {
       await navigator.clipboard.writeText(postUrl);
-      copyLinkBtn.textContent = 'Kopyalandi!';
+      copyLinkBtn.textContent = copiedLabel;
       window.setTimeout(() => {
         copyLinkBtn.textContent = defaultLabel;
       }, 2000);

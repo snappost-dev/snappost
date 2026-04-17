@@ -1,12 +1,12 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
-import { c as createComponent, m as maybeRenderHead, a as addAttribute, r as renderTemplate, b as createAstro } from './astro/server_C7eUu1_9.mjs';
+import { c as createComponent, m as maybeRenderHead, a as addAttribute, r as renderTemplate, b as createAstro } from './astro/server_RcnIsM-u.mjs';
 
 const $$Astro = createAstro();
 const $$PostCard = createComponent(($$result, $$props, $$slots) => {
   const Astro2 = $$result.createAstro($$Astro, $$props, $$slots);
   Astro2.self = $$PostCard;
-  const { post } = Astro2.props;
-  const date = new Date(post.created_at).toLocaleDateString("tr-TR", {
+  const { post, locale = "en-US" } = Astro2.props;
+  const date = new Date(post.created_at).toLocaleDateString(locale, {
     year: "numeric",
     month: "long",
     day: "numeric"

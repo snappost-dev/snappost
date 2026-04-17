@@ -1,5 +1,6 @@
 ---
 import SeoHead from '../components/SeoHead.astro';
+import { loadTranslations, normalizeLanguage } from '../i18n';
 import { loadBlogConfig } from '../lib/blog-config';
 import { absoluteUrl, resolveSiteOrigin } from '../lib/site-url';
 
@@ -35,12 +36,14 @@ const rssHref = absoluteUrl(origin, '/rss.xml');
 const metaDescRaw = (description ?? config.site_description ?? '').trim();
 const metaDesc =
   metaDescRaw.length > 160 ? `${metaDescRaw.slice(0, 157)}…` : metaDescRaw;
+const siteLang = normalizeLanguage(config.site_lang || 'en');
+const t = loadTranslations(siteLang);
 const siteThemeLight = (config.site_theme_light || 'light').trim() || 'light';
 const siteThemeDark = (config.site_theme_dark || 'dark').trim() || 'dark';
 ---
 
 <!DOCTYPE html>
-<html lang="tr" data-theme={siteThemeLight}>
+<html lang={siteLang} data-theme={siteThemeLight}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -70,8 +73,8 @@ const siteThemeDark = (config.site_theme_dark || 'dark').trim() || 'dark';
       </div>
       <nav class="flex-none">
         <ul class="menu menu-horizontal px-1 gap-2">
-          <li><a href="/" class="hover:text-primary">Home</a></li>
-          <li><a href="/blog" class="hover:text-primary">Blog</a></li>
+          <li><a href="/" class="hover:text-primary">{t.nav_home}</a></li>
+          <li><a href="/blog" class="hover:text-primary">{t.nav_blog}</a></li>
         </ul>
       </nav>
     </div>
