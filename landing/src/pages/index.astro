@@ -1,8 +1,24 @@
 ---
 import Base from '../layouts/Base.astro';
+
+const softwareAppJsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Snappost',
+  description: 'Launch your blog in seconds. No setup, no config files.',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+  url: 'https://snappost-landing.pages.dev',
+}).replace(/</g, '\\u003c');
 ---
 
 <Base title="Home">
+  <script type="application/ld+json" set:html={softwareAppJsonLd} />
   <div class="container mx-auto px-4 py-16">
     <div class="max-w-4xl mx-auto text-center">
       <h1 class="text-6xl font-bold text-gray-900 mb-6">
@@ -46,9 +62,28 @@ import Base from '../layouts/Base.astro';
 
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div class="text-3xl mb-4">&#9997;&#65039;</div>
-        <h3 class="text-xl font-semibold mb-2">Simple Editor</h3>
+        <h3 class="text-xl font-semibold mb-2">Block Editor</h3>
         <p class="text-gray-600">
-          Write in Markdown, publish instantly. No build step needed.
+          Write with a modern block editor.
+          Images, quotes, code blocks and more.
+        </p>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div class="text-3xl mb-4">&#127912;</div>
+        <h3 class="text-xl font-semibold mb-2">30+ Themes</h3>
+        <p class="text-gray-600">
+          Choose from 30+ themes.
+          Visitors can switch between light and dark.
+        </p>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div class="text-3xl mb-4">&#127760;</div>
+        <h3 class="text-xl font-semibold mb-2">Multi-language</h3>
+        <p class="text-gray-600">
+          Built-in i18n support.
+          Turkish, English, Finnish, Swedish and more.
         </p>
       </div>
     </div>
@@ -77,7 +112,7 @@ import Base from '../layouts/Base.astro';
           <div class="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">3</div>
           <div>
             <h4 class="font-semibold mb-1">Start Publishing</h4>
-            <p class="text-gray-600">Open your dashboard, write your first post</p>
+            <p class="text-gray-600">Choose your theme, write and publish instantly</p>
           </div>
         </div>
       </div>

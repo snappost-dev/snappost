@@ -49,6 +49,19 @@ const postUrl = absoluteUrl(
   resolveSiteOrigin(Astro.locals.runtime.env, Astro.url.href),
   canonicalPath
 );
+const blogPostingJsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: title,
+  description: description ?? '',
+  datePublished: createdAt,
+  dateModified: updatedAt,
+  author: {
+    '@type': 'Person',
+    name: config.author_name,
+  },
+  url: postUrl,
+}).replace(/</g, '\\u003c');
 const twitterShareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(title)}`;
 const linkedinShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`;
 const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
@@ -90,6 +103,7 @@ const nextPost = await db
   publishedTime={new Date(createdAt).toISOString()}
   modifiedTime={new Date(updatedAt).toISOString()}
 >
+  <script type="application/ld+json" set:html={blogPostingJsonLd} />
   <article
     class="prose prose-lg max-w-none prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-a:text-primary prose-pre:max-w-full prose-img:max-w-full prose-img:h-auto prose-figure:my-8 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-base-content/60"
   >
