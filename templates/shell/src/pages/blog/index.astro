@@ -3,6 +3,14 @@ import Base from '../../layouts/Base.astro';
 import PostCard from '../../components/PostCard.astro';
 import { loadBlogConfig } from '../../lib/blog-config';
 
+type PostRow = {
+  slug: string;
+  title: string;
+  description?: string | null;
+  content_html?: string | null;
+  created_at: string;
+};
+
 const db = Astro.locals.runtime.env.DB;
 const config = await loadBlogConfig(db);
 
@@ -10,7 +18,22 @@ const postsResult = await db
   .prepare('SELECT * FROM posts WHERE published = 1 ORDER BY created_at DESC')
   .all();
 
-const posts = postsResult.results;
+const posts = postsResult.results as PostRow[];
+const blogLayoutRaw = String(config.blog_layout ?? 'list').trim();
+const blogLayout =
+  blogLayoutRaw === 'grid' || blogLayoutRaw === 'featured' ? blogLayoutRaw : 'list';
+const featuredPost = blogLayout === 'featured' ? posts[0] : null;
+const remainingPosts = blogLayout === 'featured' ? posts.slice(1) : posts;
+const featuredDate = featuredPost
+  ? new Date(featuredPost.created_at).toLocaleDateString('tr-TR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  : '';
+const featuredDescription = (featuredPost?.description ?? '').trim();
+const featuredImgMatch = featuredPost?.content_html?.match(/<img[^>]+src="([^"]+)"/);
+const featuredThumbnail = featuredImgMatch?.[1] ?? null;
 
 const listTitle = `Blog – ${config.site_title}`;
 ---
@@ -23,9 +46,41 @@ const listTitle = `Blog – ${config.site_title}`;
 >
   <h1 class="text-4xl font-bold mb-8">All Posts</h1>
 
-  <div class="space-y-6">
-    {posts.map((post: any) => (
-      <PostCard post={post} />
-    ))}
-  </div>
+  {blogLayout === 'grid' ? (
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+      {posts.map((post: any) => (
+        <PostCard post={post} />
+      ))}
+    </div>
+  ) : blogLayout === 'featured' ? (
+    <div class="space-y-6">
+      {featuredPost && (
+        <article class="card border border-base-300 bg-base-100 shadow-sm transition hover:shadow-md">
+          {featuredThumbnail && (
+            <figure class="max-h-96 overflow-hidden">
+              <img src={featuredThumbnail} alt="" class="h-full w-full object-cover" />
+            </figure>
+          )}
+          <a href={`/blog/${featuredPost.slug}`} class="card-body block">
+            <h2 class="mb-2 text-2xl font-bold hover:text-primary">{featuredPost.title}</h2>
+            {featuredDescription && <p class="mb-4 text-base-content/80">{featuredDescription}</p>}
+            <time class="text-sm text-base-content/60">{featuredDate}</time>
+          </a>
+        </article>
+      )}
+      {remainingPosts.length > 0 && (
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {remainingPosts.map((post: PostRow) => (
+            <PostCard post={post} />
+          ))}
+        </div>
+      )}
+    </div>
+  ) : (
+    <div class="space-y-6">
+      {posts.map((post: any) => (
+        <PostCard post={post} />
+      ))}
+    </div>
+  )}
 </Base>

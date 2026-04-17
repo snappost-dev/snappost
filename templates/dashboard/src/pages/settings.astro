@@ -49,7 +49,7 @@ const dashboardThemeRow = await Astro.locals.runtime.env.DB
 const siteConfigRows = await Astro.locals.runtime.env.DB
   .prepare(
     `SELECT key, value FROM config
-     WHERE key IN ('site_title', 'site_description', 'author_name', 'author_bio')`
+     WHERE key IN ('site_title', 'site_description', 'author_name', 'author_bio', 'blog_layout', 'share_twitter', 'share_linkedin', 'share_facebook', 'share_whatsapp', 'share_copy')`
   )
   .all<{ key: string; value: string }>();
 
@@ -61,6 +61,15 @@ const siteTitle = (siteConfig.site_title || '').trim();
 const siteDescription = (siteConfig.site_description || '').trim();
 const authorName = (siteConfig.author_name || '').trim();
 const authorBio = (siteConfig.author_bio || '').trim();
+const blogLayoutRaw = (siteConfig.blog_layout || 'list').trim();
+const blogLayout =
+  blogLayoutRaw === 'grid' || blogLayoutRaw === 'featured' ? blogLayoutRaw : 'list';
+const shareTwitter = (siteConfig.share_twitter || '').trim() === '1';
+const shareLinkedin = (siteConfig.share_linkedin || '').trim() === '1';
+const shareFacebook = (siteConfig.share_facebook || '').trim() === '1';
+const shareWhatsapp = (siteConfig.share_whatsapp || '').trim() === '1';
+const shareCopyRaw = (siteConfig.share_copy || '').trim();
+const shareCopy = shareCopyRaw === '' ? true : shareCopyRaw === '1';
 
 const currentSiteThemeRaw = (siteThemeRow?.value || 'light').trim();
 const currentSiteTheme = (THEMES as readonly string[]).includes(currentSiteThemeRaw)
@@ -110,6 +119,45 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
           <span class="label-text font-medium">Yazar Biyografisi</span>
         </label>
         <textarea id="author-bio" name="author_bio" class="textarea textarea-bordered w-full" rows="4">{authorBio}</textarea>
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="blog-layout">
+          <span class="label-text font-medium">Blog Duzeni</span>
+        </label>
+        <select id="blog-layout" name="blog_layout" class="select select-bordered w-full">
+          <option value="list" selected={blogLayout === 'list'}>Liste (alt alta)</option>
+          <option value="grid" selected={blogLayout === 'grid'}>2 Kolonlu Grid</option>
+          <option value="featured" selected={blogLayout === 'featured'}>One Cikan + Liste</option>
+        </select>
+      </div>
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-medium">Paylasim Butonlari</span>
+        </label>
+        <div class="space-y-2 rounded-box border border-base-300 bg-base-100 p-3">
+          <label class="label cursor-pointer justify-start gap-3 py-1" for="share-twitter">
+            <input id="share-twitter" type="checkbox" class="checkbox checkbox-sm" checked={shareTwitter} />
+            <span class="label-text">Twitter/X</span>
+          </label>
+          <label class="label cursor-pointer justify-start gap-3 py-1" for="share-linkedin">
+            <input id="share-linkedin" type="checkbox" class="checkbox checkbox-sm" checked={shareLinkedin} />
+            <span class="label-text">LinkedIn</span>
+          </label>
+          <label class="label cursor-pointer justify-start gap-3 py-1" for="share-facebook">
+            <input id="share-facebook" type="checkbox" class="checkbox checkbox-sm" checked={shareFacebook} />
+            <span class="label-text">Facebook</span>
+          </label>
+          <label class="label cursor-pointer justify-start gap-3 py-1" for="share-whatsapp">
+            <input id="share-whatsapp" type="checkbox" class="checkbox checkbox-sm" checked={shareWhatsapp} />
+            <span class="label-text">WhatsApp</span>
+          </label>
+          <label class="label cursor-pointer justify-start gap-3 py-1" for="share-copy">
+            <input id="share-copy" type="checkbox" class="checkbox checkbox-sm" checked={shareCopy} />
+            <span class="label-text">Linki Kopyala</span>
+          </label>
+        </div>
       </div>
 
       <button type="submit" class="btn btn-primary">Kaydet</button>
@@ -162,6 +210,12 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
     const descriptionInput = document.getElementById('site-description');
     const authorNameInput = document.getElementById('author-name');
     const authorBioInput = document.getElementById('author-bio');
+    const blogLayoutInput = document.getElementById('blog-layout');
+    const shareTwitterInput = document.getElementById('share-twitter');
+    const shareLinkedinInput = document.getElementById('share-linkedin');
+    const shareFacebookInput = document.getElementById('share-facebook');
+    const shareWhatsappInput = document.getElementById('share-whatsapp');
+    const shareCopyInput = document.getElementById('share-copy');
 
     const updates = [
       { key: 'site_title', value: titleInput && 'value' in titleInput ? titleInput.value : '' },
@@ -171,6 +225,12 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
       },
       { key: 'author_name', value: authorNameInput && 'value' in authorNameInput ? authorNameInput.value : '' },
       { key: 'author_bio', value: authorBioInput && 'value' in authorBioInput ? authorBioInput.value : '' },
+      { key: 'blog_layout', value: blogLayoutInput && 'value' in blogLayoutInput ? blogLayoutInput.value : 'list' },
+      { key: 'share_twitter', value: shareTwitterInput && 'checked' in shareTwitterInput && shareTwitterInput.checked ? '1' : '0' },
+      { key: 'share_linkedin', value: shareLinkedinInput && 'checked' in shareLinkedinInput && shareLinkedinInput.checked ? '1' : '0' },
+      { key: 'share_facebook', value: shareFacebookInput && 'checked' in shareFacebookInput && shareFacebookInput.checked ? '1' : '0' },
+      { key: 'share_whatsapp', value: shareWhatsappInput && 'checked' in shareWhatsappInput && shareWhatsappInput.checked ? '1' : '0' },
+      { key: 'share_copy', value: shareCopyInput && 'checked' in shareCopyInput && shareCopyInput.checked ? '1' : '0' },
     ];
 
     try {

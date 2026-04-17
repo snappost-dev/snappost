@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import { loadBlogConfig } from '../../lib/blog-config';
 import { shellPostBodyHtml } from '../../lib/post-body';
+import { absoluteUrl, resolveSiteOrigin } from '../../lib/site-url';
 
 const { slug } = Astro.params;
 
@@ -40,6 +41,26 @@ const readingMinutes = Math.ceil(wordCount / 200);
 
 const pageTitle = `${title} – ${config.site_title}`;
 const canonicalPath = `/blog/${String(slug ?? '')}`;
+const postUrl = absoluteUrl(
+  resolveSiteOrigin(Astro.locals.runtime.env, Astro.url.href),
+  canonicalPath
+);
+const twitterShareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(title)}`;
+const linkedinShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`;
+const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
+const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(`${title} ${postUrl}`)}`;
+const isEnabled = (rawValue: unknown, fallback = false) => {
+  if (rawValue == null) return fallback;
+  const normalized = String(rawValue).trim().toLowerCase();
+  if (normalized === '') return fallback;
+  return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
+};
+const shareTwitter = isEnabled(config.share_twitter, false);
+const shareLinkedin = isEnabled(config.share_linkedin, false);
+const shareFacebook = isEnabled(config.share_facebook, false);
+const shareWhatsapp = isEnabled(config.share_whatsapp, false);
+const shareCopy = isEnabled(config.share_copy, true);
+const hasShareButtons = shareTwitter || shareLinkedin || shareFacebook || shareWhatsapp || shareCopy;
 
 const prevPost = await db
   .prepare(
@@ -88,6 +109,39 @@ const nextPost = await db
     </section>
   )}
 
+  {hasShareButtons && (
+    <section class="not-prose mt-6">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-sm text-base-content/70">Paylas:</span>
+        {shareTwitter && (
+          <a href={twitterShareUrl} target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+            Twitter
+          </a>
+        )}
+        {shareLinkedin && (
+          <a href={linkedinShareUrl} target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+            LinkedIn
+          </a>
+        )}
+        {shareFacebook && (
+          <a href={facebookShareUrl} target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+            Facebook
+          </a>
+        )}
+        {shareWhatsapp && (
+          <a href={whatsappShareUrl} target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+            WhatsApp
+          </a>
+        )}
+        {shareCopy && (
+          <button id="copy-link-btn" type="button" class="btn btn-outline btn-sm" data-default-label="Linki Kopyala">
+            Linki Kopyala
+          </button>
+        )}
+      </div>
+    </section>
+  )}
+
   {(prevPost || nextPost) && (
     <nav class="not-prose mt-8 flex justify-between">
       <div class="join">
@@ -109,3 +163,20 @@ const nextPost = await db
     </nav>
   )}
 </Base>
+
+<script is:inline define:vars={{ postUrl }}>
+  const copyLinkBtn = document.getElementById('copy-link-btn');
+  copyLinkBtn?.addEventListener('click', async () => {
+    if (!copyLinkBtn) return;
+    const defaultLabel = copyLinkBtn.getAttribute('data-default-label') || 'Linki Kopyala';
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      copyLinkBtn.textContent = 'Kopyalandi!';
+      window.setTimeout(() => {
+        copyLinkBtn.textContent = defaultLabel;
+      }, 2000);
+    } catch (error) {
+      console.error(error);
+    }
+  });
+</script>

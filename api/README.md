@@ -38,6 +38,8 @@ ALLOWED_EMAILS=alice@example.com,bob@example.com
 # MAX_MEDIA_UPLOAD_MB=5
 # Opsiyonel — Pages assets upload (500/1101) başarısız olursa CSS/JS'i _worker.js içine gömerek provision'ın devam etmesi (varsayılan true). Kapatmak için "false"
 # PAGES_INLINE_ASSET_FALLBACK=true
+# Opsiyonel ama /api/admin/redeploy-all için gerekli
+# ADMIN_SECRET=...
 # Yerelde /test/* açmak için (production’da kullanmayın)
 ALLOW_TEST_ROUTES=true
 ```
@@ -180,5 +182,6 @@ Ayrıntılı manuel liste: [docs/SPRINT-PLAN.md](../docs/SPRINT-PLAN.md) §C.
 | POST | `/api/sites/:id/domain` | JWT + `{ domain }` → shell Pages custom domain (blog) |
 | DELETE | `/api/sites/:id/domain` | JWT → custom domain kaldır |
 | DELETE | `/api/sites/:id` | JWT → site kaydını sil; CF’de dashboard/shell Pages + kiracı D1 + custom domain (varsa) best-effort temizlik |
+| POST | `/api/admin/redeploy-all` | `x-admin-secret` header (`ADMIN_SECRET`) ile tüm mevcut tenant shell/dashboard projelerine sırayla redeploy |
 
 `/test/*` route’ları yalnız `ALLOW_TEST_ROUTES=true` iken çalışır (bkz. yukarıdaki `.dev.vars` örneği).

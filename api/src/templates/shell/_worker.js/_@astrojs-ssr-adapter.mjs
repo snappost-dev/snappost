@@ -1,8 +1,8 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
-import { r as requestIs404Or500, n as notFound, a as normalizeTheLocale, b as redirectToFallback, c as redirectToDefaultLocale, d as requestHasLocale, e as defineMiddleware, R as RouteCache, s as sequence, f as fileExtension, j as joinPaths, g as slash, p as prependForwardSlash, h as findRouteToRewrite, i as removeTrailingForwardSlash, m as matchRoute, k as appendForwardSlash, l as RenderContext, o as getSetCookiesFromResponse } from './chunks/index_PAp2kv8u.mjs';
-import { B as ROUTE_TYPE_HEADER, R as REROUTE_DIRECTIVE_HEADER, W as decryptString, X as createSlotValueFromString, d as renderComponent, r as renderTemplate, D as DEFAULT_404_COMPONENT, Y as bold, Z as red, _ as yellow, $ as dim, a0 as blue, A as AstroError, L as LocalsNotAnObject, E as clientLocalsSymbol, F as clientAddressSymbol, a1 as REROUTABLE_STATUS_CODES, O as responseSentSymbol } from './chunks/astro/server_BmAI9ip8.mjs';
-import { N as NOOP_MIDDLEWARE_FN } from './chunks/noop-middleware_DLI2OMPj.mjs';
-import { e as ensure404Route, D as DEFAULT_404_ROUTE, a as default404Instance } from './chunks/astro-designed-error-pages_CXg6XMd3.mjs';
+import { r as requestIs404Or500, n as notFound, a as normalizeTheLocale, b as redirectToFallback, c as redirectToDefaultLocale, d as requestHasLocale, e as defineMiddleware, R as RouteCache, s as sequence, f as fileExtension, j as joinPaths, g as slash, p as prependForwardSlash, h as findRouteToRewrite, i as removeTrailingForwardSlash, m as matchRoute, k as appendForwardSlash, l as RenderContext, o as getSetCookiesFromResponse } from './chunks/index_D7B1XKW-.mjs';
+import { C as ROUTE_TYPE_HEADER, R as REROUTE_DIRECTIVE_HEADER, X as decryptString, Y as createSlotValueFromString, d as renderComponent, r as renderTemplate, D as DEFAULT_404_COMPONENT, Z as bold, _ as red, $ as yellow, a0 as dim, a1 as blue, A as AstroError, L as LocalsNotAnObject, F as clientLocalsSymbol, H as clientAddressSymbol, a2 as REROUTABLE_STATUS_CODES, Q as responseSentSymbol } from './chunks/astro/server_D71aSNc0.mjs';
+import { N as NOOP_MIDDLEWARE_FN } from './chunks/noop-middleware_MjBxX8zi.mjs';
+import { e as ensure404Route, D as DEFAULT_404_ROUTE, a as default404Instance } from './chunks/astro-designed-error-pages_pAszp-RR.mjs';
 
 function createI18nMiddleware(i18n, base, trailingSlash, format) {
   if (!i18n) return (_, next) => next();

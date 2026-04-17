@@ -1,6 +1,6 @@
 # SNAPPOST — Project Status (V1 MVP + dashboard editörü)
 
-**Son güncelleme:** 2026-04-13  
+**Son güncelleme:** 2026-04-14  
 **Repo:** https://github.com/snappost-dev/snappost  
 **Branch:** main
 
@@ -22,9 +22,18 @@ Snappost, kullanıcıların email/password ile kayıt olup **~15 saniyede** tam 
 
 - **`templates/dashboard`:** Yazı oluşturma/düzenleme **Editor.js** (`/new`, `/edit/[id]`): header, paragraph, list, quote, code, delimiter, **Alert** (özel); CDN araçları + `public/dashboard/alert-block.js` (`SnappostAlertBlock`). Blok ekleme yalnızca editördeki **+** (sidebar’da ayrı “Add Block” yok). Kayıt: `POST` sonrası **`/edit/{id}`** (yeni yazıda `last_row_id` ile). SSR HTML: `src/lib/editor.ts` içindeki `renderEditorJSToHTML()` (sayfalar import eder).
 - **Veri modeli:** `posts.content` — Editor.js JSON; `content_html` — `renderEditorJSToHTML()`. **Eski markdown** kayıtlarında edit uyarısı; shell `content_html` kullanır.
+- **Editör publish akışı (dashboard):** Checkbox yerine iki aksiyon butonu (**Save Draft** = `published=0`, **Publish/Update** = `published=1`). Liste ekranında **Delete** + **Publish/Unpublish** aksiyonları mevcut.
+- **Slug davranışı:** Edit ekranında yayınlanmış yazılarda slug kilitli (`readonly`); draft modunda düzenlenebilir ve “Orijinal slug” ipucu gösterilir.
+- **Ayar ekranı:** `settings.astro` üzerinden `site_title`, `site_description`, `author_name`, `author_bio`, tema ayarları (`site_theme`, `dashboard_theme`) ve yeni `blog_layout` (list/grid/featured) yönetilir.
 - **Kaynak dosyalar:** `templates/dashboard/src/pages/new.astro`, `edit/[id].astro`, `src/lib/editor.ts`, `public/dashboard/alert-block.js`.
 - **Provision / API:** Güncel dashboard build’i `api/src/templates/dashboard` + `npm run embed` → `api/src/generated/dashboard-template.ts`; yeni provision bu gömülü şablonu kullanır.
 - **Arşiv dokümantasyon:** Tamamlanmış revize plan → [`docs/archive-editorjs-v2-plan.md`](docs/archive-editorjs-v2-plan.md). Erken taslak → [`docs/cursor-opus-prompt-v1.md`](docs/cursor-opus-prompt-v1.md).
+
+### Shell blog geliştirmeleri (MVP sonrası tamamlananlar)
+
+- **İçerik ve SEO:** RSS feed (`/rss.xml`), sitemap endpoint (`/sitemap.xml`), custom 404, SEO meta genişletmeleri, yazı detayında prev/next navigasyon.
+- **Okuma deneyimi:** Yazı detayında tarih yanında otomatik **okuma süresi** (`X dk okuma`), yazı sonunda koşullu **yazar kartı**.
+- **Liste düzeni (`blog_layout`):** `list`, `grid`, `featured` desteklenir. `featured` modda ilk yazı büyük kart; kalanlar 2 kolon grid.
 
 ### Mimari not — ölçekleme (sıradaki büyük iş)
 
@@ -169,6 +178,7 @@ Hata olursa rollback: oluşturulan Pages projeleri ve D1 database silinir.
 |--------|------|----------|
 | GET | `/` | Health check |
 | GET | `/api/media/status` | R2 key stratejisi + yükleme limiti + izinli MIME özeti |
+| POST | `/api/admin/redeploy-all` | `x-admin-secret` + `ADMIN_SECRET` ile tüm mevcut shell/dashboard tenant projelerini sırayla yeniden deploy eder (proje/binding oluşturmaz) |
 | GET | `/test/*` | Test endpoint'leri (5 adet); yalnız `ALLOW_TEST_ROUTES=true` iken, aksi halde **404** |
 
 ---
@@ -190,7 +200,8 @@ sites (id, user_id, site_name, d1_database_id, shell_project_name,
 posts (id, slug, title, description, content, content_html,
        published, created_at, updated_at)
 config (key, value)
-  -- Defaults: site_title, site_description, author_name, author_bio, theme_color
+  -- Aktif key'ler: site_title, site_description, author_name, author_bio,
+  --                theme_color, site_theme, dashboard_theme, blog_layout
 ```
 
 ---
@@ -202,8 +213,8 @@ config (key, value)
 | API | Hono, Cloudflare Workers, D1 |
 | Auth | bcryptjs (hash), hono/jwt (HS256) |
 | Landing | Astro 4 SSR, Tailwind, @astrojs/cloudflare |
-| Templates (dashboard) | Astro 4 SSR, Tailwind, D1, **Editor.js** (CDN), DaisyUI (sadece new/edit sayfaları); sunucuda JSON→HTML |
-| Templates (shell) | Astro 4 SSR, Tailwind, D1; `marked` bağımlılığı şemada/kodda legacy için kalabilir |
+| Templates (dashboard) | Astro 4 SSR, Tailwind, D1, **Editor.js** (CDN), DaisyUI; sunucuda JSON→HTML |
+| Templates (shell) | Astro 4 SSR, Tailwind, D1, DaisyUI; `marked` bağımlılığı şemada/kodda legacy için kalabilir |
 | Deploy mekanizması | CF Pages Direct Upload API (upload-token → check-missing → bucket upload/retry → upsert-hashes → FormData deployment with _worker.js bundle; 500/1101’de opsiyonel inline fallback) |
 | Template embedding | Build time esbuild bundle → base64 encoded TS modules |
 | Session | httpOnly cookie (`auth_token`), JWT Bearer token |
@@ -311,7 +322,7 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 | 9 | Email verification yok | Doğrulama e-postası yok; kayıtta **basit e-posta formatı** kontrolü var. |
 | 10 | Password reset yok | Unutulan password kurtarılamaz |
 | 11 | ~~CORS config hardcoded~~ | **İyileştirildi:** `CORS_ORIGINS` (opsiyonel env); boş = yerleşik varsayılan origin listesi |
-| 12 | Template güncelleme mekanizması yok | Template değişince mevcut siteler eski versiyonda kalıyor |
+| 12 | Template hot-update otomatik değil | **Manuel operasyon var:** `POST /api/admin/redeploy-all` ile mevcut siteler yeniden deploy edilir; otomatik migrasyon/sürümleme hâlâ yok |
 | 13 | Site başına 2× Pages + 1× D1 ölçeklenmesi | CF Pages proje limitleri; tek hesapta çok müşteri sürdürülebilir değil — multi-tenant veya az yüzey mimarisi gerekir |
 | 14 | E-posta whitelist | **Uygulandı:** `ALLOWED_EMAILS` (opsiyonel); boş/tanımsız = kısıt yok. Uçlar: register, login, me, sites, site detay, provision, domain, site silme — **§9.5 (kapatıldı)**. |
 | 15 | Pages assets upload 500/1101 | Bazı hesap/projelerde `POST /pages/assets/upload` tek dosyada bile 500 dönebiliyor. Provision akışında `check-missing` + bölmeli retry + opsiyonel `PAGES_INLINE_ASSET_FALLBACK` (varsayılan açık) ile devam edilir. |
@@ -325,6 +336,9 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 - Editor.js tabanlı yazı editörü (`new` / `edit`), JSON + `content_html` akışı, arşiv plan: [`docs/archive-editorjs-v2-plan.md`](docs/archive-editorjs-v2-plan.md).
 - **Site silme:** `DELETE /api/sites/:id` (CF cleanup + provisioning satırı); landing **Delete blog** ile aynı API.
 - **Blog + medya sprint’i (B1–B7):** R2 upload, Editor.js görsel, shell `content_html`/SEO/performans, `templates:ship` hattı — [`docs/SPRINT-PLAN.md`](docs/SPRINT-PLAN.md) **§B** ve **§B sprint kapanışı**.
+- **Dashboard post yönetimi:** Liste ekranında delete + publish/unpublish; edit/new ekranlarında Save Draft / Publish(veya Update) aksiyonları.
+- **Tema + görünüm ayarları:** Dashboard settings ekranı üzerinden `site_theme`, `dashboard_theme` ve `blog_layout` yönetimi.
+- **Operasyon endpoint’i:** `POST /api/admin/redeploy-all` ile mevcut tenant shell/dashboard projelerine toplu redeploy.
 
 ### 9.2 Sıradaki — Stabilizasyon ve güvenlik (önceden “V2 backlog”)
 
