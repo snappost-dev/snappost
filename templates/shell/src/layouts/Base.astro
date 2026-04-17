@@ -35,11 +35,12 @@ const rssHref = absoluteUrl(origin, '/rss.xml');
 const metaDescRaw = (description ?? config.site_description ?? '').trim();
 const metaDesc =
   metaDescRaw.length > 160 ? `${metaDescRaw.slice(0, 157)}…` : metaDescRaw;
-const theme = (config.site_theme || 'light').trim() || 'light';
+const siteThemeLight = (config.site_theme_light || 'light').trim() || 'light';
+const siteThemeDark = (config.site_theme_dark || 'dark').trim() || 'dark';
 ---
 
 <!DOCTYPE html>
-<html lang="tr" data-theme={theme}>
+<html lang="tr" data-theme={siteThemeLight}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -83,5 +84,39 @@ const theme = (config.site_theme || 'light').trim() || 'light';
   <footer class="border-t border-base-300 bg-base-200 text-center py-8 text-sm text-base-content/60">
     <p>&copy; {new Date().getFullYear()} {config.author_name}</p>
   </footer>
+
+  <button
+    id="theme-toggle-btn"
+    type="button"
+    class="btn btn-outline btn-sm fixed bottom-4 right-4 z-20"
+    aria-label="Tema degistir"
+  >
+    ☀️
+  </button>
+
+  <script is:inline define:vars={{ siteThemeLight, siteThemeDark }}>
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const root = document.documentElement;
+    const storageKey = 'theme-preference';
+
+    const applyThemePreference = (preference) => {
+      const nextTheme = preference === 'dark' ? siteThemeDark : siteThemeLight;
+      root.setAttribute('data-theme', nextTheme);
+      if (themeToggleBtn) {
+        themeToggleBtn.textContent = preference === 'dark' ? '🌙' : '☀️';
+      }
+    };
+
+    const storedPreference = localStorage.getItem(storageKey);
+    const initialPreference = storedPreference === 'dark' ? 'dark' : 'light';
+    applyThemePreference(initialPreference);
+
+    themeToggleBtn?.addEventListener('click', () => {
+      const currentPreference = localStorage.getItem(storageKey) === 'dark' ? 'dark' : 'light';
+      const nextPreference = currentPreference === 'dark' ? 'light' : 'dark';
+      localStorage.setItem(storageKey, nextPreference);
+      applyThemePreference(nextPreference);
+    });
+  </script>
 </body>
 </html>

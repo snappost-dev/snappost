@@ -36,9 +36,14 @@ const THEMES = [
   'sunset',
 ] as const;
 
-const siteThemeRow = await Astro.locals.runtime.env.DB
+const siteThemeLightRow = await Astro.locals.runtime.env.DB
   .prepare('SELECT value FROM config WHERE key = ? LIMIT 1')
-  .bind('site_theme')
+  .bind('site_theme_light')
+  .first<{ value: string }>();
+
+const siteThemeDarkRow = await Astro.locals.runtime.env.DB
+  .prepare('SELECT value FROM config WHERE key = ? LIMIT 1')
+  .bind('site_theme_dark')
   .first<{ value: string }>();
 
 const dashboardThemeRow = await Astro.locals.runtime.env.DB
@@ -71,10 +76,15 @@ const shareWhatsapp = (siteConfig.share_whatsapp || '').trim() === '1';
 const shareCopyRaw = (siteConfig.share_copy || '').trim();
 const shareCopy = shareCopyRaw === '' ? true : shareCopyRaw === '1';
 
-const currentSiteThemeRaw = (siteThemeRow?.value || 'light').trim();
-const currentSiteTheme = (THEMES as readonly string[]).includes(currentSiteThemeRaw)
-  ? currentSiteThemeRaw
+const currentSiteThemeLightRaw = (siteThemeLightRow?.value || 'light').trim();
+const currentSiteThemeLight = (THEMES as readonly string[]).includes(currentSiteThemeLightRaw)
+  ? currentSiteThemeLightRaw
   : 'light';
+
+const currentSiteThemeDarkRaw = (siteThemeDarkRow?.value || 'dark').trim();
+const currentSiteThemeDark = (THEMES as readonly string[]).includes(currentSiteThemeDarkRaw)
+  ? currentSiteThemeDarkRaw
+  : 'dark';
 
 const currentDashboardThemeRaw = (dashboardThemeRow?.value || 'light').trim();
 const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDashboardThemeRaw)
@@ -169,12 +179,25 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
 
     <form id="theme-form" class="space-y-4">
       <div class="form-control">
-        <label class="label" for="blog-theme">
-          <span class="label-text font-medium">Blog Theme</span>
+        <label class="label" for="site-theme-light">
+          <span class="label-text font-medium">Acik Tema</span>
         </label>
-        <select id="blog-theme" class="select select-bordered w-full" name="blog-theme">
+        <select id="site-theme-light" class="select select-bordered w-full" name="site-theme-light">
           {THEMES.map((theme) => (
-            <option value={theme} selected={theme === currentSiteTheme}>
+            <option value={theme} selected={theme === currentSiteThemeLight}>
+              {theme}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="site-theme-dark">
+          <span class="label-text font-medium">Koyu Tema</span>
+        </label>
+        <select id="site-theme-dark" class="select select-bordered w-full" name="site-theme-dark">
+          {THEMES.map((theme) => (
+            <option value={theme} selected={theme === currentSiteThemeDark}>
               {theme}
             </option>
           ))}
@@ -254,13 +277,15 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
   });
 
   const form = document.getElementById('theme-form');
-  const blogThemeSelect = document.getElementById('blog-theme');
+  const siteThemeLightSelect = document.getElementById('site-theme-light');
+  const siteThemeDarkSelect = document.getElementById('site-theme-dark');
   const dashboardThemeSelect = document.getElementById('dashboard-theme');
   const message = document.getElementById('theme-message');
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const blogTheme = blogThemeSelect && 'value' in blogThemeSelect ? blogThemeSelect.value : 'light';
+    const siteThemeLight = siteThemeLightSelect && 'value' in siteThemeLightSelect ? siteThemeLightSelect.value : 'light';
+    const siteThemeDark = siteThemeDarkSelect && 'value' in siteThemeDarkSelect ? siteThemeDarkSelect.value : 'dark';
     const dashboardTheme =
       dashboardThemeSelect && 'value' in dashboardThemeSelect ? dashboardThemeSelect.value : 'light';
 
@@ -270,7 +295,13 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
-          body: JSON.stringify({ key: 'site_theme', value: blogTheme }),
+          body: JSON.stringify({ key: 'site_theme_light', value: siteThemeLight }),
+        }),
+        fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ key: 'site_theme_dark', value: siteThemeDark }),
         }),
         fetch('/api/config', {
           method: 'POST',
