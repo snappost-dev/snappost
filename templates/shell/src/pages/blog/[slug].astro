@@ -47,7 +47,7 @@ const readingMinutes = Math.ceil(wordCount / 200);
 
 const pageTitle = `${title} – ${config.site_title}`;
 const canonicalPath = `/blog/${String(slug ?? '')}`;
-const siteOrigin = resolveSiteOrigin(Astro.locals.runtime.env, Astro.url.href);
+const siteOrigin = resolveSiteOrigin(Astro.locals.runtime.env, Astro.url.href, config.custom_domain);
 const canonicalHref = absoluteUrl(siteOrigin, canonicalPath);
 const authorTypeRaw = String(config.author_type ?? 'person').trim().toLowerCase();
 const authorSchemaType = authorTypeRaw === 'organization' ? 'Organization' : 'Person';

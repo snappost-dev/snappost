@@ -18,7 +18,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
     created_at: string;
   }[];
 
-  const origin = resolveSiteOrigin(locals.runtime.env, url.href);
+  const origin = resolveSiteOrigin(locals.runtime.env, url.href, config.custom_domain);
   const homeUrl = absoluteUrl(origin, '/');
 
   const items = posts

@@ -1,10 +1,9 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 /* empty css                                 */
 import { c as createComponent, d as renderComponent, r as renderTemplate, b as createAstro, a as addAttribute, m as maybeRenderHead, u as unescapeHTML } from '../chunks/astro/server_RcnIsM-u.mjs';
-import { n as normalizeLanguage, l as loadTranslations, g as getDateLocale, $ as $$Base } from '../chunks/Base_59vZvpsA.mjs';
+import { n as normalizeLanguage, l as loadTranslations, g as getDateLocale, $ as $$Base } from '../chunks/Base_DPmNoQjx.mjs';
 import { $ as $$PostCard } from '../chunks/PostCard_BhkuaLvp.mjs';
-import { l as loadBlogConfig } from '../chunks/blog-config_8QCYqaqZ.mjs';
-import { r as resolveSiteOrigin, a as absoluteUrl } from '../chunks/site-url_DbiFQCpv.mjs';
+import { l as loadBlogConfig, r as resolveSiteOrigin, a as absoluteUrl } from '../chunks/site-url_By8AeHdH.mjs';
 export { renderers } from '../renderers.mjs';
 
 var __freeze = Object.freeze;
@@ -34,7 +33,7 @@ const $$Index = createComponent(async ($$result, $$props, $$slots) => {
   const featuredDescription = (featuredPost?.description ?? "").trim();
   const featuredImgMatch = featuredPost?.content_html?.match(/<img[^>]+src="([^"]+)"/);
   const featuredThumbnail = featuredImgMatch?.[1] ?? null;
-  const siteOrigin = resolveSiteOrigin(Astro2.locals.runtime.env, Astro2.url.href);
+  const siteOrigin = resolveSiteOrigin(Astro2.locals.runtime.env, Astro2.url.href, config.custom_domain);
   const blogUrl = absoluteUrl(siteOrigin, "/blog");
   const blogJsonLd = JSON.stringify({
     "@context": "https://schema.org",

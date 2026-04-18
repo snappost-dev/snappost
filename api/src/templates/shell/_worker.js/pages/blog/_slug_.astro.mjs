@@ -1,9 +1,8 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 /* empty css                                    */
 import { c as createComponent, r as renderTemplate, f as defineScriptVars, d as renderComponent, b as createAstro, u as unescapeHTML, m as maybeRenderHead, a as addAttribute } from '../../chunks/astro/server_RcnIsM-u.mjs';
-import { n as normalizeLanguage, l as loadTranslations, g as getDateLocale, $ as $$Base } from '../../chunks/Base_59vZvpsA.mjs';
-import { l as loadBlogConfig } from '../../chunks/blog-config_8QCYqaqZ.mjs';
-import { r as resolveSiteOrigin, a as absoluteUrl } from '../../chunks/site-url_DbiFQCpv.mjs';
+import { n as normalizeLanguage, l as loadTranslations, g as getDateLocale, $ as $$Base } from '../../chunks/Base_DPmNoQjx.mjs';
+import { l as loadBlogConfig, r as resolveSiteOrigin, a as absoluteUrl } from '../../chunks/site-url_By8AeHdH.mjs';
 export { renderers } from '../../renderers.mjs';
 
 /**
@@ -2592,7 +2591,7 @@ const $$slug = createComponent(async ($$result, $$props, $$slots) => {
   const readingMinutes = Math.ceil(wordCount / 200);
   const pageTitle = `${title} \u2013 ${config.site_title}`;
   const canonicalPath = `/blog/${String(slug ?? "")}`;
-  const siteOrigin = resolveSiteOrigin(Astro2.locals.runtime.env, Astro2.url.href);
+  const siteOrigin = resolveSiteOrigin(Astro2.locals.runtime.env, Astro2.url.href, config.custom_domain);
   const canonicalHref = absoluteUrl(siteOrigin, canonicalPath);
   const authorTypeRaw = String(config.author_type ?? "person").trim().toLowerCase();
   const authorSchemaType = authorTypeRaw === "organization" ? "Organization" : "Person";

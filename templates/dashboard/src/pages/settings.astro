@@ -54,7 +54,7 @@ const dashboardThemeRow = await Astro.locals.runtime.env.DB
 const siteConfigRows = await Astro.locals.runtime.env.DB
   .prepare(
     `SELECT key, value FROM config
-     WHERE key IN ('site_title', 'site_description', 'author_name', 'author_bio', 'author_bio_long', 'author_type', 'author_url', 'blog_layout', 'share_twitter', 'share_linkedin', 'share_facebook', 'share_whatsapp', 'share_copy', 'site_lang')`
+     WHERE key IN ('site_title', 'site_description', 'custom_domain', 'author_name', 'author_bio', 'author_bio_long', 'author_type', 'author_url', 'blog_layout', 'share_twitter', 'share_linkedin', 'share_facebook', 'share_whatsapp', 'share_copy', 'site_lang')`
   )
   .all<{ key: string; value: string }>();
 
@@ -64,6 +64,7 @@ const siteConfig = Object.fromEntries(
 
 const siteTitle = (siteConfig.site_title || '').trim();
 const siteDescription = (siteConfig.site_description || '').trim();
+const customDomain = (siteConfig.custom_domain || '').trim();
 const authorName = (siteConfig.author_name || '').trim();
 const authorBio = (siteConfig.author_bio || '').trim();
 const authorBioLong = (siteConfig.author_bio_long || '').trim();
@@ -120,6 +121,19 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
           name="site_description"
           class="input input-bordered w-full"
           value={siteDescription}
+        />
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="custom-domain">
+          <span class="label-text font-medium">Custom Domain (Bilgi)</span>
+        </label>
+        <input
+          id="custom-domain"
+          class="input input-bordered w-full"
+          value={customDomain}
+          placeholder="Henüz bağlı değil"
+          readonly
         />
       </div>
 

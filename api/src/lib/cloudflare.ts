@@ -489,6 +489,62 @@ export type PagesCustomDomainResult = {
   status: string;
 };
 
+function toApexDomain(domain: string): string {
+  const normalized = domain.trim().toLowerCase().replace(/\.$/, '');
+  const labels = normalized.split('.').filter(Boolean);
+  if (labels.length <= 2) return normalized;
+  return `${labels[labels.length - 2]}.${labels[labels.length - 1]}`;
+}
+
+export async function findZoneIdByDomain(
+  domain: string,
+  token: string
+): Promise<string | null> {
+  const apexDomain = toApexDomain(domain);
+  const result = await cfFetch<Array<{ id: string; name?: string }>>(
+    `${CF_API_BASE}/zones?name=${encodeURIComponent(apexDomain)}&status=active`,
+    { method: 'GET', headers: authHeadersBearer(token) },
+    'findZoneIdByDomain'
+  );
+  return result[0]?.id ?? null;
+}
+
+export async function upsertDnsCname(
+  zoneId: string,
+  name: string,
+  target: string,
+  token: string,
+  proxied = true
+): Promise<void> {
+  const existing = await cfFetch<Array<{ id: string }>>(
+    `${CF_API_BASE}/zones/${encodeURIComponent(zoneId)}/dns_records?type=CNAME&name=${encodeURIComponent(name)}`,
+    { method: 'GET', headers: authHeadersBearer(token) },
+    'listDnsCname'
+  );
+
+  const body = JSON.stringify({
+    type: 'CNAME',
+    name,
+    content: target,
+    proxied,
+  });
+
+  if (existing.length > 0) {
+    await cfFetch<unknown>(
+      `${CF_API_BASE}/zones/${encodeURIComponent(zoneId)}/dns_records/${encodeURIComponent(existing[0].id)}`,
+      { method: 'PUT', headers: authHeadersJson(token), body },
+      'updateDnsCname'
+    );
+    return;
+  }
+
+  await cfFetch<unknown>(
+    `${CF_API_BASE}/zones/${encodeURIComponent(zoneId)}/dns_records`,
+    { method: 'POST', headers: authHeadersJson(token), body },
+    'createDnsCname'
+  );
+}
+
 export async function addPagesCustomDomain(
   projectName: string,
   domain: string,

@@ -14,20 +14,6 @@ const { title, description, canonicalHref, siteName, ogType, publishedTime, modi
   Astro.props;
 
 const twDesc = description.length > 200 ? `${description.slice(0, 197)}…` : description;
-
-let articleJsonLd: string | null = null;
-if (ogType === 'article' && publishedTime) {
-  articleJsonLd = JSON.stringify({
-    '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
-    headline: title,
-    description,
-    datePublished: publishedTime,
-    dateModified: modifiedTime || publishedTime,
-    url: canonicalHref,
-    mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalHref },
-  }).replace(/</g, '\\u003c');
-}
 ---
 
 <link rel="canonical" href={canonicalHref} />
@@ -45,7 +31,3 @@ if (ogType === 'article' && publishedTime) {
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={twDesc} />
-
-{articleJsonLd && (
-  <script type="application/ld+json" set:html={articleJsonLd} />
-)}

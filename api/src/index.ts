@@ -9,7 +9,7 @@ import {
   createPagesProject,
   uploadToPages,
   setPagesBinding, deletePagesProject, deleteD1Database,
-  addPagesCustomDomain, removePagesCustomDomain,
+  addPagesCustomDomain, removePagesCustomDomain, findZoneIdByDomain, upsertDnsCname,
 } from './lib/cloudflare';
 import { prepareShellTemplate, prepareDashboardTemplate, BLOG_SCHEMA_SQL } from './lib/templates';
 import {
@@ -64,6 +64,7 @@ type Bindings = {
    * istek origin’i kullanılır; gerçek kiracı dashboard’ları için production’da tanımlanmalıdır.
    */
   SNAPPOST_API_PUBLIC_URL?: string;
+  MEDIA_PUBLIC_URL?: string;
   /**
    * Pages asset upload hattı (pages/assets/upload) fail olduğunda CSS/JS'i _worker.js içine gömerek devam et.
    * Varsayılan: true. Kapatmak için açıkça "false" verin.
@@ -853,7 +854,13 @@ app.post('/api/sites/:id/media', async (c) => {
 
   const enc = encodeKeyForUrlPath(key);
   const origin = apiPublicOrigin(c.env, c.req.url);
-  const url = `${origin}/api/media/raw/${enc}`;
+  const mediaBase = c.env.MEDIA_PUBLIC_URL?.trim();
+  const url = mediaBase
+    ? (() => {
+        const r2Key = Buffer.from(enc, 'base64url').toString('utf-8');
+        return `${mediaBase}/${r2Key}`;
+      })()
+    : `${origin}/api/media/raw/${enc}`;
 
   return c.json({
     key,
@@ -884,7 +891,7 @@ app.post('/api/sites/:id/domain', async (c) => {
   }
 
   const site = await c.env.DB.prepare(
-    'SELECT id, user_id, shell_project_name, custom_domain FROM sites WHERE id = ? AND user_id = ?'
+    'SELECT id, user_id, shell_project_name, custom_domain, d1_database_id FROM sites WHERE id = ? AND user_id = ?'
   )
     .bind(siteId, user.userId)
     .first();
@@ -897,6 +904,7 @@ app.post('/api/sites/:id/domain', async (c) => {
   }
 
   const existing = site.custom_domain as string | null;
+  const tenantDatabaseId = site.d1_database_id as string | null;
   if (existing && existing === domain) {
     const cnameTarget = `${shellProject}.pages.dev`;
     return c.json({
@@ -919,11 +927,30 @@ app.post('/api/sites/:id/domain', async (c) => {
 
   try {
     const cfResult = await addPagesCustomDomain(shellProject, domain, token, accountId);
+    const cnameTarget = `${shellProject}.pages.dev`;
+    try {
+      const zoneId = await findZoneIdByDomain(domain, token);
+      if (zoneId) {
+        await upsertDnsCname(zoneId, domain, cnameTarget, token, true);
+      }
+    } catch (dnsErr) {
+      console.error('[domain] dns upsert failed:', dnsErr);
+    }
+
     await c.env.DB.prepare('UPDATE sites SET custom_domain = ? WHERE id = ? AND user_id = ?')
       .bind(domain, siteId, user.userId)
       .run();
 
-    const cnameTarget = `${shellProject}.pages.dev`;
+    if (tenantDatabaseId) {
+      const escapedDomain = domain.replace(/'/g, "''");
+      await executeD1SQL(
+        tenantDatabaseId,
+        `INSERT OR REPLACE INTO config (key, value) VALUES ('custom_domain', '${escapedDomain}')`,
+        token,
+        accountId
+      );
+    }
+
     return c.json({
       success: true,
       domain: cfResult.name || domain,
@@ -949,7 +976,7 @@ app.delete('/api/sites/:id/domain', async (c) => {
   const siteId = c.req.param('id');
 
   const site = await c.env.DB.prepare(
-    'SELECT id, user_id, shell_project_name, custom_domain FROM sites WHERE id = ? AND user_id = ?'
+    'SELECT id, user_id, shell_project_name, custom_domain, d1_database_id FROM sites WHERE id = ? AND user_id = ?'
   )
     .bind(siteId, user.userId)
     .first();
@@ -958,6 +985,7 @@ app.delete('/api/sites/:id/domain', async (c) => {
 
   const shellProject = site.shell_project_name as string | null;
   const customDomain = site.custom_domain as string | null;
+  const tenantDatabaseId = site.d1_database_id as string | null;
 
   if (!customDomain) {
     return c.json({ error: 'No custom domain connected' }, 400);
@@ -983,6 +1011,15 @@ app.delete('/api/sites/:id/domain', async (c) => {
   await c.env.DB.prepare('UPDATE sites SET custom_domain = NULL WHERE id = ? AND user_id = ?')
     .bind(siteId, user.userId)
     .run();
+
+  if (tenantDatabaseId) {
+    await executeD1SQL(
+      tenantDatabaseId,
+      "DELETE FROM config WHERE key = 'custom_domain'",
+      token,
+      accountId
+    );
+  }
 
   return c.json({ success: true });
 });

@@ -1,6 +1,5 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
-import { l as loadBlogConfig } from '../chunks/blog-config_8QCYqaqZ.mjs';
-import { r as resolveSiteOrigin, a as absoluteUrl } from '../chunks/site-url_DbiFQCpv.mjs';
+import { l as loadBlogConfig, r as resolveSiteOrigin, a as absoluteUrl } from '../chunks/site-url_By8AeHdH.mjs';
 import { e as escapeXml } from '../chunks/xml-escape_B3aNQUL_.mjs';
 export { renderers } from '../renderers.mjs';
 
@@ -9,7 +8,7 @@ const GET = async ({ locals, url }) => {
   const config = await loadBlogConfig(db);
   const postsResult = await db.prepare("SELECT * FROM posts WHERE published = 1 ORDER BY created_at DESC").all();
   const posts = postsResult.results;
-  const origin = resolveSiteOrigin(locals.runtime.env, url.href);
+  const origin = resolveSiteOrigin(locals.runtime.env, url.href, config.custom_domain);
   const homeUrl = absoluteUrl(origin, "/");
   const items = posts.map((post) => {
     const itemLink = absoluteUrl(origin, `/blog/${post.slug}`);

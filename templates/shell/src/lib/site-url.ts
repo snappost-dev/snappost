@@ -1,5 +1,21 @@
-/** Kiracı blog için mutlak URL tabanı (SEO, RSS). `SITE_URL` yoksa isteğin origin’i. */
-export function resolveSiteOrigin(env: { SITE_URL?: string }, requestUrl: string): string {
+/** Kiracı blog için mutlak URL tabanı (SEO, RSS). Öncelik: custom domain -> SITE_URL -> request origin. */
+export function resolveSiteOrigin(
+  env: { SITE_URL?: string },
+  requestUrl: string,
+  customDomain?: string | null
+): string {
+  const customRaw = customDomain?.trim();
+  if (customRaw) {
+    const host = customRaw.replace(/^https?:\/\//, '').split('/')[0]?.replace(/\.$/, '') ?? '';
+    if (host) {
+      try {
+        return new URL(`https://${host}`).origin;
+      } catch {
+        /* geçersiz custom domain */
+      }
+    }
+  }
+
   const raw = env.SITE_URL?.trim();
   if (raw) {
     try {

@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { loadBlogConfig } from '../lib/blog-config';
 import { absoluteUrl, resolveSiteOrigin } from '../lib/site-url';
 import { escapeXml } from '../lib/xml-escape';
 
@@ -9,7 +10,8 @@ type SitemapPostRow = {
 
 export const GET: APIRoute = async ({ locals, url }) => {
   const db = locals.runtime.env.DB;
-  const origin = resolveSiteOrigin(locals.runtime.env, url.href);
+  const config = await loadBlogConfig(db);
+  const origin = resolveSiteOrigin(locals.runtime.env, url.href, config.custom_domain);
 
   const postsResult = await db
     .prepare('SELECT slug, updated_at FROM posts WHERE published = 1 ORDER BY created_at DESC')

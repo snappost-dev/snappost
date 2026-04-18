@@ -1,11 +1,12 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
-import { r as resolveSiteOrigin, a as absoluteUrl } from '../chunks/site-url_DbiFQCpv.mjs';
+import { l as loadBlogConfig, r as resolveSiteOrigin, a as absoluteUrl } from '../chunks/site-url_By8AeHdH.mjs';
 import { e as escapeXml } from '../chunks/xml-escape_B3aNQUL_.mjs';
 export { renderers } from '../renderers.mjs';
 
 const GET = async ({ locals, url }) => {
   const db = locals.runtime.env.DB;
-  const origin = resolveSiteOrigin(locals.runtime.env, url.href);
+  const config = await loadBlogConfig(db);
+  const origin = resolveSiteOrigin(locals.runtime.env, url.href, config.custom_domain);
   const postsResult = await db.prepare("SELECT slug, updated_at FROM posts WHERE published = 1 ORDER BY created_at DESC").all();
   const posts = postsResult.results ?? [];
   const staticUrls = [

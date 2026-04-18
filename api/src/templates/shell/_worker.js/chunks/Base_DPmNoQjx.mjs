@@ -1,32 +1,14 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
-import { c as createComponent, a as addAttribute, r as renderTemplate, u as unescapeHTML, b as createAstro, f as defineScriptVars, g as renderSlot, h as renderHead, d as renderComponent } from './astro/server_RcnIsM-u.mjs';
-import { l as loadBlogConfig } from './blog-config_8QCYqaqZ.mjs';
-import { r as resolveSiteOrigin, a as absoluteUrl } from './site-url_DbiFQCpv.mjs';
+import { c as createComponent, a as addAttribute, r as renderTemplate, b as createAstro, f as defineScriptVars, g as renderSlot, h as renderHead, u as unescapeHTML, d as renderComponent } from './astro/server_RcnIsM-u.mjs';
+import { l as loadBlogConfig, r as resolveSiteOrigin, a as absoluteUrl } from './site-url_By8AeHdH.mjs';
 
-var __freeze$1 = Object.freeze;
-var __defProp$1 = Object.defineProperty;
-var __template$1 = (cooked, raw) => __freeze$1(__defProp$1(cooked, "raw", { value: __freeze$1(cooked.slice()) }));
-var _a$1;
 const $$Astro$1 = createAstro();
 const $$SeoHead = createComponent(($$result, $$props, $$slots) => {
   const Astro2 = $$result.createAstro($$Astro$1, $$props, $$slots);
   Astro2.self = $$SeoHead;
   const { title, description, canonicalHref, siteName, ogType, publishedTime, modifiedTime, rssHref } = Astro2.props;
   const twDesc = description.length > 200 ? `${description.slice(0, 197)}\u2026` : description;
-  let articleJsonLd = null;
-  if (ogType === "article" && publishedTime) {
-    articleJsonLd = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "BlogPosting",
-      headline: title,
-      description,
-      datePublished: publishedTime,
-      dateModified: modifiedTime || publishedTime,
-      url: canonicalHref,
-      mainEntityOfPage: { "@type": "WebPage", "@id": canonicalHref }
-    }).replace(/</g, "\\u003c");
-  }
-  return renderTemplate`<link rel="canonical"${addAttribute(canonicalHref, "href")}><link rel="alternate" type="application/rss+xml"${addAttribute(siteName, "title")}${addAttribute(rssHref, "href")}><meta property="og:title"${addAttribute(title, "content")}><meta property="og:description"${addAttribute(description, "content")}><meta property="og:url"${addAttribute(canonicalHref, "content")}><meta property="og:type"${addAttribute(ogType, "content")}><meta property="og:site_name"${addAttribute(siteName, "content")}><meta property="og:locale" content="tr_TR">${publishedTime && renderTemplate`<meta property="article:published_time"${addAttribute(publishedTime, "content")}>`}${modifiedTime && renderTemplate`<meta property="article:modified_time"${addAttribute(modifiedTime, "content")}>`}<meta name="twitter:card" content="summary"><meta name="twitter:title"${addAttribute(title, "content")}><meta name="twitter:description"${addAttribute(twDesc, "content")}>${articleJsonLd && renderTemplate(_a$1 || (_a$1 = __template$1(['<script type="application/ld+json">', "<\/script>"])), unescapeHTML(articleJsonLd))}`;
+  return renderTemplate`<link rel="canonical"${addAttribute(canonicalHref, "href")}><link rel="alternate" type="application/rss+xml"${addAttribute(siteName, "title")}${addAttribute(rssHref, "href")}><meta property="og:title"${addAttribute(title, "content")}><meta property="og:description"${addAttribute(description, "content")}><meta property="og:url"${addAttribute(canonicalHref, "content")}><meta property="og:type"${addAttribute(ogType, "content")}><meta property="og:site_name"${addAttribute(siteName, "content")}><meta property="og:locale" content="tr_TR">${publishedTime && renderTemplate`<meta property="article:published_time"${addAttribute(publishedTime, "content")}>`}${modifiedTime && renderTemplate`<meta property="article:modified_time"${addAttribute(modifiedTime, "content")}>`}<meta name="twitter:card" content="summary"><meta name="twitter:title"${addAttribute(title, "content")}><meta name="twitter:description"${addAttribute(twDesc, "content")}>`;
 }, "/home/aurora/snappost/templates/shell/src/components/SeoHead.astro", void 0);
 
 const nav_home$3 = "Home";
@@ -229,7 +211,7 @@ const $$Base = createComponent(async ($$result, $$props, $$slots) => {
     config: configProp
   } = Astro2.props;
   const config = configProp ?? await loadBlogConfig(Astro2.locals.runtime.env.DB);
-  const origin = resolveSiteOrigin(Astro2.locals.runtime.env, Astro2.url.href);
+  const origin = resolveSiteOrigin(Astro2.locals.runtime.env, Astro2.url.href, config.custom_domain);
   const path = canonicalPath ?? `${Astro2.url.pathname}${Astro2.url.search}`;
   const canonicalHref = absoluteUrl(origin, path);
   const rssHref = absoluteUrl(origin, "/rss.xml");

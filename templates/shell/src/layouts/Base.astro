@@ -28,7 +28,7 @@ const {
 
 const config = configProp ?? (await loadBlogConfig(Astro.locals.runtime.env.DB));
 
-const origin = resolveSiteOrigin(Astro.locals.runtime.env, Astro.url.href);
+const origin = resolveSiteOrigin(Astro.locals.runtime.env, Astro.url.href, config.custom_domain);
 const path = canonicalPath ?? `${Astro.url.pathname}${Astro.url.search}`;
 const canonicalHref = absoluteUrl(origin, path);
 const rssHref = absoluteUrl(origin, '/rss.xml');

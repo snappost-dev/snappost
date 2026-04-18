@@ -39,7 +39,7 @@ const featuredDate = featuredPost
 const featuredDescription = (featuredPost?.description ?? '').trim();
 const featuredImgMatch = featuredPost?.content_html?.match(/<img[^>]+src="([^"]+)"/);
 const featuredThumbnail = featuredImgMatch?.[1] ?? null;
-const siteOrigin = resolveSiteOrigin(Astro.locals.runtime.env, Astro.url.href);
+const siteOrigin = resolveSiteOrigin(Astro.locals.runtime.env, Astro.url.href, config.custom_domain);
 const blogUrl = absoluteUrl(siteOrigin, '/blog');
 const blogJsonLd = JSON.stringify({
   '@context': 'https://schema.org',
