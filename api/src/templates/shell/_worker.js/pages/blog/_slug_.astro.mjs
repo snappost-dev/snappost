@@ -1,9 +1,9 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
-/* empty css                                     */
+/* empty css                                    */
 import { c as createComponent, r as renderTemplate, f as defineScriptVars, d as renderComponent, b as createAstro, u as unescapeHTML, m as maybeRenderHead, a as addAttribute } from '../../chunks/astro/server_RcnIsM-u.mjs';
-import { n as normalizeLanguage, l as loadTranslations, g as getDateLocale, $ as $$Base } from '../../chunks/Base_D3D5EMzo.mjs';
+import { n as normalizeLanguage, l as loadTranslations, g as getDateLocale, $ as $$Base } from '../../chunks/Base_59vZvpsA.mjs';
 import { l as loadBlogConfig } from '../../chunks/blog-config_8QCYqaqZ.mjs';
-import { a as absoluteUrl, r as resolveSiteOrigin } from '../../chunks/site-url_DbiFQCpv.mjs';
+import { r as resolveSiteOrigin, a as absoluteUrl } from '../../chunks/site-url_DbiFQCpv.mjs';
 export { renderers } from '../../renderers.mjs';
 
 /**
@@ -2583,6 +2583,8 @@ const $$slug = createComponent(async ($$result, $$props, $$slots) => {
     day: "numeric"
   });
   const bodyHtml = shellPostBodyHtml(post);
+  const imgMatch = bodyHtml?.match(/<img[^>]+src="([^"]+)"/);
+  const featuredImage = imgMatch?.[1] ?? null;
   const authorName = String(config.author_name ?? "").trim();
   const authorBio = String(config.author_bio ?? "").trim();
   const plainText = bodyHtml.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -2590,27 +2592,65 @@ const $$slug = createComponent(async ($$result, $$props, $$slots) => {
   const readingMinutes = Math.ceil(wordCount / 200);
   const pageTitle = `${title} \u2013 ${config.site_title}`;
   const canonicalPath = `/blog/${String(slug ?? "")}`;
-  const postUrl = absoluteUrl(
-    resolveSiteOrigin(Astro2.locals.runtime.env, Astro2.url.href),
-    canonicalPath
-  );
-  const blogPostingJsonLd = JSON.stringify({
+  const siteOrigin = resolveSiteOrigin(Astro2.locals.runtime.env, Astro2.url.href);
+  const canonicalHref = absoluteUrl(siteOrigin, canonicalPath);
+  const authorTypeRaw = String(config.author_type ?? "person").trim().toLowerCase();
+  const authorSchemaType = authorTypeRaw === "organization" ? "Organization" : "Person";
+  const authorUrlRaw = String(config.author_url ?? "").trim();
+  const authorUrl = authorUrlRaw || absoluteUrl(siteOrigin, "/about");
+  const authorNameForSchema = String(config.author_name ?? "").trim() || config.site_title;
+  const blogPostingSchema = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: title,
     description: description ?? "",
-    datePublished: createdAt,
-    dateModified: updatedAt,
+    datePublished: new Date(createdAt).toISOString(),
+    dateModified: new Date(updatedAt).toISOString(),
     author: {
-      "@type": "Person",
-      name: config.author_name
+      "@type": authorSchemaType,
+      name: authorNameForSchema,
+      url: authorUrl
     },
-    url: postUrl
-  }).replace(/</g, "\\u003c");
-  const twitterShareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(title)}`;
-  const linkedinShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`;
-  const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
-  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(`${title} ${postUrl}`)}`;
+    publisher: {
+      "@type": "Organization",
+      name: config.site_title
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": canonicalHref
+    },
+    ...featuredImage ? { image: [featuredImage] } : {}
+  };
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: siteOrigin
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Blog",
+        item: absoluteUrl(siteOrigin, "/blog")
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: title,
+        item: canonicalHref
+      }
+    ]
+  };
+  const blogPostingJsonLd = JSON.stringify(blogPostingSchema).replace(/</g, "\\u003c");
+  const breadcrumbJsonLd = JSON.stringify(breadcrumbSchema).replace(/</g, "\\u003c");
+  const twitterShareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(canonicalHref)}&text=${encodeURIComponent(title)}`;
+  const linkedinShareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(canonicalHref)}`;
+  const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(canonicalHref)}`;
+  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(`${title} ${canonicalHref}`)}`;
   const isEnabled = (rawValue, fallback = false) => {
     if (rawValue == null) return fallback;
     const normalized = String(rawValue).trim().toLowerCase();
@@ -2629,7 +2669,7 @@ const $$slug = createComponent(async ($$result, $$props, $$slots) => {
   const nextPost = await db.prepare(
     "SELECT slug, title FROM posts WHERE published = 1 AND created_at > ? ORDER BY created_at ASC LIMIT 1"
   ).bind(createdAt).first();
-  return renderTemplate(_b || (_b = __template(["", " <script>(function(){", "\n  const copyLinkBtn = document.getElementById('copy-link-btn');\n  copyLinkBtn?.addEventListener('click', async () => {\n    if (!copyLinkBtn) return;\n    const defaultLabel = copyLinkBtn.getAttribute('data-default-label') || copyLinkLabel;\n    try {\n      await navigator.clipboard.writeText(postUrl);\n      copyLinkBtn.textContent = copiedLabel;\n      window.setTimeout(() => {\n        copyLinkBtn.textContent = defaultLabel;\n      }, 2000);\n    } catch (error) {\n      console.error(error);\n    }\n  });\n})();<\/script>"])), renderComponent($$result, "Base", $$Base, { "config": config, "title": pageTitle, "description": description, "canonicalPath": canonicalPath, "ogType": "article", "publishedTime": new Date(createdAt).toISOString(), "modifiedTime": new Date(updatedAt).toISOString() }, { "default": async ($$result2) => renderTemplate(_a || (_a = __template([' <script type="application/ld+json">', "<\/script> ", '<article class="prose prose-lg max-w-none prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-a:text-primary prose-pre:max-w-full prose-img:max-w-full prose-img:h-auto prose-figure:my-8 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-base-content/60"> <h1>', '</h1> <p class="not-prose text-base-content/60 text-sm mb-6"> <time', ">", "</time> <span> &middot; ", " ", '</span> </p> <div class="post-body">', "</div> </article> ", "", "", ""])), unescapeHTML(blogPostingJsonLd), maybeRenderHead(), title, addAttribute(createdAt, "datetime"), date, readingMinutes, t.reading_time, unescapeHTML(bodyHtml), authorBio && renderTemplate`<section class="not-prose mt-8"> <div class="card border border-base-300 bg-base-100"> <div class="card-body gap-2"> <h2 class="card-title text-base-content">${t.author_about}</h2> ${authorName && renderTemplate`<p class="font-medium text-base-content">${authorName}</p>`} <p class="text-base-content/80">${authorBio}</p> </div> </div> </section>`, hasShareButtons && renderTemplate`<section class="not-prose mt-6"> <div class="flex flex-wrap items-center gap-2"> <span class="text-sm text-base-content/70">${t.share}:</span> ${shareTwitter && renderTemplate`<a${addAttribute(twitterShareUrl, "href")} target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+  return renderTemplate(_b || (_b = __template(["", " <script>(function(){", "\n  const copyLinkBtn = document.getElementById('copy-link-btn');\n  copyLinkBtn?.addEventListener('click', async () => {\n    if (!copyLinkBtn) return;\n    const defaultLabel = copyLinkBtn.getAttribute('data-default-label') || copyLinkLabel;\n    try {\n      await navigator.clipboard.writeText(postUrl);\n      copyLinkBtn.textContent = copiedLabel;\n      window.setTimeout(() => {\n        copyLinkBtn.textContent = defaultLabel;\n      }, 2000);\n    } catch (error) {\n      console.error(error);\n    }\n  });\n})();<\/script>"])), renderComponent($$result, "Base", $$Base, { "config": config, "title": pageTitle, "description": description, "canonicalPath": canonicalPath, "ogType": "article", "publishedTime": new Date(createdAt).toISOString(), "modifiedTime": new Date(updatedAt).toISOString() }, { "default": async ($$result2) => renderTemplate(_a || (_a = __template([' <script type="application/ld+json">', '<\/script> <script type="application/ld+json">', "<\/script> ", '<article class="prose prose-lg max-w-none prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-a:text-primary prose-pre:max-w-full prose-img:max-w-full prose-img:h-auto prose-figure:my-8 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-base-content/60"> <h1>', '</h1> <p class="not-prose text-base-content/60 text-sm mb-6"> <time', ">", "</time> <span> &middot; ", " ", '</span> </p> <div class="post-body">', "</div> </article> ", "", "", ""])), unescapeHTML(blogPostingJsonLd), unescapeHTML(breadcrumbJsonLd), maybeRenderHead(), title, addAttribute(createdAt, "datetime"), date, readingMinutes, t.reading_time, unescapeHTML(bodyHtml), authorBio && renderTemplate`<section class="not-prose mt-8"> <div class="card border border-base-300 bg-base-100"> <div class="card-body gap-2"> <h2 class="card-title text-base-content">${t.author_about}</h2> ${authorName && renderTemplate`<p class="font-medium text-base-content">${authorName}</p>`} <p class="text-base-content/80">${authorBio}</p> </div> </div> </section>`, hasShareButtons && renderTemplate`<section class="not-prose mt-6"> <div class="flex flex-wrap items-center gap-2"> <span class="text-sm text-base-content/70">${t.share}:</span> ${shareTwitter && renderTemplate`<a${addAttribute(twitterShareUrl, "href")} target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
 Twitter
 </a>`} ${shareLinkedin && renderTemplate`<a${addAttribute(linkedinShareUrl, "href")} target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
 LinkedIn
@@ -2639,7 +2679,7 @@ Facebook
 WhatsApp
 </a>`} ${shareCopy && renderTemplate`<button id="copy-link-btn" type="button" class="btn btn-outline btn-sm"${addAttribute(t.copy_link, "data-default-label")}> ${t.copy_link} </button>`} </div> </section>`, (prevPost || nextPost) && renderTemplate`<nav class="not-prose mt-8 flex justify-between"> <div class="join"> ${prevPost ? renderTemplate`<a${addAttribute(`/blog/${prevPost.slug}`, "href")} class="btn btn-outline btn-sm join-item"${addAttribute(prevPost.title, "title")}>
 ← ${t.prev_post} </a>` : renderTemplate`<span class="btn btn-outline btn-sm join-item btn-disabled">← ${t.prev_post}</span>`} ${nextPost ? renderTemplate`<a${addAttribute(`/blog/${nextPost.slug}`, "href")} class="btn btn-outline btn-sm join-item"${addAttribute(nextPost.title, "title")}> ${t.next_post} →
-</a>` : renderTemplate`<span class="btn btn-outline btn-sm join-item btn-disabled">${t.next_post} →</span>`} </div> </nav>`) }), defineScriptVars({ postUrl, copiedLabel: t.copied, copyLinkLabel: t.copy_link }));
+</a>` : renderTemplate`<span class="btn btn-outline btn-sm join-item btn-disabled">${t.next_post} →</span>`} </div> </nav>`) }), defineScriptVars({ postUrl: canonicalHref, copiedLabel: t.copied, copyLinkLabel: t.copy_link }));
 }, "/home/aurora/snappost/templates/shell/src/pages/blog/[slug].astro", void 0);
 
 const $$file = "/home/aurora/snappost/templates/shell/src/pages/blog/[slug].astro";

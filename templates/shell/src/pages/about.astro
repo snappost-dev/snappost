@@ -1,0 +1,62 @@
+---
+import Base from '../layouts/Base.astro';
+import { loadTranslations, normalizeLanguage } from '../i18n';
+import { loadBlogConfig } from '../lib/blog-config';
+import { absoluteUrl, resolveSiteOrigin } from '../lib/site-url';
+
+const db = Astro.locals.runtime.env.DB;
+const config = await loadBlogConfig(db);
+const siteLang = normalizeLanguage(config.site_lang || 'en');
+const t = loadTranslations(siteLang);
+
+const authorName = String(config.author_name ?? '').trim() || config.site_title;
+const authorBioShort = String(config.author_bio ?? '').trim();
+const authorBioLong = String(config.author_bio_long ?? '').trim();
+const aboutBio = authorBioLong || authorBioShort;
+const authorTypeRaw = String(config.author_type ?? 'person').trim().toLowerCase();
+const authorSchemaType = authorTypeRaw === 'organization' ? 'Organization' : 'Person';
+
+const pageTitle = `${t.nav_about} - ${config.site_title}`;
+const canonicalPath = '/about';
+const siteOrigin = resolveSiteOrigin(Astro.locals.runtime.env, Astro.url.href);
+const aboutUrl = absoluteUrl(siteOrigin, canonicalPath);
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+const aboutBioHtml = aboutBio
+  ? escapeHtml(aboutBio).replace(/\r\n|\r|\n/g, '<br>')
+  : '-';
+
+const aboutSchema = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': authorSchemaType,
+  name: authorName,
+  description: aboutBio,
+  url: aboutUrl,
+}).replace(/</g, '\\u003c');
+---
+
+<Base
+  config={config}
+  title={pageTitle}
+  description={aboutBio || `${authorName} - ${config.site_title}`}
+  canonicalPath={canonicalPath}
+>
+  <script type="application/ld+json" set:html={aboutSchema} />
+
+  <section class="max-w-2xl mx-auto">
+    <div class="card border border-base-300 bg-base-100 shadow-sm">
+      <div class="card-body gap-4">
+        <h1 class="card-title text-3xl">{authorName}</h1>
+        <p class="text-base-content/80" set:html={aboutBioHtml} />
+        <div class="card-actions">
+          <a href="/blog" class="link link-primary">{t.about_back_to_blog}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

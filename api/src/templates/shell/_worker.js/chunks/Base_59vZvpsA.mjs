@@ -31,12 +31,14 @@ const $$SeoHead = createComponent(($$result, $$props, $$slots) => {
 
 const nav_home$3 = "Home";
 const nav_blog$3 = "Blog";
+const nav_about$3 = "About";
 const all_posts$3 = "All Posts";
 const all_posts_link$3 = "All posts →";
 const author_about$3 = "About the Author";
 const page_not_found$3 = "Page not found";
 const page_not_found_desc$3 = "The content you are looking for may have been moved or removed.";
 const back_home$3 = "Back to home";
+const about_back_to_blog$3 = "← Blog";
 const reading_time$3 = "min read";
 const share$3 = "Share";
 const copy_link$3 = "Copy Link";
@@ -48,12 +50,14 @@ const published$3 = "Published";
 const en = {
 	nav_home: nav_home$3,
 	nav_blog: nav_blog$3,
+	nav_about: nav_about$3,
 	all_posts: all_posts$3,
 	all_posts_link: all_posts_link$3,
 	author_about: author_about$3,
 	page_not_found: page_not_found$3,
 	page_not_found_desc: page_not_found_desc$3,
 	back_home: back_home$3,
+	about_back_to_blog: about_back_to_blog$3,
 	reading_time: reading_time$3,
 	share: share$3,
 	copy_link: copy_link$3,
@@ -66,12 +70,14 @@ const en = {
 
 const nav_home$2 = "Etusivu";
 const nav_blog$2 = "Blogi";
+const nav_about$2 = "Tietoa";
 const all_posts$2 = "Kaikki kirjoitukset";
 const all_posts_link$2 = "Kaikki kirjoitukset →";
 const author_about$2 = "Kirjoittajasta";
 const page_not_found$2 = "Sivua ei löytynyt";
 const page_not_found_desc$2 = "Etsimäsi sisältö on voitu siirtää tai poistaa.";
 const back_home$2 = "Palaa etusivulle";
+const about_back_to_blog$2 = "← Blogi";
 const reading_time$2 = "min lukuaika";
 const share$2 = "Jaa";
 const copy_link$2 = "Kopioi linkki";
@@ -83,12 +89,14 @@ const published$2 = "Julkaistu";
 const fi = {
 	nav_home: nav_home$2,
 	nav_blog: nav_blog$2,
+	nav_about: nav_about$2,
 	all_posts: all_posts$2,
 	all_posts_link: all_posts_link$2,
 	author_about: author_about$2,
 	page_not_found: page_not_found$2,
 	page_not_found_desc: page_not_found_desc$2,
 	back_home: back_home$2,
+	about_back_to_blog: about_back_to_blog$2,
 	reading_time: reading_time$2,
 	share: share$2,
 	copy_link: copy_link$2,
@@ -101,12 +109,14 @@ const fi = {
 
 const nav_home$1 = "Hem";
 const nav_blog$1 = "Blogg";
+const nav_about$1 = "Om";
 const all_posts$1 = "Alla inlägg";
 const all_posts_link$1 = "Alla inlägg →";
 const author_about$1 = "Om författaren";
 const page_not_found$1 = "Sidan hittades inte";
 const page_not_found_desc$1 = "Innehållet du letar efter kan ha flyttats eller tagits bort.";
 const back_home$1 = "Tillbaka till startsidan";
+const about_back_to_blog$1 = "← Blogg";
 const reading_time$1 = "min läsning";
 const share$1 = "Dela";
 const copy_link$1 = "Kopiera länk";
@@ -118,12 +128,14 @@ const published$1 = "Publicerad";
 const sv = {
 	nav_home: nav_home$1,
 	nav_blog: nav_blog$1,
+	nav_about: nav_about$1,
 	all_posts: all_posts$1,
 	all_posts_link: all_posts_link$1,
 	author_about: author_about$1,
 	page_not_found: page_not_found$1,
 	page_not_found_desc: page_not_found_desc$1,
 	back_home: back_home$1,
+	about_back_to_blog: about_back_to_blog$1,
 	reading_time: reading_time$1,
 	share: share$1,
 	copy_link: copy_link$1,
@@ -136,12 +148,14 @@ const sv = {
 
 const nav_home = "Ana Sayfa";
 const nav_blog = "Blog";
+const nav_about = "Hakkinda";
 const all_posts = "Tüm Yazılar";
 const all_posts_link = "Tum yazilar →";
 const author_about = "Yazar Hakkında";
 const page_not_found = "Sayfa bulunamadı";
 const page_not_found_desc = "Aradığınız içerik taşınmış veya silinmiş olabilir.";
 const back_home = "Ana sayfaya dön";
+const about_back_to_blog = "← Blog";
 const reading_time = "dk okuma";
 const share = "Paylaş";
 const copy_link = "Linki Kopyala";
@@ -153,12 +167,14 @@ const published = "Yayında";
 const tr = {
 	nav_home: nav_home,
 	nav_blog: nav_blog,
+	nav_about: nav_about,
 	all_posts: all_posts,
 	all_posts_link: all_posts_link,
 	author_about: author_about,
 	page_not_found: page_not_found,
 	page_not_found_desc: page_not_found_desc,
 	back_home: back_home,
+	about_back_to_blog: about_back_to_blog,
 	reading_time: reading_time,
 	share: share,
 	copy_link: copy_link,
@@ -217,13 +233,20 @@ const $$Base = createComponent(async ($$result, $$props, $$slots) => {
   const path = canonicalPath ?? `${Astro2.url.pathname}${Astro2.url.search}`;
   const canonicalHref = absoluteUrl(origin, path);
   const rssHref = absoluteUrl(origin, "/rss.xml");
+  const webSiteJsonLd = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: config.site_title,
+    description: config.site_description,
+    url: origin
+  }).replace(/</g, "\\u003c");
   const metaDescRaw = (description ?? config.site_description ?? "").trim();
   const metaDesc = metaDescRaw.length > 160 ? `${metaDescRaw.slice(0, 157)}\u2026` : metaDescRaw;
   const siteLang = normalizeLanguage(config.site_lang || "en");
   const t = loadTranslations(siteLang);
   const siteThemeLight = (config.site_theme_light || "light").trim() || "light";
   const siteThemeDark = (config.site_theme_dark || "dark").trim() || "dark";
-  return renderTemplate(_a || (_a = __template(["<html", "", '> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description"', '><meta property="og:title"', '><meta property="og:description"', '><meta property="og:type" content="website"><meta name="twitter:card" content="summary"><meta name="theme-color"', "><title>", "</title>", "", '</head> <body class="min-h-screen bg-base-200 text-base-content"> <header class="sticky top-0 z-10 border-b border-base-300 bg-base-100/95 backdrop-blur"> <div class="navbar max-w-3xl mx-auto px-4"> <div class="flex-1"> <a href="/" class="text-xl font-bold">', '</a> </div> <nav class="flex-none"> <ul class="menu menu-horizontal px-1 gap-2"> <li><a href="/" class="hover:text-primary">', '</a></li> <li><a href="/blog" class="hover:text-primary">', '</a></li> </ul> </nav> </div> </header> <main class="max-w-3xl mx-auto px-4 py-8"> ', ' </main> <footer class="border-t border-base-300 bg-base-200 text-center py-8 text-sm text-base-content/60"> <p>&copy; ', " ", '</p> </footer> <button id="theme-toggle-btn" type="button" class="btn btn-outline btn-sm fixed bottom-4 right-4 z-20" aria-label="Tema degistir">\n\u2600\uFE0F\n</button> <script>(function(){', "\n    const themeToggleBtn = document.getElementById('theme-toggle-btn');\n    const root = document.documentElement;\n    const storageKey = 'theme-preference';\n\n    const applyThemePreference = (preference) => {\n      const nextTheme = preference === 'dark' ? siteThemeDark : siteThemeLight;\n      root.setAttribute('data-theme', nextTheme);\n      if (themeToggleBtn) {\n        themeToggleBtn.textContent = preference === 'dark' ? '\u{1F319}' : '\u2600\uFE0F';\n      }\n    };\n\n    const storedPreference = localStorage.getItem(storageKey);\n    const initialPreference = storedPreference === 'dark' ? 'dark' : 'light';\n    applyThemePreference(initialPreference);\n\n    themeToggleBtn?.addEventListener('click', () => {\n      const currentPreference = localStorage.getItem(storageKey) === 'dark' ? 'dark' : 'light';\n      const nextPreference = currentPreference === 'dark' ? 'light' : 'dark';\n      localStorage.setItem(storageKey, nextPreference);\n      applyThemePreference(nextPreference);\n    });\n  })();<\/script> </body> </html>"])), addAttribute(siteLang, "lang"), addAttribute(siteThemeLight, "data-theme"), addAttribute(metaDesc, "content"), addAttribute(title, "content"), addAttribute(metaDesc, "content"), addAttribute(config.theme_color, "content"), title, renderComponent($$result, "SeoHead", $$SeoHead, { "title": title, "description": metaDesc, "canonicalHref": canonicalHref, "siteName": config.site_title, "ogType": ogType, "publishedTime": publishedTime, "modifiedTime": modifiedTime, "rssHref": rssHref }), renderHead(), config.site_title, t.nav_home, t.nav_blog, renderSlot($$result, $$slots["default"]), (/* @__PURE__ */ new Date()).getFullYear(), config.author_name, defineScriptVars({ siteThemeLight, siteThemeDark }));
+  return renderTemplate(_a || (_a = __template(["<html", "", '> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description"', '><meta property="og:title"', '><meta property="og:description"', '><meta property="og:type" content="website"><meta name="twitter:card" content="summary"><meta name="theme-color"', "><title>", "</title>", '<script type="application/ld+json">', "<\/script>", '</head> <body class="min-h-screen bg-base-200 text-base-content"> <header class="sticky top-0 z-10 border-b border-base-300 bg-base-100/95 backdrop-blur"> <div class="navbar max-w-3xl mx-auto px-4"> <div class="flex-1"> <a href="/" class="text-xl font-bold">', '</a> </div> <nav class="flex-none"> <ul class="menu menu-horizontal px-1 gap-2"> <li><a href="/" class="hover:text-primary">', '</a></li> <li><a href="/blog" class="hover:text-primary">', '</a></li> <li><a href="/about" class="hover:text-primary">', '</a></li> </ul> </nav> </div> </header> <main class="max-w-3xl mx-auto px-4 py-8"> ', ' </main> <footer class="border-t border-base-300 bg-base-200 text-center py-8 text-sm text-base-content/60"> <p>&copy; ', " ", '</p> </footer> <button id="theme-toggle-btn" type="button" class="btn btn-outline btn-sm fixed bottom-4 right-4 z-20" aria-label="Tema degistir">\n\u2600\uFE0F\n</button> <script>(function(){', "\n    const themeToggleBtn = document.getElementById('theme-toggle-btn');\n    const root = document.documentElement;\n    const storageKey = 'theme-preference';\n\n    const applyThemePreference = (preference) => {\n      const nextTheme = preference === 'dark' ? siteThemeDark : siteThemeLight;\n      root.setAttribute('data-theme', nextTheme);\n      if (themeToggleBtn) {\n        themeToggleBtn.textContent = preference === 'dark' ? '\u{1F319}' : '\u2600\uFE0F';\n      }\n    };\n\n    const storedPreference = localStorage.getItem(storageKey);\n    const initialPreference = storedPreference === 'dark' ? 'dark' : 'light';\n    applyThemePreference(initialPreference);\n\n    themeToggleBtn?.addEventListener('click', () => {\n      const currentPreference = localStorage.getItem(storageKey) === 'dark' ? 'dark' : 'light';\n      const nextPreference = currentPreference === 'dark' ? 'light' : 'dark';\n      localStorage.setItem(storageKey, nextPreference);\n      applyThemePreference(nextPreference);\n    });\n  })();<\/script> </body> </html>"])), addAttribute(siteLang, "lang"), addAttribute(siteThemeLight, "data-theme"), addAttribute(metaDesc, "content"), addAttribute(title, "content"), addAttribute(metaDesc, "content"), addAttribute(config.theme_color, "content"), title, renderComponent($$result, "SeoHead", $$SeoHead, { "title": title, "description": metaDesc, "canonicalHref": canonicalHref, "siteName": config.site_title, "ogType": ogType, "publishedTime": publishedTime, "modifiedTime": modifiedTime, "rssHref": rssHref }), unescapeHTML(webSiteJsonLd), renderHead(), config.site_title, t.nav_home, t.nav_blog, t.nav_about, renderSlot($$result, $$slots["default"]), (/* @__PURE__ */ new Date()).getFullYear(), config.author_name, defineScriptVars({ siteThemeLight, siteThemeDark }));
 }, "/home/aurora/snappost/templates/shell/src/layouts/Base.astro", void 0);
 
 export { $$Base as $, getDateLocale as g, loadTranslations as l, normalizeLanguage as n };

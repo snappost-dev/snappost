@@ -54,7 +54,7 @@ const dashboardThemeRow = await Astro.locals.runtime.env.DB
 const siteConfigRows = await Astro.locals.runtime.env.DB
   .prepare(
     `SELECT key, value FROM config
-     WHERE key IN ('site_title', 'site_description', 'author_name', 'author_bio', 'blog_layout', 'share_twitter', 'share_linkedin', 'share_facebook', 'share_whatsapp', 'share_copy', 'site_lang')`
+     WHERE key IN ('site_title', 'site_description', 'author_name', 'author_bio', 'author_bio_long', 'author_type', 'author_url', 'blog_layout', 'share_twitter', 'share_linkedin', 'share_facebook', 'share_whatsapp', 'share_copy', 'site_lang')`
   )
   .all<{ key: string; value: string }>();
 
@@ -66,6 +66,10 @@ const siteTitle = (siteConfig.site_title || '').trim();
 const siteDescription = (siteConfig.site_description || '').trim();
 const authorName = (siteConfig.author_name || '').trim();
 const authorBio = (siteConfig.author_bio || '').trim();
+const authorBioLong = (siteConfig.author_bio_long || '').trim();
+const authorTypeRaw = (siteConfig.author_type || 'person').trim().toLowerCase();
+const authorType = authorTypeRaw === 'organization' ? 'organization' : 'person';
+const authorUrl = (siteConfig.author_url || '').trim();
 const blogLayoutRaw = (siteConfig.blog_layout || 'list').trim();
 const blogLayout =
   blogLayoutRaw === 'grid' || blogLayoutRaw === 'featured' ? blogLayoutRaw : 'list';
@@ -131,6 +135,42 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
           <span class="label-text font-medium">Yazar Biyografisi</span>
         </label>
         <textarea id="author-bio" name="author_bio" class="textarea textarea-bordered w-full" rows="4">{authorBio}</textarea>
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="author-bio-long">
+          <span class="label-text font-medium">Hakkında Sayfası Biyografisi (uzun)</span>
+        </label>
+        <textarea
+          id="author-bio-long"
+          name="author_bio_long"
+          class="textarea textarea-bordered w-full"
+          rows="6"
+          placeholder="Hakkında sayfasında görünecek detaylı biyografi..."
+        >{authorBioLong}</textarea>
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="author-type">
+          <span class="label-text font-medium">Yazar Tipi</span>
+        </label>
+        <select id="author-type" name="author_type" class="select select-bordered w-full">
+          <option value="person" selected={authorType === 'person'}>Person</option>
+          <option value="organization" selected={authorType === 'organization'}>Organization</option>
+        </select>
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="author-url">
+          <span class="label-text font-medium">Yazar URL</span>
+        </label>
+        <input
+          id="author-url"
+          name="author_url"
+          class="input input-bordered w-full"
+          placeholder="https://ornek.com/about"
+          value={authorUrl}
+        />
       </div>
 
       <div class="form-control">
@@ -247,6 +287,9 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
     const descriptionInput = document.getElementById('site-description');
     const authorNameInput = document.getElementById('author-name');
     const authorBioInput = document.getElementById('author-bio');
+    const authorBioLongInput = document.getElementById('author-bio-long');
+    const authorTypeInput = document.getElementById('author-type');
+    const authorUrlInput = document.getElementById('author-url');
     const blogLayoutInput = document.getElementById('blog-layout');
     const siteLangInput = document.getElementById('site-lang');
     const shareTwitterInput = document.getElementById('share-twitter');
@@ -263,6 +306,18 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
       },
       { key: 'author_name', value: authorNameInput && 'value' in authorNameInput ? authorNameInput.value : '' },
       { key: 'author_bio', value: authorBioInput && 'value' in authorBioInput ? authorBioInput.value : '' },
+      {
+        key: 'author_bio_long',
+        value: authorBioLongInput && 'value' in authorBioLongInput ? authorBioLongInput.value : '',
+      },
+      {
+        key: 'author_type',
+        value:
+          authorTypeInput && 'value' in authorTypeInput && authorTypeInput.value === 'organization'
+            ? 'organization'
+            : 'person',
+      },
+      { key: 'author_url', value: authorUrlInput && 'value' in authorUrlInput ? authorUrlInput.value : '' },
       { key: 'blog_layout', value: blogLayoutInput && 'value' in blogLayoutInput ? blogLayoutInput.value : 'list' },
       { key: 'site_lang', value: siteLangInput && 'value' in siteLangInput ? siteLangInput.value : 'en' },
       { key: 'share_twitter', value: shareTwitterInput && 'checked' in shareTwitterInput && shareTwitterInput.checked ? '1' : '0' },

@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import PostCard from '../../components/PostCard.astro';
 import { getDateLocale, loadTranslations, normalizeLanguage } from '../../i18n';
 import { loadBlogConfig } from '../../lib/blog-config';
+import { absoluteUrl, resolveSiteOrigin } from '../../lib/site-url';
 
 type PostRow = {
   slug: string;
@@ -38,6 +39,15 @@ const featuredDate = featuredPost
 const featuredDescription = (featuredPost?.description ?? '').trim();
 const featuredImgMatch = featuredPost?.content_html?.match(/<img[^>]+src="([^"]+)"/);
 const featuredThumbnail = featuredImgMatch?.[1] ?? null;
+const siteOrigin = resolveSiteOrigin(Astro.locals.runtime.env, Astro.url.href);
+const blogUrl = absoluteUrl(siteOrigin, '/blog');
+const blogJsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'Blog',
+  name: `${config.site_title} - Blog`,
+  url: blogUrl,
+  description: config.site_description,
+}).replace(/</g, '\\u003c');
 
 const listTitle = `Blog – ${config.site_title}`;
 ---
@@ -48,6 +58,7 @@ const listTitle = `Blog – ${config.site_title}`;
   description={config.site_description}
   canonicalPath="/blog"
 >
+  <script type="application/ld+json" set:html={blogJsonLd} />
   <h1 class="text-4xl font-bold mb-8">{t.all_posts}</h1>
 
   {blogLayout === 'grid' ? (

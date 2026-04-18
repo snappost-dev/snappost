@@ -32,6 +32,13 @@ const origin = resolveSiteOrigin(Astro.locals.runtime.env, Astro.url.href);
 const path = canonicalPath ?? `${Astro.url.pathname}${Astro.url.search}`;
 const canonicalHref = absoluteUrl(origin, path);
 const rssHref = absoluteUrl(origin, '/rss.xml');
+const webSiteJsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: config.site_title,
+  description: config.site_description,
+  url: origin,
+}).replace(/</g, '\\u003c');
 
 const metaDescRaw = (description ?? config.site_description ?? '').trim();
 const metaDesc =
@@ -64,6 +71,7 @@ const siteThemeDark = (config.site_theme_dark || 'dark').trim() || 'dark';
     modifiedTime={modifiedTime}
     rssHref={rssHref}
   />
+  <script type="application/ld+json" set:html={webSiteJsonLd} />
 </head>
 <body class="min-h-screen bg-base-200 text-base-content">
   <header class="sticky top-0 z-10 border-b border-base-300 bg-base-100/95 backdrop-blur">
@@ -75,6 +83,7 @@ const siteThemeDark = (config.site_theme_dark || 'dark').trim() || 'dark';
         <ul class="menu menu-horizontal px-1 gap-2">
           <li><a href="/" class="hover:text-primary">{t.nav_home}</a></li>
           <li><a href="/blog" class="hover:text-primary">{t.nav_blog}</a></li>
+          <li><a href="/about" class="hover:text-primary">{t.nav_about}</a></li>
         </ul>
       </nav>
     </div>
