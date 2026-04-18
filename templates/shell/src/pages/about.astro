@@ -18,8 +18,20 @@ const authorSchemaType = authorTypeRaw === 'organization' ? 'Organization' : 'Pe
 
 const pageTitle = `${t.nav_about} - ${config.site_title}`;
 const canonicalPath = '/about';
-const siteOrigin = resolveSiteOrigin(Astro.locals.runtime.env, Astro.url.href);
+const siteOrigin = resolveSiteOrigin(Astro.locals.runtime.env, Astro.url.href, config.custom_domain);
 const aboutUrl = absoluteUrl(siteOrigin, canonicalPath);
+
+const socialTwitter = String(config.social_twitter ?? '').trim();
+const socialLinkedin = String(config.social_linkedin ?? '').trim();
+const socialGithub = String(config.social_github ?? '').trim();
+const socialWebsite = String(config.social_website ?? '').trim();
+type SocialLink = { label: string; href: string };
+const socialLinks: SocialLink[] = [];
+if (socialTwitter) socialLinks.push({ label: 'Twitter/X', href: socialTwitter });
+if (socialLinkedin) socialLinks.push({ label: 'LinkedIn', href: socialLinkedin });
+if (socialGithub) socialLinks.push({ label: 'GitHub', href: socialGithub });
+if (socialWebsite) socialLinks.push({ label: 'Website', href: socialWebsite });
+const hasSocialLinks = socialLinks.length > 0;
 const escapeHtml = (value: string): string =>
   value
     .replace(/&/g, '&amp;')
@@ -53,6 +65,20 @@ const aboutSchema = JSON.stringify({
       <div class="card-body gap-4">
         <h1 class="card-title text-3xl">{authorName}</h1>
         <p class="text-base-content/80" set:html={aboutBioHtml} />
+        {hasSocialLinks && (
+          <div class="not-prose flex flex-wrap gap-2 pt-2">
+            {socialLinks.map((link) => (
+              <a
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn btn-outline btn-sm"
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+        )}
         <div class="card-actions">
           <a href="/blog" class="link link-primary">{t.about_back_to_blog}</a>
         </div>

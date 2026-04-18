@@ -54,7 +54,7 @@ const dashboardThemeRow = await Astro.locals.runtime.env.DB
 const siteConfigRows = await Astro.locals.runtime.env.DB
   .prepare(
     `SELECT key, value FROM config
-     WHERE key IN ('site_title', 'site_description', 'custom_domain', 'author_name', 'author_bio', 'author_bio_long', 'author_type', 'author_url', 'blog_layout', 'share_twitter', 'share_linkedin', 'share_facebook', 'share_whatsapp', 'share_copy', 'site_lang')`
+     WHERE key IN ('site_title', 'site_description', 'custom_domain', 'author_name', 'author_bio', 'author_bio_long', 'author_type', 'author_url', 'social_twitter', 'social_linkedin', 'social_github', 'social_website', 'blog_layout', 'share_twitter', 'share_linkedin', 'share_facebook', 'share_whatsapp', 'share_copy', 'site_lang')`
   )
   .all<{ key: string; value: string }>();
 
@@ -71,6 +71,10 @@ const authorBioLong = (siteConfig.author_bio_long || '').trim();
 const authorTypeRaw = (siteConfig.author_type || 'person').trim().toLowerCase();
 const authorType = authorTypeRaw === 'organization' ? 'organization' : 'person';
 const authorUrl = (siteConfig.author_url || '').trim();
+const socialTwitter = (siteConfig.social_twitter || '').trim();
+const socialLinkedin = (siteConfig.social_linkedin || '').trim();
+const socialGithub = (siteConfig.social_github || '').trim();
+const socialWebsite = (siteConfig.social_website || '').trim();
 const blogLayoutRaw = (siteConfig.blog_layout || 'list').trim();
 const blogLayout =
   blogLayoutRaw === 'grid' || blogLayoutRaw === 'featured' ? blogLayoutRaw : 'list';
@@ -185,6 +189,62 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
           placeholder="https://ornek.com/about"
           value={authorUrl}
         />
+      </div>
+
+      <div class="rounded-box border border-base-300 bg-base-100 p-4 space-y-4">
+        <h2 class="text-sm font-semibold text-base-content">Sosyal Medya</h2>
+        <div class="form-control">
+          <label class="label" for="social-twitter">
+            <span class="label-text font-medium">Twitter/X URL</span>
+          </label>
+          <input
+            id="social-twitter"
+            name="social_twitter"
+            type="url"
+            class="input input-bordered w-full"
+            placeholder="https://x.com/kullanici"
+            value={socialTwitter}
+          />
+        </div>
+        <div class="form-control">
+          <label class="label" for="social-linkedin">
+            <span class="label-text font-medium">LinkedIn URL</span>
+          </label>
+          <input
+            id="social-linkedin"
+            name="social_linkedin"
+            type="url"
+            class="input input-bordered w-full"
+            placeholder="https://www.linkedin.com/in/..."
+            value={socialLinkedin}
+          />
+        </div>
+        <div class="form-control">
+          <label class="label" for="social-github">
+            <span class="label-text font-medium">GitHub URL</span>
+          </label>
+          <input
+            id="social-github"
+            name="social_github"
+            type="url"
+            class="input input-bordered w-full"
+            placeholder="https://github.com/kullanici"
+            value={socialGithub}
+          />
+        </div>
+        <div class="form-control">
+          <label class="label" for="social-website">
+            <span class="label-text font-medium">Website URL</span>
+          </label>
+          <input
+            id="social-website"
+            name="social_website"
+            type="url"
+            class="input input-bordered w-full"
+            placeholder="https://ornek.com"
+            value={socialWebsite}
+          />
+        </div>
       </div>
 
       <div class="form-control">
@@ -304,6 +364,10 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
     const authorBioLongInput = document.getElementById('author-bio-long');
     const authorTypeInput = document.getElementById('author-type');
     const authorUrlInput = document.getElementById('author-url');
+    const socialTwitterInput = document.getElementById('social-twitter');
+    const socialLinkedinInput = document.getElementById('social-linkedin');
+    const socialGithubInput = document.getElementById('social-github');
+    const socialWebsiteInput = document.getElementById('social-website');
     const blogLayoutInput = document.getElementById('blog-layout');
     const siteLangInput = document.getElementById('site-lang');
     const shareTwitterInput = document.getElementById('share-twitter');
@@ -332,6 +396,10 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
             : 'person',
       },
       { key: 'author_url', value: authorUrlInput && 'value' in authorUrlInput ? authorUrlInput.value : '' },
+      { key: 'social_twitter', value: socialTwitterInput && 'value' in socialTwitterInput ? socialTwitterInput.value : '' },
+      { key: 'social_linkedin', value: socialLinkedinInput && 'value' in socialLinkedinInput ? socialLinkedinInput.value : '' },
+      { key: 'social_github', value: socialGithubInput && 'value' in socialGithubInput ? socialGithubInput.value : '' },
+      { key: 'social_website', value: socialWebsiteInput && 'value' in socialWebsiteInput ? socialWebsiteInput.value : '' },
       { key: 'blog_layout', value: blogLayoutInput && 'value' in blogLayoutInput ? blogLayoutInput.value : 'list' },
       { key: 'site_lang', value: siteLangInput && 'value' in siteLangInput ? siteLangInput.value : 'en' },
       { key: 'share_twitter', value: shareTwitterInput && 'checked' in shareTwitterInput && shareTwitterInput.checked ? '1' : '0' },
