@@ -829,10 +829,11 @@ app.post('/api/sites/:id/media', async (c) => {
     return c.json({ error: 'Dosya çok büyük', max_bytes: maxBytes }, 413);
   }
 
+  const allowedUploadTypes = new Set([...ALLOWED_IMAGE_TYPES, 'image/svg+xml']);
   const ct = (file.type || '').trim().toLowerCase();
-  if (!ct || !ALLOWED_IMAGE_TYPES.has(ct)) {
+  if (!ct || !allowedUploadTypes.has(ct)) {
     return c.json(
-      { error: 'Desteklenmeyen dosya türü', allowed: [...ALLOWED_IMAGE_TYPES] },
+      { error: 'Desteklenmeyen dosya türü', allowed: [...allowedUploadTypes] },
       415
     );
   }

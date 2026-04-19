@@ -1,7 +1,7 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 /* empty css                                */
 import { c as createComponent, d as renderTemplate, g as renderComponent, e as createAstro, m as maybeRenderHead, a as addAttribute } from '../chunks/astro/server_CO8Dftjj.mjs';
-import { $ as $$Dashboard } from '../chunks/Dashboard_DgN7kGK8.mjs';
+import { $ as $$Dashboard } from '../chunks/Dashboard_DtHiDK3w.mjs';
 export { renderers } from '../renderers.mjs';
 
 var __freeze = Object.freeze;
