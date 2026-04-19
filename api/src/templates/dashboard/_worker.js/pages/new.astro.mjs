@@ -2,7 +2,7 @@ globalThis.process ??= {}; globalThis.process.env ??= {};
 /* empty css                                */
 import { c as createComponent, d as renderTemplate, r as renderHead, e as createAstro } from '../chunks/astro/server_CO8Dftjj.mjs';
 /* empty css                                 */
-import { r as renderEditorJSToHTML } from '../chunks/editor-html_WvNIgpGN.mjs';
+import { r as renderEditorJSToHTML } from '../chunks/editor-html_BUdsH5eH.mjs';
 export { renderers } from '../renderers.mjs';
 
 var __freeze = Object.freeze;
@@ -100,6 +100,21 @@ async function optimizeImage(file) {
   });
 }
 
+async function uploadFile(file) {
+  const body = new FormData();
+  body.append('file', file, file.name);
+  const res = await fetch('/api/upload-media', {
+    method: 'POST',
+    body,
+    credentials: 'same-origin',
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.success !== 1 || !data.file?.url) {
+    throw new Error(data.error || \`Upload failed (\${res.status})\`);
+  }
+  return data.file.url;
+}
+
 // ==========================================
 // Editor.js Init
 // ==========================================
@@ -151,19 +166,13 @@ function boot() {
         uploader: {
           async uploadByFile(file) {
             const optimized = await optimizeImage(file);
-            const body = new FormData();
-            body.append('file', optimized, optimized.name);
-            return fetch('/api/upload-media', {
-              method: 'POST',
-              body,
-              credentials: 'same-origin',
-            }).then(async (res) => {
-              const data = await res.json().catch(() => ({}));
-              if (!res.ok || data.success !== 1 || !data.file?.url) {
-                throw new Error(data.error || \`Upload failed (\${res.status})\`);
-              }
-              return data;
-            });
+            const url = await uploadFile(optimized);
+            return {
+              success: 1,
+              file: {
+                url,
+              },
+            };
           },
           uploadByUrl() {
             return Promise.reject(new Error('URL ile g\xF6rsel ekleme hen\xFCz kapal\u0131'));
@@ -471,6 +480,21 @@ async function optimizeImage(file) {
   });
 }
 
+async function uploadFile(file) {
+  const body = new FormData();
+  body.append('file', file, file.name);
+  const res = await fetch('/api/upload-media', {
+    method: 'POST',
+    body,
+    credentials: 'same-origin',
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.success !== 1 || !data.file?.url) {
+    throw new Error(data.error || \\\`Upload failed (\\\${res.status})\\\`);
+  }
+  return data.file.url;
+}
+
 // ==========================================
 // Editor.js Init
 // ==========================================
@@ -522,19 +546,13 @@ function boot() {
         uploader: {
           async uploadByFile(file) {
             const optimized = await optimizeImage(file);
-            const body = new FormData();
-            body.append('file', optimized, optimized.name);
-            return fetch('/api/upload-media', {
-              method: 'POST',
-              body,
-              credentials: 'same-origin',
-            }).then(async (res) => {
-              const data = await res.json().catch(() => ({}));
-              if (!res.ok || data.success !== 1 || !data.file?.url) {
-                throw new Error(data.error || \\\`Upload failed (\\\${res.status})\\\`);
-              }
-              return data;
-            });
+            const url = await uploadFile(optimized);
+            return {
+              success: 1,
+              file: {
+                url,
+              },
+            };
           },
           uploadByUrl() {
             return Promise.reject(new Error('URL ile g\xF6rsel ekleme hen\xFCz kapal\u0131'));

@@ -2501,11 +2501,15 @@ function renderEditorJSToHTML(json) {
       case "image": {
         const file = data.file;
         const url = String(file?.url ?? data.url ?? "").trim();
+        const srcsetRaw = String(file?.srcset ?? data.srcset ?? "").trim();
+        const sizesRaw = String(file?.sizes ?? data.sizes ?? "").trim();
         const caption = String(data.caption ?? "").trim();
         if (!url) return "";
         const alt = escapeHtml(caption);
+        const srcsetAttr = srcsetRaw ? ` srcset="${escapeHtml(srcsetRaw)}"` : "";
+        const sizesAttr = sizesRaw ? ` sizes="${escapeHtml(sizesRaw)}"` : "";
         const cap = caption ? `<figcaption style="font-size:0.875rem;color:#64748b;margin-top:0.5rem">${escapeHtml(caption)}</figcaption>` : "";
-        return `<figure style="margin:1rem 0"><img src="${escapeHtml(url)}" alt="${alt}" loading="lazy" decoding="async" style="max-width:100%;height:auto;display:block" />${cap}</figure>`;
+        return `<figure style="margin:1rem 0"><img src="${escapeHtml(url)}"${srcsetAttr}${sizesAttr} alt="${alt}" loading="lazy" decoding="async" style="max-width:100%;height:auto;display:block" />${cap}</figure>`;
       }
       default:
         return "";
