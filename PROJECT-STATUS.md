@@ -24,7 +24,7 @@ Snappost, kullanıcıların email/password ile kayıt olup **~15 saniyede** tam 
 - **Veri modeli:** `posts.content` — Editor.js JSON; `content_html` — `renderEditorJSToHTML()`. **Eski markdown** kayıtlarında edit uyarısı; shell `content_html` kullanır.
 - **Editör publish akışı (dashboard):** Checkbox yerine iki aksiyon butonu (**Save Draft** = `published=0`, **Publish/Update** = `published=1`). Liste ekranında **Delete** + **Publish/Unpublish** aksiyonları mevcut.
 - **Slug davranışı:** Edit ekranında yayınlanmış yazılarda slug kilitli (`readonly`); draft modunda düzenlenebilir ve “Orijinal slug” ipucu gösterilir.
-- **Ayar ekranı:** `settings.astro` üzerinden `site_title`, `site_description`, `author_name`, `author_bio` + `author_bio_long`, tema ayarları (`site_theme_light`, `site_theme_dark`, `dashboard_theme`), `blog_layout` (list/grid/featured), paylaşım butonları ve sosyal link URL'leri (`social_twitter`, `social_linkedin`, `social_github`, `social_website`) yönetilir. `custom_domain` bilgi amaçlı readonly gösterilir.
+- **Ayar ekranı:** `settings.astro` üzerinden `site_title`, `site_description`, `author_name`, `author_bio` + `author_bio_long`, tema ayarları (`site_theme_light`, `site_theme_dark`, `dashboard_theme`), `blog_layout` (list/grid/featured), paylaşım butonları ve sosyal link URL'leri (`social_twitter`, `social_linkedin`, `social_github`, `social_website`) yönetilir. `custom_domain` bilgi amaçlı readonly gösterilir. Branding için `site_logo`, `site_logo_dark` (opsiyonel), `site_favicon` upload alanları ve `logo_display` (`text`/`logo`/`logo_text`) seçeneği mevcuttur.
 - **Kaynak dosyalar:** `templates/dashboard/src/pages/new.astro`, `edit/[id].astro`, `src/lib/editor.ts`, `public/dashboard/alert-block.js`.
 - **Provision / API:** Güncel dashboard build’i `api/src/templates/dashboard` + `npm run embed` → `api/src/generated/dashboard-template.ts`; yeni provision bu gömülü şablonu kullanır.
 - **Arşiv dokümantasyon:** Tamamlanmış revize plan → [`docs/archive-editorjs-v2-plan.md`](docs/archive-editorjs-v2-plan.md). Erken taslak → [`docs/cursor-opus-prompt-v1.md`](docs/cursor-opus-prompt-v1.md).
@@ -172,7 +172,7 @@ Hata olursa rollback: oluşturulan Pages projeleri ve D1 database silinir.
 | POST | `/api/sites/:id/domain` | Auth + whitelist. Body `{ domain }` → shell Pages’e CF custom domain; provisioning DB `custom_domain` günceller; tenant blog D1 `config.custom_domain` upsert eder; zone bulunursa DNS CNAME kaydını otomatik upsert eder (best-effort) |
 | DELETE | `/api/sites/:id/domain` | Auth + whitelist. CF’den domain kaldırır; provisioning DB `custom_domain` null; tenant blog D1 `config.custom_domain` kaydını siler |
 | DELETE | `/api/sites/:id` | Auth + whitelist. Önce custom domain (varsa), sonra dashboard/shell Pages + kiracı D1 **best-effort** silinir; provisioning `sites` satırı silinir; kiracı **R2** prefix `u{userId}/s{siteId}/` best-effort temizlenir |
-| POST | `/api/sites/:id/media` | Auth + whitelist + site sahibi. `multipart/form-data` alan `file` — jpeg/png/webp/gif, boyut `MAX_MEDIA_UPLOAD_MB` (varsayılan 5 MB) |
+| POST | `/api/sites/:id/media` | Auth + whitelist + site sahibi. `multipart/form-data` alan `file` — jpeg/png/webp/gif/svg, boyut `MAX_MEDIA_UPLOAD_MB` (varsayılan 5 MB) |
 | GET | `/api/media/raw/:enc` | Auth yok. R2 key (base64url); blog `<img src>` |
 
 ### Utility
@@ -205,6 +205,7 @@ config (key, value)
   -- Aktif key'ler: site_title, site_description, custom_domain,
   --                author_name, author_bio, author_bio_long,
   --                author_type, author_url,
+  --                site_logo, site_logo_dark, site_favicon, logo_display,
   --                site_theme_light, site_theme_dark, dashboard_theme,
   --                blog_layout, site_lang,
   --                share_twitter, share_linkedin, share_facebook, share_whatsapp, share_copy,
@@ -350,6 +351,7 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 - **Blog + medya sprint’i (B1–B7):** R2 upload, Editor.js görsel, shell `content_html`/SEO/performans, `templates:ship` hattı — [`docs/SPRINT-PLAN.md`](docs/SPRINT-PLAN.md) **§B** ve **§B sprint kapanışı**.
 - **Dashboard post yönetimi:** Liste ekranında delete + publish/unpublish; edit/new ekranlarında Save Draft / Publish(veya Update) aksiyonları.
 - **Tema + görünüm ayarları:** Dashboard settings ekranı üzerinden `site_theme`, `dashboard_theme` ve `blog_layout` yönetimi.
+- **Branding ayarları:** Dashboard settings ekranından logo/favicon upload (`site_logo`, `site_logo_dark`, `site_favicon`) ve nav logo görünümü (`logo_display`) yönetimi; shell nav aktif tema tercihine göre light/dark logo swap yapar.
 - **Operasyon endpoint’i:** `POST /api/admin/redeploy-all` ile mevcut tenant shell/dashboard projelerine toplu redeploy.
 
 ### 9.2 Sıradaki — Stabilizasyon ve güvenlik (önceden “V2 backlog”)

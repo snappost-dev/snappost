@@ -106,9 +106,12 @@ const hasSiteLogo = Boolean((config.site_logo || '').trim());
           {logoDisplay === 'logo' ? (
             hasSiteLogo ? (
               <img
+                id="site-logo-img"
                 src={config.site_logo}
                 alt={config.site_title}
                 height="32"
+                data-light={config.site_logo}
+                data-dark={config.site_logo_dark || config.site_logo}
                 style="max-width:160px;object-fit:contain"
               />
             ) : (
@@ -118,9 +121,12 @@ const hasSiteLogo = Boolean((config.site_logo || '').trim());
             hasSiteLogo ? (
               <span class="inline-flex items-center gap-2">
                 <img
+                  id="site-logo-img"
                   src={config.site_logo}
                   alt={config.site_title}
                   height="32"
+                  data-light={config.site_logo}
+                  data-dark={config.site_logo_dark || config.site_logo}
                   style="max-width:160px;object-fit:contain"
                 />
                 <span>{config.site_title}</span>
@@ -162,12 +168,22 @@ const hasSiteLogo = Boolean((config.site_logo || '').trim());
 
   <script is:inline define:vars={{ siteThemeLight, siteThemeDark }}>
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const logoEl = document.getElementById('site-logo-img');
     const root = document.documentElement;
     const storageKey = 'theme-preference';
+    const lightLogo = logoEl && 'dataset' in logoEl ? logoEl.dataset.light || '' : '';
+    const darkLogo =
+      logoEl && 'dataset' in logoEl ? logoEl.dataset.dark || lightLogo : lightLogo;
+
+    const applyLogo = (preference) => {
+      if (!logoEl || !('src' in logoEl)) return;
+      logoEl.src = preference === 'dark' ? darkLogo : lightLogo;
+    };
 
     const applyThemePreference = (preference) => {
       const nextTheme = preference === 'dark' ? siteThemeDark : siteThemeLight;
       root.setAttribute('data-theme', nextTheme);
+      applyLogo(preference);
       if (themeToggleBtn) {
         themeToggleBtn.textContent = preference === 'dark' ? '🌙' : '☀️';
       }

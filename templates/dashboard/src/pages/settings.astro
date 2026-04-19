@@ -54,7 +54,7 @@ const dashboardThemeRow = await Astro.locals.runtime.env.DB
 const siteConfigRows = await Astro.locals.runtime.env.DB
   .prepare(
     `SELECT key, value FROM config
-     WHERE key IN ('site_title', 'site_description', 'custom_domain', 'site_logo', 'site_favicon', 'logo_display', 'author_name', 'author_bio', 'author_bio_long', 'author_type', 'author_url', 'social_twitter', 'social_linkedin', 'social_github', 'social_website', 'blog_layout', 'share_twitter', 'share_linkedin', 'share_facebook', 'share_whatsapp', 'share_copy', 'site_lang')`
+     WHERE key IN ('site_title', 'site_description', 'custom_domain', 'site_logo', 'site_logo_dark', 'site_favicon', 'logo_display', 'author_name', 'author_bio', 'author_bio_long', 'author_type', 'author_url', 'social_twitter', 'social_linkedin', 'social_github', 'social_website', 'blog_layout', 'share_twitter', 'share_linkedin', 'share_facebook', 'share_whatsapp', 'share_copy', 'site_lang')`
   )
   .all<{ key: string; value: string }>();
 
@@ -66,6 +66,7 @@ const siteTitle = (siteConfig.site_title || '').trim();
 const siteDescription = (siteConfig.site_description || '').trim();
 const customDomain = (siteConfig.custom_domain || '').trim();
 const siteLogo = (siteConfig.site_logo || '').trim();
+const siteLogoDark = (siteConfig.site_logo_dark || '').trim();
 const siteFavicon = (siteConfig.site_favicon || '').trim();
 const logoDisplayRaw = (siteConfig.logo_display || 'text').trim().toLowerCase();
 const logoDisplay =
@@ -151,7 +152,7 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
 
         <div class="form-control gap-2">
           <label class="label p-0" for="site-logo-file">
-            <span class="label-text font-medium">Site Logosu</span>
+            <span class="label-text font-medium">Site Logosu (Acik Tema)</span>
           </label>
           <input
             id="site-logo-file"
@@ -168,6 +169,28 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
             class:list={['h-12 w-auto rounded border border-base-300 bg-base-200 p-1', { hidden: !siteLogo }]}
           />
           <p id="site-logo-upload-message" class="text-sm text-base-content/70"></p>
+        </div>
+
+        <div class="form-control gap-2">
+          <label class="label p-0" for="site-logo-dark-file">
+            <span class="label-text font-medium">Site Logosu (Koyu Tema)</span>
+          </label>
+          <p class="text-xs text-base-content/60">Koyu temada gosterilir. Bos birakilirsa acik tema logosu kullanilir.</p>
+          <input
+            id="site-logo-dark-file"
+            type="file"
+            accept="image/png,image/svg+xml,image/jpeg,image/webp"
+            class="file-input file-input-bordered w-full"
+          />
+          <button id="site-logo-dark-upload-btn" type="button" class="btn btn-outline btn-sm w-fit">Logo Yukle</button>
+          <input id="site-logo-dark-url" type="hidden" value={siteLogoDark} />
+          <img
+            id="site-logo-dark-preview"
+            src={siteLogoDark || ''}
+            alt="Site koyu tema logosu onizleme"
+            class:list={['h-12 w-auto rounded border border-base-300 bg-base-200 p-1', { hidden: !siteLogoDark }]}
+          />
+          <p id="site-logo-dark-upload-message" class="text-sm text-base-content/70"></p>
         </div>
 
         <div class="form-control gap-2">
@@ -496,6 +519,18 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
     })
   );
 
+  const logoDarkUploadBtn = document.getElementById('site-logo-dark-upload-btn');
+  logoDarkUploadBtn?.addEventListener('click', () =>
+    uploadAndSaveAsset({
+      inputId: 'site-logo-dark-file',
+      urlFieldId: 'site-logo-dark-url',
+      previewId: 'site-logo-dark-preview',
+      messageId: 'site-logo-dark-upload-message',
+      configKey: 'site_logo_dark',
+      allowedTypes: ['image/png', 'image/svg+xml', 'image/jpeg', 'image/webp'],
+    })
+  );
+
   const faviconUploadBtn = document.getElementById('site-favicon-upload-btn');
   faviconUploadBtn?.addEventListener('click', () =>
     uploadAndSaveAsset({
@@ -529,6 +564,7 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
     const shareWhatsappInput = document.getElementById('share-whatsapp');
     const shareCopyInput = document.getElementById('share-copy');
     const siteLogoInput = document.getElementById('site-logo-url');
+    const siteLogoDarkInput = document.getElementById('site-logo-dark-url');
     const siteFaviconInput = document.getElementById('site-favicon-url');
     const logoDisplayInput = document.getElementById('logo-display');
 
@@ -542,6 +578,10 @@ const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDash
       {
         key: 'site_favicon',
         value: siteFaviconInput && 'value' in siteFaviconInput ? siteFaviconInput.value : '',
+      },
+      {
+        key: 'site_logo_dark',
+        value: siteLogoDarkInput && 'value' in siteLogoDarkInput ? siteLogoDarkInput.value : '',
       },
       {
         key: 'logo_display',
