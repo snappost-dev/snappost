@@ -8,9 +8,10 @@ interface Props {
     created_at: string;
   };
   locale?: string;
+  priority?: boolean;
 }
 
-const { post, locale = 'en-US' } = Astro.props;
+const { post, locale = 'en-US', priority = false } = Astro.props;
 const date = new Date(post.created_at).toLocaleDateString(locale, {
   year: 'numeric',
   month: 'long',
@@ -26,7 +27,13 @@ const thumbnail = imgMatch?.[1] ?? null;
 <article class="card bg-base-100 border border-base-300 transition hover:shadow-md">
   {thumbnail && (
     <figure class="aspect-[16/9] overflow-hidden">
-      <img src={thumbnail} alt="" class="h-full w-full object-cover" />
+      <img
+        src={thumbnail}
+        alt=""
+        class="h-full w-full object-cover"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchpriority={priority ? 'high' : 'auto'}
+      />
     </figure>
   )}
   <a href={`/blog/${post.slug}`} class="card-body block">

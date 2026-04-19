@@ -3,6 +3,7 @@ import SeoHead from '../components/SeoHead.astro';
 import { loadTranslations, normalizeLanguage } from '../i18n';
 import { loadBlogConfig } from '../lib/blog-config';
 import { absoluteUrl, resolveSiteOrigin } from '../lib/site-url';
+import { getThemeVars } from '../lib/theme-vars';
 
 interface Props {
   title: string;
@@ -47,6 +48,9 @@ const siteLang = normalizeLanguage(config.site_lang || 'en');
 const t = loadTranslations(siteLang);
 const siteThemeLight = (config.site_theme_light || 'light').trim() || 'light';
 const siteThemeDark = (config.site_theme_dark || 'dark').trim() || 'dark';
+const lightThemeVars = getThemeVars(siteThemeLight);
+const darkThemeVars = getThemeVars(siteThemeDark);
+const inlineThemeCss = `[data-theme="${siteThemeLight}"] { ${lightThemeVars} } [data-theme="${siteThemeDark}"] { ${darkThemeVars} }`;
 ---
 
 <!DOCTYPE html>
@@ -71,6 +75,20 @@ const siteThemeDark = (config.site_theme_dark || 'dark').trim() || 'dark';
     modifiedTime={modifiedTime}
     rssHref={rssHref}
   />
+  <style set:html={inlineThemeCss}></style>
+  <script is:inline>
+    const styleLinks = document.querySelectorAll('link[rel="stylesheet"]');
+    styleLinks.forEach((link) => {
+      const href = link.getAttribute('href');
+      if (!href) return;
+      link.setAttribute('rel', 'preload');
+      link.setAttribute('as', 'style');
+      link.setAttribute('onload', "this.onload=null;this.rel='stylesheet'");
+      const noscript = document.createElement('noscript');
+      noscript.innerHTML = `<link rel="stylesheet" href="${href}">`;
+      link.insertAdjacentElement('afterend', noscript);
+    });
+  </script>
   <script type="application/ld+json" set:html={webSiteJsonLd} />
 </head>
 <body class="min-h-screen bg-base-200 text-base-content">

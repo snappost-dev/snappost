@@ -52,8 +52,8 @@ const featuredThumbnail = featuredImgMatch?.[1] ?? null;
 
   {blogLayout === 'grid' ? (
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-      {posts.map((post: any) => (
-        <PostCard post={post} locale={dateLocale} />
+      {posts.map((post: any, index: number) => (
+        <PostCard post={post} locale={dateLocale} priority={index === 0} />
       ))}
     </div>
   ) : blogLayout === 'featured' ? (
@@ -74,16 +74,16 @@ const featuredThumbnail = featuredImgMatch?.[1] ?? null;
       )}
       {remainingPosts.length > 0 && (
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {remainingPosts.map((post: PostRow) => (
-            <PostCard post={post} locale={dateLocale} />
+          {remainingPosts.map((post: PostRow, index: number) => (
+            <PostCard post={post} locale={dateLocale} priority={index === 0} />
           ))}
         </div>
       )}
     </div>
   ) : (
     <div class="space-y-6">
-      {posts.map((post: any) => (
-        <PostCard post={post} locale={dateLocale} />
+      {posts.map((post: any, index: number) => (
+        <PostCard post={post} locale={dateLocale} priority={index === 0} />
       ))}
     </div>
   )}

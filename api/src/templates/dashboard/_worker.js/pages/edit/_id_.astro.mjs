@@ -50,13 +50,58 @@ const $$id = createComponent(async ($$result, $$props, $$slots) => {
       error = "Error updating post: " + e.message;
     }
   }
-  return renderTemplate(_a || (_a = __template(['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Edit: ', " - Dashboard</title><style>\n    .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }\n    .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }\n    .editor-main { overflow-y: auto; }\n    .nav-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }\n    .nav-item:hover { background: #e2e8f0; }\n    .nav-item.active { background: #dbeafe; color: #1d4ed8; }\n    .ce-block--focused { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 4px; }\n    #editorjs { min-height: 400px; }\n    .codex-editor__redactor { padding-bottom: 200px !important; }\n  </style>", '</head> <body class="bg-gray-50" data-theme="corporate"> ', " ", ' <form method="POST" id="save-form"> <input type="hidden" name="content" id="hidden-content"> <input type="hidden" name="title" id="hidden-title"> <input type="hidden" name="slug" id="hidden-slug"> <input type="hidden" name="description" id="hidden-description"> <input type="hidden" name="published" id="hidden-published" value="0"> </form> <div class="editor-grid"> <!-- SIDEBAR --> <aside class="sidebar flex flex-col"> <div class="p-4 border-b border-gray-200"> <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to Posts</a> </div> <div class="p-4 flex-1"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Blocks</h3> <div id="block-list" class="space-y-1"> <div class="text-sm text-gray-400 italic">Loading...</div> </div> <p class="text-xs text-gray-400 mt-3 leading-relaxed">Add blocks with the <strong>+</strong> in the editor.</p> </div> <div class="border-t border-gray-200 p-4"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Properties</h3> <div id="properties-content"> <p class="text-sm text-gray-400 italic">Select a block</p> </div> </div> </aside> <!-- MAIN PANEL --> <main class="editor-main"> <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3"> <div class="max-w-3xl mx-auto flex items-center gap-3"> <input id="post-title" type="text"', ' placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg"> ', ' <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button> <button id="save-draft-btn" class="btn btn-outline btn-sm">Save Draft</button> <button id="publish-btn" class="btn btn-primary btn-sm">', '</button> </div> <div class="max-w-3xl mx-auto mt-2"> <input id="post-description" type="text"', ' placeholder="Short description (optional)" class="input input-bordered input-xs w-full"> ', ' </div> </div> <div class="max-w-3xl mx-auto px-6 py-8"> <div id="editorjs"></div> </div> </main> </div> <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/paragraph@2.11.7/dist/paragraph.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/nested-list@1.4.3/dist/nested-list.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@sotaproject/strikethrough@1.0.1/dist/bundle.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/quote.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0/dist/code.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0/dist/image.umd.js"><\/script> <script src="/dashboard/alert-block.js"><\/script> <script>(function(){', `
+  return renderTemplate(_a || (_a = __template(['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Edit: ', " - Dashboard</title><style>\n    .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }\n    .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }\n    .editor-main { overflow-y: auto; }\n    .nav-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }\n    .nav-item:hover { background: #e2e8f0; }\n    .nav-item.active { background: #dbeafe; color: #1d4ed8; }\n    .ce-block--focused { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 4px; }\n    #editorjs { min-height: 400px; }\n    .codex-editor__redactor { padding-bottom: 200px !important; }\n  </style>", '</head> <body class="bg-gray-50" data-theme="corporate"> ', " ", ' <form method="POST" id="save-form"> <input type="hidden" name="content" id="hidden-content"> <input type="hidden" name="title" id="hidden-title"> <input type="hidden" name="slug" id="hidden-slug"> <input type="hidden" name="description" id="hidden-description"> <input type="hidden" name="published" id="hidden-published" value="0"> </form> <div class="editor-grid"> <!-- SIDEBAR --> <aside class="sidebar flex flex-col"> <div class="p-4 border-b border-gray-200"> <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to Posts</a> </div> <div class="p-4 flex-1"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Blocks</h3> <div id="block-list" class="space-y-1"> <div class="text-sm text-gray-400 italic">Loading...</div> </div> <p class="text-xs text-gray-400 mt-3 leading-relaxed">Add blocks with the <strong>+</strong> in the editor.</p> </div> <div class="border-t border-gray-200 p-4"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Properties</h3> <div id="properties-content"> <p class="text-sm text-gray-400 italic">Select a block</p> </div> </div> </aside> <!-- MAIN PANEL --> <main class="editor-main"> <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3"> <div class="max-w-3xl mx-auto flex items-center gap-3"> <input id="post-title" type="text"', ' placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg"> ', ' <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button> <button id="save-draft-btn" class="btn btn-outline btn-sm">Save Draft</button> <button id="publish-btn" class="btn btn-primary btn-sm">', '</button> </div> <div class="max-w-3xl mx-auto mt-2"> <input id="post-description" type="text"', ' placeholder="Short description (optional)" class="input input-bordered input-xs w-full"> ', ' </div> </div> <div class="max-w-3xl mx-auto px-6 py-8"> <div id="editorjs"></div> <p class="mt-3 text-xs text-base-content/50">\nOnerilen gorsel boyutu: 1200x675px (16:9). Gorseller otomatik olarak WebP formatina ve max 1200px genislige optimize edilir.\n</p> </div> </main> </div> <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/paragraph@2.11.7/dist/paragraph.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/nested-list@1.4.3/dist/nested-list.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@sotaproject/strikethrough@1.0.1/dist/bundle.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/quote.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0/dist/code.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0/dist/image.umd.js"><\/script> <script src="/dashboard/alert-block.js"><\/script> <script>(function(){', `
 let editor, activeBlockIndex = null, navigatorDebounce = null, editorBootStarted = false;
 const existingData = editorDataJson !== 'null' ? JSON.parse(editorDataJson) : null;
 
 window.addEventListener('pageshow', (e) => {
   if (e.persisted) location.reload();
 });
+
+async function optimizeImage(file) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX_W = 1200;
+      const MAX_H = 675;
+      let w = img.width;
+      let h = img.height;
+      const ratio = Math.min(MAX_W / w, MAX_H / h, 1);
+      w = Math.round(w * ratio);
+      h = Math.round(h * ratio);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        URL.revokeObjectURL(url);
+        resolve(file);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          resolve(file);
+          return;
+        }
+        resolve(
+          new File([blob], file.name.replace(/\\.[^.]+$/, '.webp'), {
+            type: 'image/webp',
+          })
+        );
+      }, 'image/webp', 0.85);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+}
 
 function boot() {
   const StrikethroughTool = window.Strikethrough && (window.Strikethrough.default || window.Strikethrough);
@@ -103,9 +148,10 @@ function boot() {
       class: ImageTool,
       config: {
         uploader: {
-          uploadByFile(file) {
+          async uploadByFile(file) {
+            const optimized = await optimizeImage(file);
             const body = new FormData();
-            body.append('file', file, file.name);
+            body.append('file', optimized, optimized.name);
             return fetch('/api/upload-media', {
               method: 'POST',
               body,
@@ -279,13 +325,58 @@ async function openPreview() {
     alert('Preview failed: '+(e && e.message ? e.message : String(e)));
   }
 }
-})();<\/script> </body> </html>`], ['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Edit: ', " - Dashboard</title><style>\n    .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }\n    .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }\n    .editor-main { overflow-y: auto; }\n    .nav-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }\n    .nav-item:hover { background: #e2e8f0; }\n    .nav-item.active { background: #dbeafe; color: #1d4ed8; }\n    .ce-block--focused { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 4px; }\n    #editorjs { min-height: 400px; }\n    .codex-editor__redactor { padding-bottom: 200px !important; }\n  </style>", '</head> <body class="bg-gray-50" data-theme="corporate"> ', " ", ' <form method="POST" id="save-form"> <input type="hidden" name="content" id="hidden-content"> <input type="hidden" name="title" id="hidden-title"> <input type="hidden" name="slug" id="hidden-slug"> <input type="hidden" name="description" id="hidden-description"> <input type="hidden" name="published" id="hidden-published" value="0"> </form> <div class="editor-grid"> <!-- SIDEBAR --> <aside class="sidebar flex flex-col"> <div class="p-4 border-b border-gray-200"> <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to Posts</a> </div> <div class="p-4 flex-1"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Blocks</h3> <div id="block-list" class="space-y-1"> <div class="text-sm text-gray-400 italic">Loading...</div> </div> <p class="text-xs text-gray-400 mt-3 leading-relaxed">Add blocks with the <strong>+</strong> in the editor.</p> </div> <div class="border-t border-gray-200 p-4"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Properties</h3> <div id="properties-content"> <p class="text-sm text-gray-400 italic">Select a block</p> </div> </div> </aside> <!-- MAIN PANEL --> <main class="editor-main"> <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3"> <div class="max-w-3xl mx-auto flex items-center gap-3"> <input id="post-title" type="text"', ' placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg"> ', ' <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button> <button id="save-draft-btn" class="btn btn-outline btn-sm">Save Draft</button> <button id="publish-btn" class="btn btn-primary btn-sm">', '</button> </div> <div class="max-w-3xl mx-auto mt-2"> <input id="post-description" type="text"', ' placeholder="Short description (optional)" class="input input-bordered input-xs w-full"> ', ' </div> </div> <div class="max-w-3xl mx-auto px-6 py-8"> <div id="editorjs"></div> </div> </main> </div> <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/paragraph@2.11.7/dist/paragraph.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/nested-list@1.4.3/dist/nested-list.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@sotaproject/strikethrough@1.0.1/dist/bundle.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/quote.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0/dist/code.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0/dist/image.umd.js"><\/script> <script src="/dashboard/alert-block.js"><\/script> <script>(function(){', `
+})();<\/script> </body> </html>`], ['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Edit: ', " - Dashboard</title><style>\n    .editor-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }\n    .sidebar { background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }\n    .editor-main { overflow-y: auto; }\n    .nav-item { cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }\n    .nav-item:hover { background: #e2e8f0; }\n    .nav-item.active { background: #dbeafe; color: #1d4ed8; }\n    .ce-block--focused { outline: 2px solid #3b82f6; outline-offset: 2px; border-radius: 4px; }\n    #editorjs { min-height: 400px; }\n    .codex-editor__redactor { padding-bottom: 200px !important; }\n  </style>", '</head> <body class="bg-gray-50" data-theme="corporate"> ', " ", ' <form method="POST" id="save-form"> <input type="hidden" name="content" id="hidden-content"> <input type="hidden" name="title" id="hidden-title"> <input type="hidden" name="slug" id="hidden-slug"> <input type="hidden" name="description" id="hidden-description"> <input type="hidden" name="published" id="hidden-published" value="0"> </form> <div class="editor-grid"> <!-- SIDEBAR --> <aside class="sidebar flex flex-col"> <div class="p-4 border-b border-gray-200"> <a href="/" class="text-sm text-gray-500 hover:text-gray-700">&larr; Back to Posts</a> </div> <div class="p-4 flex-1"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Blocks</h3> <div id="block-list" class="space-y-1"> <div class="text-sm text-gray-400 italic">Loading...</div> </div> <p class="text-xs text-gray-400 mt-3 leading-relaxed">Add blocks with the <strong>+</strong> in the editor.</p> </div> <div class="border-t border-gray-200 p-4"> <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Properties</h3> <div id="properties-content"> <p class="text-sm text-gray-400 italic">Select a block</p> </div> </div> </aside> <!-- MAIN PANEL --> <main class="editor-main"> <div class="sticky top-0 bg-white border-b border-gray-200 z-10 px-6 py-3"> <div class="max-w-3xl mx-auto flex items-center gap-3"> <input id="post-title" type="text"', ' placeholder="Post title..." class="input input-bordered input-sm flex-1 font-semibold text-lg"> ', ' <button id="preview-btn" class="btn btn-ghost btn-sm">Preview</button> <button id="save-draft-btn" class="btn btn-outline btn-sm">Save Draft</button> <button id="publish-btn" class="btn btn-primary btn-sm">', '</button> </div> <div class="max-w-3xl mx-auto mt-2"> <input id="post-description" type="text"', ' placeholder="Short description (optional)" class="input input-bordered input-xs w-full"> ', ' </div> </div> <div class="max-w-3xl mx-auto px-6 py-8"> <div id="editorjs"></div> <p class="mt-3 text-xs text-base-content/50">\nOnerilen gorsel boyutu: 1200x675px (16:9). Gorseller otomatik olarak WebP formatina ve max 1200px genislige optimize edilir.\n</p> </div> </main> </div> <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.30.6/dist/editorjs.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/paragraph@2.11.7/dist/paragraph.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/nested-list@1.4.3/dist/nested-list.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@sotaproject/strikethrough@1.0.1/dist/bundle.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.8/dist/header.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/quote.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0/dist/code.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.2/dist/delimiter.umd.js"><\/script> <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0/dist/image.umd.js"><\/script> <script src="/dashboard/alert-block.js"><\/script> <script>(function(){', `
 let editor, activeBlockIndex = null, navigatorDebounce = null, editorBootStarted = false;
 const existingData = editorDataJson !== 'null' ? JSON.parse(editorDataJson) : null;
 
 window.addEventListener('pageshow', (e) => {
   if (e.persisted) location.reload();
 });
+
+async function optimizeImage(file) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX_W = 1200;
+      const MAX_H = 675;
+      let w = img.width;
+      let h = img.height;
+      const ratio = Math.min(MAX_W / w, MAX_H / h, 1);
+      w = Math.round(w * ratio);
+      h = Math.round(h * ratio);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        URL.revokeObjectURL(url);
+        resolve(file);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          resolve(file);
+          return;
+        }
+        resolve(
+          new File([blob], file.name.replace(/\\\\.[^.]+$/, '.webp'), {
+            type: 'image/webp',
+          })
+        );
+      }, 'image/webp', 0.85);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+}
 
 function boot() {
   const StrikethroughTool = window.Strikethrough && (window.Strikethrough.default || window.Strikethrough);
@@ -332,9 +423,10 @@ function boot() {
       class: ImageTool,
       config: {
         uploader: {
-          uploadByFile(file) {
+          async uploadByFile(file) {
+            const optimized = await optimizeImage(file);
             const body = new FormData();
-            body.append('file', file, file.name);
+            body.append('file', optimized, optimized.name);
             return fetch('/api/upload-media', {
               method: 'POST',
               body,

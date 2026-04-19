@@ -14,11 +14,11 @@ export default {
   ],
   daisyui: {
     themes: [
-      'light', 'dark', 'cupcake', 'bumblebee', 'emerald', 'corporate',
-      'synthwave', 'retro', 'cyberpunk', 'valentine', 'halloween', 'garden',
-      'forest', 'aqua', 'lofi', 'pastel', 'fantasy', 'wireframe', 'black',
-      'luxury', 'dracula', 'cmyk', 'autumn', 'business', 'acid', 'lemonade',
-      'night', 'coffee', 'winter', 'nord', 'sunset',
+      'light', 'dark', 'corporate', 'nord', 'business', 'winter',
+      'cupcake', 'emerald', 'lofi', 'dracula', 'night', 'coffee',
+      'synthwave', 'cyberpunk', 'retro', 'valentine', 'halloween',
+      'garden', 'forest', 'aqua', 'pastel', 'fantasy', 'wireframe',
+      'black', 'luxury', 'cmyk', 'autumn', 'acid', 'lemonade', 'sunset',
     ],
     logs: false,
   },

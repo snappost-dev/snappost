@@ -116,6 +116,9 @@ if (Astro.request.method === 'POST') {
     <!-- Editor -->
     <div class="max-w-3xl mx-auto px-6 py-8">
       <div id="editorjs"></div>
+      <p class="mt-3 text-xs text-base-content/50">
+        Onerilen gorsel boyutu: 1200x675px (16:9). Gorseller otomatik olarak WebP formatina ve max 1200px genislige optimize edilir.
+      </p>
     </div>
   </main>
 </div>
@@ -143,6 +146,51 @@ let editorBootStarted = false;
 window.addEventListener('pageshow', (e) => {
   if (e.persisted) location.reload();
 });
+
+async function optimizeImage(file) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX_W = 1200;
+      const MAX_H = 675;
+      let w = img.width;
+      let h = img.height;
+      const ratio = Math.min(MAX_W / w, MAX_H / h, 1);
+      w = Math.round(w * ratio);
+      h = Math.round(h * ratio);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        URL.revokeObjectURL(url);
+        resolve(file);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          resolve(file);
+          return;
+        }
+        resolve(
+          new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), {
+            type: 'image/webp',
+          })
+        );
+      }, 'image/webp', 0.85);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+}
 
 // ==========================================
 // Editor.js Init
@@ -193,9 +241,10 @@ function boot() {
       config: {
         /** Varsayılan ajax bazen cookie göndermez; girişli dashboard için same-origin fetch */
         uploader: {
-          uploadByFile(file) {
+          async uploadByFile(file) {
+            const optimized = await optimizeImage(file);
             const body = new FormData();
-            body.append('file', file, file.name);
+            body.append('file', optimized, optimized.name);
             return fetch('/api/upload-media', {
               method: 'POST',
               body,

@@ -1,7 +1,7 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 /* empty css                                    */
 import { c as createComponent, r as renderTemplate, f as defineScriptVars, d as renderComponent, b as createAstro, u as unescapeHTML, m as maybeRenderHead, a as addAttribute } from '../../chunks/astro/server_RcnIsM-u.mjs';
-import { n as normalizeLanguage, l as loadTranslations, g as getDateLocale, $ as $$Base } from '../../chunks/Base_DPmNoQjx.mjs';
+import { n as normalizeLanguage, l as loadTranslations, g as getDateLocale, $ as $$Base } from '../../chunks/Base_DTGZzR77.mjs';
 import { l as loadBlogConfig, r as resolveSiteOrigin, a as absoluteUrl } from '../../chunks/site-url_By8AeHdH.mjs';
 export { renderers } from '../../renderers.mjs';
 
