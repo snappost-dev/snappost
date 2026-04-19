@@ -1,6 +1,6 @@
 # SNAPPOST — Project Status (V1 MVP + dashboard editörü)
 
-**Son güncelleme:** 2026-04-14  
+**Son güncelleme:** 2026-04-19  
 **Repo:** https://github.com/snappost-dev/snappost  
 **Branch:** main
 
@@ -24,7 +24,7 @@ Snappost, kullanıcıların email/password ile kayıt olup **~15 saniyede** tam 
 - **Veri modeli:** `posts.content` — Editor.js JSON; `content_html` — `renderEditorJSToHTML()`. **Eski markdown** kayıtlarında edit uyarısı; shell `content_html` kullanır.
 - **Editör publish akışı (dashboard):** Checkbox yerine iki aksiyon butonu (**Save Draft** = `published=0`, **Publish/Update** = `published=1`). Liste ekranında **Delete** + **Publish/Unpublish** aksiyonları mevcut.
 - **Slug davranışı:** Edit ekranında yayınlanmış yazılarda slug kilitli (`readonly`); draft modunda düzenlenebilir ve “Orijinal slug” ipucu gösterilir.
-- **Ayar ekranı:** `settings.astro` üzerinden `site_title`, `site_description`, `author_name`, `author_bio`, tema ayarları (`site_theme`, `dashboard_theme`) ve yeni `blog_layout` (list/grid/featured) yönetilir.
+- **Ayar ekranı:** `settings.astro` üzerinden `site_title`, `site_description`, `author_name`, `author_bio` + `author_bio_long`, tema ayarları (`site_theme_light`, `site_theme_dark`, `dashboard_theme`), `blog_layout` (list/grid/featured), paylaşım butonları ve sosyal link URL'leri (`social_twitter`, `social_linkedin`, `social_github`, `social_website`) yönetilir. `custom_domain` bilgi amaçlı readonly gösterilir.
 - **Kaynak dosyalar:** `templates/dashboard/src/pages/new.astro`, `edit/[id].astro`, `src/lib/editor.ts`, `public/dashboard/alert-block.js`.
 - **Provision / API:** Güncel dashboard build’i `api/src/templates/dashboard` + `npm run embed` → `api/src/generated/dashboard-template.ts`; yeni provision bu gömülü şablonu kullanır.
 - **Arşiv dokümantasyon:** Tamamlanmış revize plan → [`docs/archive-editorjs-v2-plan.md`](docs/archive-editorjs-v2-plan.md). Erken taslak → [`docs/cursor-opus-prompt-v1.md`](docs/cursor-opus-prompt-v1.md).
@@ -34,6 +34,8 @@ Snappost, kullanıcıların email/password ile kayıt olup **~15 saniyede** tam 
 - **İçerik ve SEO:** RSS feed (`/rss.xml`), sitemap endpoint (`/sitemap.xml`), custom 404, SEO meta genişletmeleri, yazı detayında prev/next navigasyon.
 - **Okuma deneyimi:** Yazı detayında tarih yanında otomatik **okuma süresi** (`X dk okuma`), yazı sonunda koşullu **yazar kartı**.
 - **Liste düzeni (`blog_layout`):** `list`, `grid`, `featured` desteklenir. `featured` modda ilk yazı büyük kart; kalanlar 2 kolon grid.
+- **Canonical / origin:** Shell tarafında canonical, RSS, sitemap ve JSON-LD origin hesaplaması `custom_domain` > `SITE_URL` > request origin önceliğiyle yapılır.
+- **About sayfası:** `/about` sayfası aktif; uzun bio fallback'i (`author_bio_long` -> `author_bio`) ve opsiyonel sosyal link butonları desteklenir.
 
 ### Mimari not — ölçekleme (sıradaki büyük iş)
 
@@ -167,8 +169,8 @@ Hata olursa rollback: oluşturulan Pages projeleri ve D1 database silinir.
 | POST | `/api/provision` | Auth + whitelist (varsa). `{ site_name }` → D1 + Shell + Dashboard deploy |
 | GET | `/api/sites` | Auth + whitelist (varsa). Kullanıcının tüm siteleri (`shell_project_name`, `custom_domain` dahil) |
 | GET | `/api/sites/:id` | Auth + whitelist (varsa). Tek site detay |
-| POST | `/api/sites/:id/domain` | Auth + whitelist. Body `{ domain }` → shell Pages’e CF custom domain; DB `custom_domain` |
-| DELETE | `/api/sites/:id/domain` | Auth + whitelist. CF’den domain kaldırır; DB `custom_domain` null |
+| POST | `/api/sites/:id/domain` | Auth + whitelist. Body `{ domain }` → shell Pages’e CF custom domain; provisioning DB `custom_domain` günceller; tenant blog D1 `config.custom_domain` upsert eder; zone bulunursa DNS CNAME kaydını otomatik upsert eder (best-effort) |
+| DELETE | `/api/sites/:id/domain` | Auth + whitelist. CF’den domain kaldırır; provisioning DB `custom_domain` null; tenant blog D1 `config.custom_domain` kaydını siler |
 | DELETE | `/api/sites/:id` | Auth + whitelist. Önce custom domain (varsa), sonra dashboard/shell Pages + kiracı D1 **best-effort** silinir; provisioning `sites` satırı silinir; kiracı **R2** prefix `u{userId}/s{siteId}/` best-effort temizlenir |
 | POST | `/api/sites/:id/media` | Auth + whitelist + site sahibi. `multipart/form-data` alan `file` — jpeg/png/webp/gif, boyut `MAX_MEDIA_UPLOAD_MB` (varsayılan 5 MB) |
 | GET | `/api/media/raw/:enc` | Auth yok. R2 key (base64url); blog `<img src>` |
@@ -200,8 +202,13 @@ sites (id, user_id, site_name, d1_database_id, shell_project_name,
 posts (id, slug, title, description, content, content_html,
        published, created_at, updated_at)
 config (key, value)
-  -- Aktif key'ler: site_title, site_description, author_name, author_bio,
-  --                theme_color, site_theme, dashboard_theme, blog_layout
+  -- Aktif key'ler: site_title, site_description, custom_domain,
+  --                author_name, author_bio, author_bio_long,
+  --                author_type, author_url,
+  --                site_theme_light, site_theme_dark, dashboard_theme,
+  --                blog_layout, site_lang,
+  --                share_twitter, share_linkedin, share_facebook, share_whatsapp, share_copy,
+  --                social_twitter, social_linkedin, social_github, social_website
 ```
 
 ---
@@ -218,6 +225,7 @@ config (key, value)
 | Deploy mekanizması | CF Pages Direct Upload API (upload-token → check-missing → bucket upload/retry → upsert-hashes → FormData deployment with _worker.js bundle; 500/1101’de opsiyonel inline fallback) |
 | Template embedding | Build time esbuild bundle → base64 encoded TS modules |
 | Session | httpOnly cookie (`auth_token`), JWT Bearer token |
+| Domain/DNS otomasyon | Pages custom domain + zone keşfi + CNAME upsert (best-effort) |
 
 ---
 
@@ -296,6 +304,10 @@ ALLOWED_EMAILS=...
 # MAX_MEDIA_UPLOAD_MB=5
 # Opsiyonel; Pages assets upload arızasında CSS/JS'in _worker.js içine inline edilerek provision'ın devam etmesi (varsayılan true). Kapatmak için "false"
 # PAGES_INLINE_ASSET_FALLBACK=true
+# Opsiyonel; medya URL üretiminde public origin override (örn. https://media.example.com)
+# MEDIA_PUBLIC_URL=https://media.snaplinx.net
+# Admin toplu operasyon endpoint'i için secret
+# ADMIN_SECRET=...
 # Yerelde /test/* kullanacaksanız:
 ALLOW_TEST_ROUTES=true
 
