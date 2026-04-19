@@ -73,7 +73,13 @@ const listTitle = `Blog – ${config.site_title}`;
         <article class="card border border-base-300 bg-base-100 shadow-sm transition hover:shadow-md">
           {featuredThumbnail && (
             <figure class="max-h-96 overflow-hidden">
-              <img src={featuredThumbnail} alt="" class="h-full w-full object-cover" />
+              <img
+                src={featuredThumbnail}
+                alt=""
+                class="h-full w-full object-cover"
+                loading="eager"
+                fetchpriority="high"
+              />
             </figure>
           )}
           <a href={`/blog/${featuredPost.slug}`} class="card-body block">
