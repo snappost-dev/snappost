@@ -12,13 +12,16 @@ const isLoggedIn = !!Astro.cookies.get('auth_token')?.value;
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <title>{title} - Snappost</title>
   <meta name="description" content="Launch your blog in seconds with Snappost">
 </head>
 <body class="bg-gray-50 min-h-screen">
   <header class="bg-white border-b border-gray-200">
     <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
-      <a href="/" class="text-lg font-bold text-gray-900">Snappost</a>
+      <a href="/" class="flex items-center text-gray-900">
+        <img src="/snappost-logo.svg" alt="Snappost" height="32">
+      </a>
       <nav class="flex items-center gap-4 text-sm">
         {isLoggedIn ? (
           <a href="/dashboard" class="text-gray-600 hover:text-gray-900">Dashboard</a>
