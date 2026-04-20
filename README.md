@@ -6,6 +6,12 @@ Launch your blog in 15 seconds. Email/password ile kayıt ol, blog adını seç,
 
 **Canlı:** [snappost-landing.pages.dev](https://snappost-landing.pages.dev)
 
+## Son Güncellemeler (Özet)
+
+- Dashboard branding ayarları: `site_logo`, `site_logo_dark` (opsiyonel), `site_favicon`, `logo_display` (`text` / `logo` / `logo_text`)
+- Shell nav branding: aktif tema tercihine göre light/dark logo swap (dark logo boşsa light logo fallback)
+- Medya upload API: `POST /api/sites/:id/media` artık SVG (`image/svg+xml`) kabul eder
+
 ## Yapı
 
 ```

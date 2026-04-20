@@ -30,6 +30,11 @@ npm run dev
 | `/dashboard` | Oturum: siteler + provision (**Create Blog** gönderiminde buton kilitlenir + “Creating…”) + **blog custom domain** (CNAME tablosu) + **Delete blog** → `DELETE /api/sites/:id` (onaylı; CF + kiracı D1 best-effort) |
 | `/logout` | Cookie temizleme |
 
+## Branding varlıkları
+
+- Landing nav markası `landing/public/snappost-logo.svg` üzerinden render edilir.
+- Landing favicon `landing/public/favicon.svg` dosyasından servis edilir.
+
 ## Ortam değişkenleri
 
 **Production:** `wrangler.toml` içinde `[vars]` — örnek:

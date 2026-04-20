@@ -74,7 +74,7 @@ npx wrangler r2 bucket create snappost-media
 
 Durum JSON: `GET /api/media/status` (auth gerekmez) — `recommended_image_max_edge_px` önerilen uzun kenar (şu an 1920; yükleme hâlâ `MAX_MEDIA_UPLOAD_MB` ile sınırlı).
 
-**Yükleme (B2 + B3):** `POST /api/sites/{siteId}/media` — `Content-Type: multipart/form-data`, alan **`file`** veya **`image`** (@editorjs/image). `Authorization: Bearer …` olarak **JWT** (site sahibi + whitelist) veya sitenin **`access_token`** (kiracı dashboard sunucu proxy’si). İzinli türler: `image/jpeg`, `image/png`, `image/webp`, `image/gif`. Yanıt: `{ key, url, content_type, size }` — `url` genelde Worker’da tanımlı **`SNAPPOST_API_PUBLIC_URL`** köküyle üretilir (boşsa isteğin origin’i).
+**Yükleme (B2 + B3):** `POST /api/sites/{siteId}/media` — `Content-Type: multipart/form-data`, alan **`file`** veya **`image`** (@editorjs/image). `Authorization: Bearer …` olarak **JWT** (site sahibi + whitelist) veya sitenin **`access_token`** (kiracı dashboard sunucu proxy’si). İzinli türler: `image/jpeg`, `image/png`, `image/webp`, `image/gif`, `image/svg+xml`. Yanıt: `{ key, url, content_type, size }` — `url` genelde Worker’da tanımlı **`SNAPPOST_API_PUBLIC_URL`** köküyle üretilir (boşsa isteğin origin’i).
 
 **Opsiyonel env:** `SNAPPOST_API_PUBLIC_URL` — production’da tanımlanması önerilir; aksi halde yerel `wrangler dev` ile provision edilen Pages dashboard’larında dönen medya URL’leri tarayıcıdan erişilemez olabilir.
 

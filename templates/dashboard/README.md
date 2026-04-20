@@ -2,6 +2,14 @@
 
 Admin paneli: giriş, yazı listesi, **Editor.js** ile `/new` ve `/edit/[id]`. Bloklar: **paragraph** (açık araç), **header**, **nested list** (iç içe madde), quote, code, delimiter, image, alert (özel). Satır içi: **bold, italic, link** (çekirdek) + **strikethrough** (`@sotaproject/strikethrough`, CDN). Önizleme: **`POST /api/preview-html`** — sunucu `renderEditorJSToHTML` ile kayıtla aynı HTML.
 
+Settings ekranında içerik/meta alanlarına ek olarak branding yönetimi vardır:
+- `site_logo` (açık tema logo)
+- `site_logo_dark` (koyu tema logo, opsiyonel)
+- `site_favicon`
+- `logo_display` (`text` / `logo` / `logo_text`)
+
+Logo/favicon upload akışı dashboard tarafında `POST /api/upload-media` + `POST /api/config` ile yapılır.
+
 **Tek kaynak HTML:** [`../shared/editor-html.ts`](../shared/editor-html.ts) — Vite alias `@snappost/editor-html`; dashboard `src/lib/editor.ts` ve shell `editor-html.ts` buradan re-export. Eski yazılarda düz string liste maddeleri edit yüklemesinde `{ content, items }` biçimine normalize edilir.
 
 **Sonraki (Faz 2):** `@editorjs/table` vb. özel bloklar — şu an yok.

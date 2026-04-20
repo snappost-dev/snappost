@@ -2,6 +2,12 @@
 
 Ziyaretçi blogu: anasayfa, yazı listesi, `/blog/[slug]`, RSS. `content_html` (dashboard + Editor.js çıktısı) doğrudan render edilir.
 
+Nav branding, `config` tablosundaki ayarlara göre koşullu render edilir:
+- `logo_display`: `text` / `logo` / `logo_text`
+- `site_logo`: açık tema logo URL
+- `site_logo_dark`: koyu tema logo URL (boşsa `site_logo` fallback)
+- `site_favicon`: varsa `<head>` favicon olarak kullanılır, yoksa `/favicon.svg`
+
 Genel mimari: [`PROJECT-STATUS.md`](../../PROJECT-STATUS.md).
 
 ## Yerel test (dashboard ile aynı D1)
