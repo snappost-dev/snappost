@@ -1,0 +1,20 @@
+{
+  "nav_home": "Hem",
+  "nav_blog": "Blogg",
+  "nav_about": "Om",
+  "all_posts": "Alla inlägg",
+  "all_posts_link": "Alla inlägg →",
+  "author_about": "Om författaren",
+  "page_not_found": "Sidan hittades inte",
+  "page_not_found_desc": "Innehållet du letar efter kan ha flyttats eller tagits bort.",
+  "back_home": "Tillbaka till startsidan",
+  "about_back_to_blog": "← Blogg",
+  "reading_time": "min läsning",
+  "share": "Dela",
+  "copy_link": "Kopiera länk",
+  "copied": "Kopierad!",
+  "prev_post": "Föregående",
+  "next_post": "Nästa",
+  "draft": "Utkast",
+  "published": "Publicerad"
+}

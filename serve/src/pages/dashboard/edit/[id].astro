@@ -1,0 +1,91 @@
+---
+import Dashboard from "../../../layouts/Dashboard.astro";
+import { renderEditorJSToHTML } from "../../../lib/editor";
+import { queryD1 } from "../../../lib/d1";
+import { isDashboardAuthenticated } from "../../../lib/dashboard-auth";
+
+const tenantConfig = Astro.locals.tenant.config;
+const d1ApiEnv = Astro.locals.d1ApiEnv;
+const authCookie = Astro.cookies.get("auth")?.value;
+
+if (!isDashboardAuthenticated(tenantConfig, authCookie)) {
+  return Astro.redirect("/dashboard/login");
+}
+
+if (!tenantConfig) {
+  return Astro.redirect("/dashboard");
+}
+
+const { id } = Astro.params;
+if (!id) {
+  return Astro.redirect("/dashboard");
+}
+
+type PostRow = {
+  id: number;
+  title: string;
+  slug: string;
+  description: string | null;
+  content: string | null;
+  published: number;
+};
+
+const rows = await queryD1<PostRow>(
+  "SELECT * FROM posts WHERE id = ? LIMIT 1",
+  [id],
+  tenantConfig.d1_database_id,
+  d1ApiEnv
+);
+const post = rows[0];
+
+if (!post) {
+  return Astro.redirect("/dashboard");
+}
+
+let error = "";
+
+if (Astro.request.method === "POST") {
+  try {
+    const formData = await Astro.request.formData();
+    const title = String(formData.get("title") ?? "").trim();
+    const slug = String(formData.get("slug") ?? "").trim();
+    const description = String(formData.get("description") ?? "").trim();
+    const contentRaw = String(formData.get("content") ?? "").trim();
+    const published = formData.get("published") === "1" ? 1 : 0;
+
+    if (!title || !slug || !contentRaw) {
+      error = "Title, slug, and content are required";
+    } else {
+      const contentJson = JSON.parse(contentRaw);
+      const contentHtml = renderEditorJSToHTML(contentJson);
+      const now = new Date().toISOString();
+
+      await queryD1(
+        "UPDATE posts SET title = ?, slug = ?, description = ?, content = ?, content_html = ?, published = ?, updated_at = ? WHERE id = ?",
+        [title, slug, description, contentRaw, contentHtml, published, now, id],
+        tenantConfig.d1_database_id,
+        d1ApiEnv
+      );
+      return Astro.redirect(`/dashboard/edit/${id}`);
+    }
+  } catch (e) {
+    error = "Error updating post: " + (e as Error).message;
+  }
+}
+---
+
+<Dashboard title="Edit Post">
+  <h1 class="text-3xl font-bold mb-6">Edit Post</h1>
+  {error && <p class="mb-4 text-red-600">{error}</p>}
+  <form method="POST" class="space-y-4 max-w-2xl">
+    <input class="input input-bordered w-full" name="title" value={post.title} required />
+    <input class="input input-bordered w-full" name="slug" value={post.slug} required />
+    <input class="input input-bordered w-full" name="description" value={post.description ?? ""} />
+    <textarea class="textarea textarea-bordered w-full h-56" name="content" required>{post.content ?? ""}</textarea>
+    <label class="label cursor-pointer justify-start gap-3">
+      <input type="checkbox" class="checkbox checkbox-sm" name="published" value="1" checked={post.published === 1} />
+      <span>Published</span>
+    </label>
+    <button type="submit" class="btn btn-primary">Update</button>
+  </form>
+</Dashboard>

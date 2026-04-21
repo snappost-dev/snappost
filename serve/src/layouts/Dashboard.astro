@@ -1,0 +1,51 @@
+---
+import "../styles/global.css";
+import { queryD1 } from "../lib/d1";
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+const tenantConfig = Astro.locals.tenant.config;
+const d1ApiEnv = Astro.locals.d1ApiEnv;
+
+let theme = "light";
+if (tenantConfig) {
+  const rows = await queryD1<{ value: string }>(
+    "SELECT value FROM config WHERE key = ? LIMIT 1",
+    ["dashboard_theme"],
+    tenantConfig.d1_database_id,
+    d1ApiEnv
+  );
+  theme = (rows[0]?.value || "light").trim() || "light";
+}
+---
+
+<!doctype html>
+<html lang="en" data-theme={theme}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} - Dashboard</title>
+  </head>
+  <body class="bg-base-200 text-base-content">
+    <header class="bg-base-100 border-b border-base-300">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold">Dashboard</h1>
+        <nav class="flex gap-4">
+          <a href="/dashboard" class="hover:text-primary">Posts</a>
+          <a href="/dashboard/new" class="hover:text-primary">New Post</a>
+          <a href="/dashboard/settings" class="hover:text-primary">Settings</a>
+          <form method="POST" action="/dashboard/logout" class="inline">
+            <button type="submit" class="text-base-content/60 hover:text-base-content">Logout</button>
+          </form>
+        </nav>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8">
+      <slot />
+    </main>
+  </body>
+</html>

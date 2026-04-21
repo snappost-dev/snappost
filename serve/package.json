@@ -1,0 +1,19 @@
+{
+  "name": "snappost-serve",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro build && wrangler dev -c dist/server/wrangler.json --persist-to .wrangler/state",
+    "build": "astro build",
+    "deploy": "astro build && wrangler deploy --config dist/server/wrangler.json"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^13.1.10",
+    "astro": "^6.1.8",
+    "marked": "^17.0.1"
+  },
+  "devDependencies": {
+    "wrangler": "^4.84.1"
+  }
+}

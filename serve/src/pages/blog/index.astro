@@ -1,0 +1,115 @@
+---
+import Base from "../../layouts/Base.astro";
+import PostCard from "../../components/PostCard.astro";
+import { getDateLocale, loadTranslations, normalizeLanguage } from "../../i18n";
+import { loadBlogConfig, localBlogConfig } from "../../lib/blog-config";
+import { queryD1 } from "../../lib/d1";
+import { absoluteUrl, resolveSiteOrigin } from "../../lib/site-url";
+
+type PostRow = {
+  slug: string;
+  title: string;
+  description?: string | null;
+  content_html?: string | null;
+  created_at: string;
+};
+
+const tenantConfig = Astro.locals.tenant.config;
+const d1ApiEnv = Astro.locals.d1ApiEnv;
+
+const config = tenantConfig
+  ? await loadBlogConfig(tenantConfig.d1_database_id, d1ApiEnv)
+  : localBlogConfig();
+const siteLang = normalizeLanguage(config.site_lang || "en");
+const t = loadTranslations(siteLang);
+const dateLocale = getDateLocale(siteLang);
+
+const posts = tenantConfig
+  ? await queryD1<PostRow>(
+      "SELECT * FROM posts WHERE published = 1 ORDER BY created_at DESC",
+      [],
+      tenantConfig.d1_database_id,
+      d1ApiEnv
+    )
+  : [];
+
+const blogLayoutRaw = String(config.blog_layout ?? "list").trim();
+const blogLayout =
+  blogLayoutRaw === "grid" || blogLayoutRaw === "featured" ? blogLayoutRaw : "list";
+const featuredPost = blogLayout === "featured" ? posts[0] : null;
+const remainingPosts = blogLayout === "featured" ? posts.slice(1) : posts;
+const featuredDate = featuredPost
+  ? new Date(featuredPost.created_at).toLocaleDateString(dateLocale, {
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    })
+  : "";
+const featuredDescription = (featuredPost?.description ?? "").trim();
+const featuredImgMatch = featuredPost?.content_html?.match(/<img[^>]+src="([^"]+)"/);
+const featuredThumbnail = featuredImgMatch?.[1] ?? null;
+const siteOrigin = resolveSiteOrigin({}, Astro.url.href, config.custom_domain);
+const blogUrl = absoluteUrl(siteOrigin, "/blog");
+const blogJsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  name: `${config.site_title} - Blog`,
+  url: blogUrl,
+  description: config.site_description
+}).replace(/</g, "\\u003c");
+
+const listTitle = `Blog – ${config.site_title}`;
+---
+
+<Base config={config} title={listTitle} description={config.site_description} canonicalPath="/blog">
+  <script type="application/ld+json" set:html={blogJsonLd} />
+  <h1 class="text-4xl font-bold mb-8">{t.all_posts}</h1>
+
+  {!tenantConfig ? (
+    <section class="rounded-box border border-base-300 bg-base-100 p-6 text-center">
+      <p>Hello local</p>
+    </section>
+  ) : blogLayout === "grid" ? (
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+      {posts.map((post, index) => (
+        <PostCard post={post} locale={dateLocale} priority={index === 0} />
+      ))}
+    </div>
+  ) : blogLayout === "featured" ? (
+    <div class="space-y-6">
+      {featuredPost && (
+        <article class="card border border-base-300 bg-base-100 shadow-sm transition hover:shadow-md">
+          {featuredThumbnail && (
+            <figure class="max-h-96 overflow-hidden">
+              <img
+                src={featuredThumbnail}
+                alt=""
+                class="h-full w-full object-cover"
+                loading="eager"
+                fetchpriority="high"
+              />
+            </figure>
+          )}
+          <a href={`/blog/${featuredPost.slug}`} class="card-body block">
+            <h2 class="mb-2 text-2xl font-bold hover:text-primary">{featuredPost.title}</h2>
+            {featuredDescription && <p class="mb-4 text-base-content/80">{featuredDescription}</p>}
+            <time class="text-sm text-base-content/60">{featuredDate}</time>
+          </a>
+        </article>
+      )}
+      {remainingPosts.length > 0 && (
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {remainingPosts.map((post, index) => (
+            <PostCard post={post} locale={dateLocale} priority={index === 0} />
+          ))}
+        </div>
+      )}
+    </div>
+  ) : (
+    <div class="space-y-6">
+      {posts.map((post, index) => (
+        <PostCard post={post} locale={dateLocale} priority={index === 0} />
+      ))}
+    </div>
+  )}
+</Base>

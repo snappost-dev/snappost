@@ -1,0 +1,151 @@
+---
+import SeoHead from "../components/SeoHead.astro";
+import { loadTranslations, normalizeLanguage } from "../i18n";
+import { loadBlogConfig, localBlogConfig } from "../lib/blog-config";
+import { absoluteUrl, resolveSiteOrigin } from "../lib/site-url";
+import { getThemeVars } from "../lib/theme-vars";
+
+interface Props {
+  title: string;
+  description?: string;
+  canonicalPath?: string;
+  ogType?: "website" | "article";
+  publishedTime?: string;
+  modifiedTime?: string;
+  config?: Record<string, string>;
+}
+
+const {
+  title,
+  description,
+  canonicalPath,
+  ogType = "website",
+  publishedTime,
+  modifiedTime,
+  config: configProp
+} = Astro.props;
+
+const tenantConfig = Astro.locals.tenant.config;
+const d1ApiEnv = Astro.locals.d1ApiEnv;
+
+const config =
+  configProp ??
+  (tenantConfig
+    ? await loadBlogConfig(tenantConfig.d1_database_id, d1ApiEnv)
+    : localBlogConfig());
+
+const origin = resolveSiteOrigin({}, Astro.url.href, config.custom_domain);
+const path = canonicalPath ?? `${Astro.url.pathname}${Astro.url.search}`;
+const canonicalHref = absoluteUrl(origin, path);
+const rssHref = absoluteUrl(origin, "/rss.xml");
+const webSiteJsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: config.site_title,
+  description: config.site_description,
+  url: origin
+}).replace(/</g, "\\u003c");
+
+const metaDescRaw = (description ?? config.site_description ?? "").trim();
+const metaDesc = metaDescRaw.length > 160 ? `${metaDescRaw.slice(0, 157)}…` : metaDescRaw;
+const siteLang = normalizeLanguage(config.site_lang || "en");
+const t = loadTranslations(siteLang);
+const siteThemeLight = (config.site_theme_light || "light").trim() || "light";
+const siteThemeDark = (config.site_theme_dark || "dark").trim() || "dark";
+const lightThemeVars = getThemeVars(siteThemeLight);
+const darkThemeVars = getThemeVars(siteThemeDark);
+const inlineThemeCss = `[data-theme="${siteThemeLight}"] { ${lightThemeVars} } [data-theme="${siteThemeDark}"] { ${darkThemeVars} }`;
+const logoDisplayRaw = (config.logo_display || "text").trim().toLowerCase();
+const logoDisplay =
+  logoDisplayRaw === "logo" || logoDisplayRaw === "logo_text" ? logoDisplayRaw : "text";
+const hasSiteLogo = Boolean((config.site_logo || "").trim());
+---
+
+<!doctype html>
+<html lang={siteLang} data-theme={siteThemeLight}>
+  <head>
+    <link rel="preconnect" href="https://media.snaplinx.net" />
+    <link rel="dns-prefetch" href="https://media.snaplinx.net" />
+    <link rel="icon" href={config.site_favicon || "/favicon.svg"} />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={metaDesc} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={metaDesc} />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="theme-color" content={config.theme_color} />
+    <title>{title}</title>
+    <SeoHead
+      title={title}
+      description={metaDesc}
+      canonicalHref={canonicalHref}
+      siteName={config.site_title}
+      ogType={ogType}
+      publishedTime={publishedTime}
+      modifiedTime={modifiedTime}
+      rssHref={rssHref}
+    />
+    <style set:html={inlineThemeCss}></style>
+    <script type="application/ld+json" set:html={webSiteJsonLd} />
+  </head>
+  <body class="min-h-screen bg-base-200 text-base-content">
+    <header class="sticky top-0 z-10 border-b border-base-300 bg-base-100/95 backdrop-blur">
+      <div class="navbar max-w-3xl mx-auto px-4">
+        <div class="flex-1">
+          <a href="/" class="text-xl font-bold">
+            {logoDisplay === "logo" ? (
+              hasSiteLogo ? (
+                <img
+                  id="site-logo-img"
+                  src={config.site_logo}
+                  alt={config.site_title}
+                  height="32"
+                  data-light={config.site_logo}
+                  data-dark={config.site_logo_dark || config.site_logo}
+                  style="max-width:160px;object-fit:contain"
+                />
+              ) : (
+                config.site_title
+              )
+            ) : logoDisplay === "logo_text" ? (
+              hasSiteLogo ? (
+                <span class="inline-flex items-center gap-2">
+                  <img
+                    id="site-logo-img"
+                    src={config.site_logo}
+                    alt={config.site_title}
+                    height="32"
+                    data-light={config.site_logo}
+                    data-dark={config.site_logo_dark || config.site_logo}
+                    style="max-width:160px;object-fit:contain"
+                  />
+                  <span>{config.site_title}</span>
+                </span>
+              ) : (
+                config.site_title
+              )
+            ) : (
+              config.site_title
+            )}
+          </a>
+        </div>
+        <nav class="flex-none">
+          <ul class="menu menu-horizontal px-1 gap-2">
+            <li><a href="/" class="hover:text-primary">{t.nav_home}</a></li>
+            <li><a href="/blog" class="hover:text-primary">{t.nav_blog}</a></li>
+            <li><a href="/about" class="hover:text-primary">{t.nav_about}</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 py-8">
+      <slot />
+    </main>
+
+    <footer class="border-t border-base-300 bg-base-200 text-center py-8 text-sm text-base-content/60">
+      <p>&copy; {new Date().getFullYear()} {config.author_name}</p>
+    </footer>
+  </body>
+</html>

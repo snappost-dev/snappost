@@ -1,0 +1,54 @@
+---
+import Base from "../layouts/Base.astro";
+import { loadTranslations, normalizeLanguage } from "../i18n";
+import { loadBlogConfig, localBlogConfig } from "../lib/blog-config";
+import { absoluteUrl, resolveSiteOrigin } from "../lib/site-url";
+
+const tenantConfig = Astro.locals.tenant.config;
+const d1ApiEnv = Astro.locals.d1ApiEnv;
+const config = tenantConfig
+  ? await loadBlogConfig(tenantConfig.d1_database_id, d1ApiEnv)
+  : localBlogConfig();
+const siteLang = normalizeLanguage(config.site_lang || "en");
+const t = loadTranslations(siteLang);
+
+const authorName = String(config.author_name ?? "").trim() || config.site_title;
+const authorBioShort = String(config.author_bio ?? "").trim();
+const authorBioLong = String(config.author_bio_long ?? "").trim();
+const aboutBio = authorBioLong || authorBioShort;
+const authorTypeRaw = String(config.author_type ?? "person").trim().toLowerCase();
+const authorSchemaType = authorTypeRaw === "organization" ? "Organization" : "Person";
+
+const pageTitle = `${t.nav_about} - ${config.site_title}`;
+const canonicalPath = "/about";
+const siteOrigin = resolveSiteOrigin({}, Astro.url.href, config.custom_domain);
+const aboutUrl = absoluteUrl(siteOrigin, canonicalPath);
+
+const aboutSchema = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": authorSchemaType,
+  name: authorName,
+  description: aboutBio,
+  url: aboutUrl
+}).replace(/</g, "\\u003c");
+---
+
+<Base
+  config={config}
+  title={pageTitle}
+  description={aboutBio || `${authorName} - ${config.site_title}`}
+  canonicalPath={canonicalPath}
+>
+  <script type="application/ld+json" set:html={aboutSchema} />
+  <section class="max-w-2xl mx-auto">
+    <div class="card border border-base-300 bg-base-100 shadow-sm">
+      <div class="card-body gap-4">
+        <h1 class="card-title text-3xl">{authorName}</h1>
+        <p class="text-base-content/80">{aboutBio || "-"}</p>
+        <div class="card-actions">
+          <a href="/blog" class="link link-primary">{t.about_back_to_blog}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

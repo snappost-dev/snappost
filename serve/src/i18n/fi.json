@@ -1,0 +1,20 @@
+{
+  "nav_home": "Etusivu",
+  "nav_blog": "Blogi",
+  "nav_about": "Tietoa",
+  "all_posts": "Kaikki kirjoitukset",
+  "all_posts_link": "Kaikki kirjoitukset →",
+  "author_about": "Kirjoittajasta",
+  "page_not_found": "Sivua ei löytynyt",
+  "page_not_found_desc": "Etsimäsi sisältö on voitu siirtää tai poistaa.",
+  "back_home": "Palaa etusivulle",
+  "about_back_to_blog": "← Blogi",
+  "reading_time": "min lukuaika",
+  "share": "Jaa",
+  "copy_link": "Kopioi linkki",
+  "copied": "Kopioitu!",
+  "prev_post": "Edellinen",
+  "next_post": "Seuraava",
+  "draft": "Luonnos",
+  "published": "Julkaistu"
+}

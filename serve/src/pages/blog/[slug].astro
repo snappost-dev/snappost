@@ -1,0 +1,132 @@
+---
+import Base from "../../layouts/Base.astro";
+import { getDateLocale, loadTranslations, normalizeLanguage } from "../../i18n";
+import { loadBlogConfig, localBlogConfig } from "../../lib/blog-config";
+import { queryD1 } from "../../lib/d1";
+import { shellPostBodyHtml } from "../../lib/post-body";
+import { absoluteUrl, resolveSiteOrigin } from "../../lib/site-url";
+
+const { slug } = Astro.params;
+const tenantConfig = Astro.locals.tenant.config;
+const d1ApiEnv = Astro.locals.d1ApiEnv;
+
+if (!tenantConfig || !slug) {
+  return Astro.redirect("/404");
+}
+
+type PostRow = {
+  slug: string;
+  title: string;
+  description?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+  content_html?: string | null;
+  content?: string | null;
+};
+
+const rows = await queryD1<PostRow>(
+  "SELECT * FROM posts WHERE slug = ? AND published = 1",
+  [slug],
+  tenantConfig.d1_database_id,
+  d1ApiEnv
+);
+const post = rows[0];
+
+if (!post) {
+  return Astro.redirect("/404");
+}
+
+const config = await loadBlogConfig(tenantConfig.d1_database_id, d1ApiEnv);
+const siteLang = normalizeLanguage(config.site_lang || "en");
+const t = loadTranslations(siteLang);
+const dateLocale = getDateLocale(siteLang);
+
+const title = String(post.title ?? "");
+const description = post.description != null ? String(post.description) : undefined;
+const createdAt = String(post.created_at ?? "");
+const updatedAt = post.updated_at != null ? String(post.updated_at) : createdAt;
+const date = new Date(createdAt).toLocaleDateString(dateLocale, {
+  year: "numeric",
+  month: "long",
+  day: "numeric"
+});
+
+const bodyHtml = shellPostBodyHtml(post);
+const imgMatch = bodyHtml?.match(/<img[^>]+src="([^"]+)"/);
+const featuredImage = imgMatch?.[1] ?? null;
+const authorName = String(config.author_name ?? "").trim();
+const authorBio = String(config.author_bio ?? "").trim();
+const plainText = bodyHtml
+  .replace(/<[^>]*>/g, " ")
+  .replace(/\s+/g, " ")
+  .trim();
+const wordCount = plainText.length > 0 ? plainText.split(" ").length : 0;
+const readingMinutes = Math.ceil(wordCount / 200);
+
+const pageTitle = `${title} – ${config.site_title}`;
+const canonicalPath = `/blog/${String(slug ?? "")}`;
+const siteOrigin = resolveSiteOrigin({}, Astro.url.href, config.custom_domain);
+const canonicalHref = absoluteUrl(siteOrigin, canonicalPath);
+const authorTypeRaw = String(config.author_type ?? "person").trim().toLowerCase();
+const authorSchemaType = authorTypeRaw === "organization" ? "Organization" : "Person";
+const authorUrlRaw = String(config.author_url ?? "").trim();
+const authorUrl = authorUrlRaw || absoluteUrl(siteOrigin, "/about");
+const authorNameForSchema = String(config.author_name ?? "").trim() || config.site_title;
+const blogPostingSchema: Record<string, unknown> = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: title,
+  description: description ?? "",
+  datePublished: new Date(createdAt).toISOString(),
+  dateModified: new Date(updatedAt).toISOString(),
+  author: {
+    "@type": authorSchemaType,
+    name: authorNameForSchema,
+    url: authorUrl
+  },
+  publisher: {
+    "@type": "Organization",
+    name: config.site_title
+  },
+  mainEntityOfPage: {
+    "@type": "WebPage",
+    "@id": canonicalHref
+  },
+  ...(featuredImage ? { image: [featuredImage] } : {})
+};
+const blogPostingJsonLd = JSON.stringify(blogPostingSchema).replace(/</g, "\\u003c");
+---
+
+<Base
+  config={config}
+  title={pageTitle}
+  description={description}
+  canonicalPath={canonicalPath}
+  ogType="article"
+  publishedTime={new Date(createdAt).toISOString()}
+  modifiedTime={new Date(updatedAt).toISOString()}
+>
+  <script type="application/ld+json" set:html={blogPostingJsonLd} />
+  <article
+    class="prose prose-lg max-w-none prose-headings:scroll-mt-24 prose-p:leading-relaxed prose-a:text-primary prose-pre:max-w-full prose-img:max-w-full prose-img:h-auto prose-figure:my-8 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-base-content/60"
+  >
+    <h1>{title}</h1>
+    <p class="not-prose text-base-content/60 text-sm mb-6">
+      <time datetime={createdAt}>{date}</time>
+      <span> &middot; {readingMinutes} {t.reading_time}</span>
+    </p>
+    <div class="post-body" set:html={bodyHtml} />
+  </article>
+
+  {authorBio && (
+    <section class="not-prose mt-8">
+      <div class="card border border-base-300 bg-base-100">
+        <div class="card-body gap-2">
+          <h2 class="card-title text-base-content">{t.author_about}</h2>
+          {authorName && <p class="font-medium text-base-content">{authorName}</p>}
+          <p class="text-base-content/80">{authorBio}</p>
+        </div>
+      </div>
+    </section>
+  )}
+</Base>

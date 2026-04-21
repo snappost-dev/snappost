@@ -1,0 +1,102 @@
+---
+import Dashboard from "../../layouts/Dashboard.astro";
+import { queryD1 } from "../../lib/d1";
+import { isDashboardAuthenticated } from "../../lib/dashboard-auth";
+
+const tenantConfig = Astro.locals.tenant.config;
+const d1ApiEnv = Astro.locals.d1ApiEnv;
+const authCookie = Astro.cookies.get("auth")?.value;
+
+if (!isDashboardAuthenticated(tenantConfig, authCookie)) {
+  return Astro.redirect("/dashboard/login");
+}
+
+if (!tenantConfig) {
+  return Astro.redirect("/dashboard");
+}
+
+let message = "";
+let isError = false;
+
+if (Astro.request.method === "POST") {
+  try {
+    const formData = await Astro.request.formData();
+    const updates = [
+      ["site_title", String(formData.get("site_title") ?? "").trim()],
+      ["site_description", String(formData.get("site_description") ?? "").trim()],
+      ["dashboard_theme", String(formData.get("dashboard_theme") ?? "light").trim()],
+      ["site_theme_light", String(formData.get("site_theme_light") ?? "light").trim()],
+      ["site_theme_dark", String(formData.get("site_theme_dark") ?? "dark").trim()]
+    ] as const;
+
+    for (const [key, value] of updates) {
+      await queryD1(
+        "INSERT INTO config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        [key, value],
+        tenantConfig.d1_database_id,
+        d1ApiEnv
+      );
+    }
+    message = "Settings saved.";
+  } catch (error) {
+    isError = true;
+    message = `Save failed: ${(error as Error).message}`;
+  }
+}
+
+const configRows = await queryD1<{ key: string; value: string }>(
+  "SELECT key, value FROM config WHERE key IN ('site_title','site_description','dashboard_theme','site_theme_light','site_theme_dark')",
+  [],
+  tenantConfig.d1_database_id,
+  d1ApiEnv
+);
+const config = Object.fromEntries(configRows.map((row) => [row.key, row.value])) as Record<string, string>;
+---
+
+<Dashboard title="Settings">
+  <h1 class="text-3xl font-bold mb-6">Settings</h1>
+  {message && <p class:list={["mb-4", isError ? "text-red-600" : "text-green-700"]}>{message}</p>}
+  <form method="POST" class="space-y-4 max-w-2xl">
+    <div>
+      <label class="label" for="site_title"><span class="label-text">Site Title</span></label>
+      <input id="site_title" class="input input-bordered w-full" name="site_title" value={config.site_title ?? ""} />
+    </div>
+    <div>
+      <label class="label" for="site_description"><span class="label-text">Site Description</span></label>
+      <input
+        id="site_description"
+        class="input input-bordered w-full"
+        name="site_description"
+        value={config.site_description ?? ""}
+      />
+    </div>
+    <div>
+      <label class="label" for="dashboard_theme"><span class="label-text">Dashboard Theme</span></label>
+      <input
+        id="dashboard_theme"
+        class="input input-bordered w-full"
+        name="dashboard_theme"
+        value={config.dashboard_theme ?? "light"}
+      />
+    </div>
+    <div>
+      <label class="label" for="site_theme_light"><span class="label-text">Site Light Theme</span></label>
+      <input
+        id="site_theme_light"
+        class="input input-bordered w-full"
+        name="site_theme_light"
+        value={config.site_theme_light ?? "light"}
+      />
+    </div>
+    <div>
+      <label class="label" for="site_theme_dark"><span class="label-text">Site Dark Theme</span></label>
+      <input
+        id="site_theme_dark"
+        class="input input-bordered w-full"
+        name="site_theme_dark"
+        value={config.site_theme_dark ?? "dark"}
+      />
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+  </form>
+</Dashboard>
