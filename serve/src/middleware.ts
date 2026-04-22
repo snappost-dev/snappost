@@ -44,14 +44,12 @@ function isTenantConfig(value: unknown): value is TenantConfig {
 }
 
 export const onRequest = defineMiddleware(async (context: APIContext, next) => {
-  const requestUrl = new URL(context.request.url);
-  const forwardedHost = context.request.headers
-    .get("x-forwarded-host")
-    ?.split(",")[0]
-    ?.trim();
-  const hostHeader = context.request.headers.get("host");
-
-  const hostname = forwardedHost ?? hostHeader ?? requestUrl.hostname;
+  const request = context.request;
+  const host =
+    request.headers.get("X-Forwarded-Host") ||
+    request.headers.get("Host") ||
+    "";
+  const hostname = host.split(",")[0]?.trim() ?? "";
   const subdomain = resolveSubdomain(hostname);
   const runtime = context.locals.runtime;
   const env = runtime.env as {

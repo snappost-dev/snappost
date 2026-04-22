@@ -1,0 +1,7 @@
+name = "snappost-router"
+compatibility_date = "2024-09-23"
+main = "src/index.ts"
+
+[[routes]]
+pattern = "*.snappost.app/*"
+zone_name = "snappost.app"

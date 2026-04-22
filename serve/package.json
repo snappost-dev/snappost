@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "astro build && wrangler dev -c dist/server/wrangler.json --persist-to .wrangler/state",
     "build": "astro build",
-    "deploy": "astro build && wrangler deploy --config dist/server/wrangler.json"
+    "deploy": "astro build && wrangler pages deploy dist/ --project-name snappost-serve --branch main"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^11.0.0",
