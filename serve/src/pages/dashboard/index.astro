@@ -1,27 +1,13 @@
 ---
-import Dashboard from "../../layouts/Dashboard.astro";
-import { queryD1 } from "../../lib/d1";
-import { isDashboardAuthenticated } from "../../lib/dashboard-auth";
+import Dashboard from '../../layouts/Dashboard.astro';
+import { queryD1 } from '../../lib/d1';
 
 const tenantConfig = Astro.locals.tenant.config;
 const d1ApiEnv = Astro.locals.d1ApiEnv;
-const authCookie = Astro.cookies.get("auth")?.value;
-
-if (!isDashboardAuthenticated(tenantConfig, authCookie)) {
-  return Astro.redirect("/dashboard/login");
-}
-
-type PostRow = {
-  id: number;
-  slug: string;
-  title: string;
-  published: number;
-  created_at: string;
-};
 
 const posts = tenantConfig
-  ? await queryD1<PostRow>(
-      "SELECT * FROM posts ORDER BY created_at DESC",
+  ? await queryD1<any>(
+      'SELECT * FROM posts ORDER BY created_at DESC',
       [],
       tenantConfig.d1_database_id,
       d1ApiEnv
@@ -32,14 +18,19 @@ const posts = tenantConfig
 <Dashboard title="All Posts">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-3xl font-bold">All Posts</h1>
-    <a href="/dashboard/new" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+    <a 
+      href="/dashboard/new"
+      class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+    >
       + New Post
     </a>
   </div>
 
   <div class="bg-white rounded-lg border">
     {posts.length === 0 ? (
-      <div class="p-8 text-center text-gray-500">No posts yet.</div>
+      <div class="p-8 text-center text-gray-500">
+        No posts yet. Create your first post!
+      </div>
     ) : (
       <table class="w-full">
         <thead class="border-b bg-gray-50">
@@ -51,15 +42,49 @@ const posts = tenantConfig
           </tr>
         </thead>
         <tbody>
-          {posts.map((post) => (
+          {posts.map((post: any) => (
             <tr class="border-b hover:bg-gray-50">
-              <td class="p-4 font-medium">{post.title}</td>
-              <td class="p-4">{post.published ? "Published" : "Draft"}</td>
-              <td class="p-4 text-sm text-gray-600">{new Date(post.created_at).toLocaleDateString()}</td>
-              <td class="p-4 text-right">
-                <a href={`/dashboard/edit/${post.id}`} class="text-blue-600 hover:text-blue-700 text-sm">
-                  Edit
+              <td class="p-4 font-medium">
+                <a href={`/blog/${post.slug}`} target="_blank" class="link link-hover">
+                  {post.title}
                 </a>
+              </td>
+              <td class="p-4">
+                <span class={`px-2 py-1 rounded text-xs ${
+                  post.published 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-gray-100 text-gray-700'
+                }`}>
+                  {post.published ? 'Published' : 'Draft'}
+                </span>
+              </td>
+              <td class="p-4 text-sm text-gray-600">
+                {new Date(post.created_at).toLocaleDateString()}
+              </td>
+              <td class="p-4 text-right">
+                <div class="inline-flex items-center gap-2">
+                  <a 
+                    href={`/dashboard/edit/${post.id}`}
+                    class="text-blue-600 hover:text-blue-700 text-sm"
+                  >
+                    Edit
+                  </a>
+                  <button
+                    type="button"
+                    class={`btn btn-xs ${post.published ? 'btn-warning' : 'btn-success'}`}
+                    data-publish-post-id={String(post.id)}
+                    data-next-published={post.published ? '0' : '1'}
+                  >
+                    {post.published ? 'Unpublish' : 'Publish'}
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-error btn-xs"
+                    data-delete-post-id={String(post.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
@@ -68,3 +93,57 @@ const posts = tenantConfig
     )}
   </div>
 </Dashboard>
+
+<script is:inline>
+  const deleteButtons = document.querySelectorAll('[data-delete-post-id]');
+  const publishButtons = document.querySelectorAll('[data-publish-post-id]');
+
+  deleteButtons.forEach((button) => {
+    button.addEventListener('click', async () => {
+      const postId = button.getAttribute('data-delete-post-id');
+      if (!postId) return;
+
+      const confirmed = window.confirm('Bu yazıyı silmek istediğinizden emin misiniz?');
+      if (!confirmed) return;
+
+      try {
+        const response = await fetch(`/api/posts/${postId}`, {
+          method: 'DELETE',
+          credentials: 'same-origin',
+        });
+        if (!response.ok) {
+          throw new Error(`Delete failed (${response.status})`);
+        }
+        window.location.reload();
+      } catch (error) {
+        console.error(error);
+        window.alert('Yazı silinemedi. Lütfen tekrar deneyin.');
+      }
+    });
+  });
+
+  publishButtons.forEach((button) => {
+    button.addEventListener('click', async () => {
+      const postId = button.getAttribute('data-publish-post-id');
+      const nextPublishedRaw = button.getAttribute('data-next-published');
+      const nextPublished = nextPublishedRaw === '1' ? 1 : 0;
+      if (!postId) return;
+
+      try {
+        const response = await fetch(`/api/posts/${postId}/publish`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ published: nextPublished }),
+        });
+        if (!response.ok) {
+          throw new Error(`Publish toggle failed (${response.status})`);
+        }
+        window.location.reload();
+      } catch (error) {
+        console.error(error);
+        window.alert('Yayin durumu guncellenemedi. Lutfen tekrar deneyin.');
+      }
+    });
+  });
+</script>

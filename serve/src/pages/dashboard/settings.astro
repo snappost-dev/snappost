@@ -1,102 +1,712 @@
 ---
-import Dashboard from "../../layouts/Dashboard.astro";
-import { queryD1 } from "../../lib/d1";
-import { isDashboardAuthenticated } from "../../lib/dashboard-auth";
+import Dashboard from '../../layouts/Dashboard.astro';
+import { queryD1 } from '../../lib/d1';
+
+const THEMES = [
+  'light',
+  'dark',
+  'cupcake',
+  'bumblebee',
+  'emerald',
+  'corporate',
+  'synthwave',
+  'retro',
+  'cyberpunk',
+  'valentine',
+  'halloween',
+  'garden',
+  'forest',
+  'aqua',
+  'lofi',
+  'pastel',
+  'fantasy',
+  'wireframe',
+  'black',
+  'luxury',
+  'dracula',
+  'cmyk',
+  'autumn',
+  'business',
+  'acid',
+  'lemonade',
+  'night',
+  'coffee',
+  'winter',
+  'dim',
+  'nord',
+  'sunset',
+] as const;
 
 const tenantConfig = Astro.locals.tenant.config;
 const d1ApiEnv = Astro.locals.d1ApiEnv;
-const authCookie = Astro.cookies.get("auth")?.value;
 
-if (!isDashboardAuthenticated(tenantConfig, authCookie)) {
-  return Astro.redirect("/dashboard/login");
-}
+const siteThemeLightRows = tenantConfig
+  ? await queryD1<{ value: string }>(
+      'SELECT value FROM config WHERE key = ? LIMIT 1',
+      ['site_theme_light'],
+      tenantConfig.d1_database_id,
+      d1ApiEnv
+    )
+  : [];
+const siteThemeLightRow = siteThemeLightRows[0];
 
-if (!tenantConfig) {
-  return Astro.redirect("/dashboard");
-}
+const siteThemeDarkRows = tenantConfig
+  ? await queryD1<{ value: string }>(
+      'SELECT value FROM config WHERE key = ? LIMIT 1',
+      ['site_theme_dark'],
+      tenantConfig.d1_database_id,
+      d1ApiEnv
+    )
+  : [];
+const siteThemeDarkRow = siteThemeDarkRows[0];
 
-let message = "";
-let isError = false;
+const dashboardThemeRows = tenantConfig
+  ? await queryD1<{ value: string }>(
+      'SELECT value FROM config WHERE key = ? LIMIT 1',
+      ['dashboard_theme'],
+      tenantConfig.d1_database_id,
+      d1ApiEnv
+    )
+  : [];
+const dashboardThemeRow = dashboardThemeRows[0];
 
-if (Astro.request.method === "POST") {
-  try {
-    const formData = await Astro.request.formData();
-    const updates = [
-      ["site_title", String(formData.get("site_title") ?? "").trim()],
-      ["site_description", String(formData.get("site_description") ?? "").trim()],
-      ["dashboard_theme", String(formData.get("dashboard_theme") ?? "light").trim()],
-      ["site_theme_light", String(formData.get("site_theme_light") ?? "light").trim()],
-      ["site_theme_dark", String(formData.get("site_theme_dark") ?? "dark").trim()]
-    ] as const;
+const siteConfigRows = tenantConfig
+  ? await queryD1<{ key: string; value: string }>(
+      `SELECT key, value FROM config
+       WHERE key IN ('site_title', 'site_description', 'custom_domain', 'site_logo', 'site_logo_dark', 'site_favicon', 'logo_display', 'author_name', 'author_bio', 'author_bio_long', 'author_type', 'author_url', 'social_twitter', 'social_linkedin', 'social_github', 'social_website', 'blog_layout', 'share_twitter', 'share_linkedin', 'share_facebook', 'share_whatsapp', 'share_copy', 'site_lang')`,
+      [],
+      tenantConfig.d1_database_id,
+      d1ApiEnv
+    )
+  : [];
 
-    for (const [key, value] of updates) {
-      await queryD1(
-        "INSERT INTO config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-        [key, value],
-        tenantConfig.d1_database_id,
-        d1ApiEnv
-      );
-    }
-    message = "Settings saved.";
-  } catch (error) {
-    isError = true;
-    message = `Save failed: ${(error as Error).message}`;
-  }
-}
+const siteConfig = Object.fromEntries(
+  siteConfigRows.map((row) => [row.key, row.value])
+) as Record<string, string>;
 
-const configRows = await queryD1<{ key: string; value: string }>(
-  "SELECT key, value FROM config WHERE key IN ('site_title','site_description','dashboard_theme','site_theme_light','site_theme_dark')",
-  [],
-  tenantConfig.d1_database_id,
-  d1ApiEnv
-);
-const config = Object.fromEntries(configRows.map((row) => [row.key, row.value])) as Record<string, string>;
+const siteTitle = (siteConfig.site_title || '').trim();
+const siteDescription = (siteConfig.site_description || '').trim();
+const customDomain = (siteConfig.custom_domain || '').trim();
+const siteLogo = (siteConfig.site_logo || '').trim();
+const siteLogoDark = (siteConfig.site_logo_dark || '').trim();
+const siteFavicon = (siteConfig.site_favicon || '').trim();
+const logoDisplayRaw = (siteConfig.logo_display || 'text').trim().toLowerCase();
+const logoDisplay =
+  logoDisplayRaw === 'logo' || logoDisplayRaw === 'logo_text' ? logoDisplayRaw : 'text';
+const authorName = (siteConfig.author_name || '').trim();
+const authorBio = (siteConfig.author_bio || '').trim();
+const authorBioLong = (siteConfig.author_bio_long || '').trim();
+const authorTypeRaw = (siteConfig.author_type || 'person').trim().toLowerCase();
+const authorType = authorTypeRaw === 'organization' ? 'organization' : 'person';
+const authorUrl = (siteConfig.author_url || '').trim();
+const socialTwitter = (siteConfig.social_twitter || '').trim();
+const socialLinkedin = (siteConfig.social_linkedin || '').trim();
+const socialGithub = (siteConfig.social_github || '').trim();
+const socialWebsite = (siteConfig.social_website || '').trim();
+const blogLayoutRaw = (siteConfig.blog_layout || 'list').trim();
+const blogLayout =
+  blogLayoutRaw === 'grid' || blogLayoutRaw === 'featured' ? blogLayoutRaw : 'list';
+const shareTwitter = (siteConfig.share_twitter || '').trim() === '1';
+const shareLinkedin = (siteConfig.share_linkedin || '').trim() === '1';
+const shareFacebook = (siteConfig.share_facebook || '').trim() === '1';
+const shareWhatsapp = (siteConfig.share_whatsapp || '').trim() === '1';
+const shareCopyRaw = (siteConfig.share_copy || '').trim();
+const shareCopy = shareCopyRaw === '' ? true : shareCopyRaw === '1';
+const siteLangRaw = (siteConfig.site_lang || 'en').trim().toLowerCase();
+const siteLang = ['tr', 'en', 'fi', 'sv'].includes(siteLangRaw) ? siteLangRaw : 'en';
+
+const currentSiteThemeLightRaw = (siteThemeLightRow?.value || 'light').trim();
+const currentSiteThemeLight = (THEMES as readonly string[]).includes(currentSiteThemeLightRaw)
+  ? currentSiteThemeLightRaw
+  : 'light';
+
+const currentSiteThemeDarkRaw = (siteThemeDarkRow?.value || 'dark').trim();
+const currentSiteThemeDark = (THEMES as readonly string[]).includes(currentSiteThemeDarkRaw)
+  ? currentSiteThemeDarkRaw
+  : 'dark';
+
+const currentDashboardThemeRaw = (dashboardThemeRow?.value || 'light').trim();
+const currentDashboardTheme = (THEMES as readonly string[]).includes(currentDashboardThemeRaw)
+  ? currentDashboardThemeRaw
+  : 'light';
 ---
 
 <Dashboard title="Settings">
-  <h1 class="text-3xl font-bold mb-6">Settings</h1>
-  {message && <p class:list={["mb-4", isError ? "text-red-600" : "text-green-700"]}>{message}</p>}
-  <form method="POST" class="space-y-4 max-w-2xl">
-    <div>
-      <label class="label" for="site_title"><span class="label-text">Site Title</span></label>
-      <input id="site_title" class="input input-bordered w-full" name="site_title" value={config.site_title ?? ""} />
-    </div>
-    <div>
-      <label class="label" for="site_description"><span class="label-text">Site Description</span></label>
-      <input
-        id="site_description"
-        class="input input-bordered w-full"
-        name="site_description"
-        value={config.site_description ?? ""}
-      />
-    </div>
-    <div>
-      <label class="label" for="dashboard_theme"><span class="label-text">Dashboard Theme</span></label>
-      <input
-        id="dashboard_theme"
-        class="input input-bordered w-full"
-        name="dashboard_theme"
-        value={config.dashboard_theme ?? "light"}
-      />
-    </div>
-    <div>
-      <label class="label" for="site_theme_light"><span class="label-text">Site Light Theme</span></label>
-      <input
-        id="site_theme_light"
-        class="input input-bordered w-full"
-        name="site_theme_light"
-        value={config.site_theme_light ?? "light"}
-      />
-    </div>
-    <div>
-      <label class="label" for="site_theme_dark"><span class="label-text">Site Dark Theme</span></label>
-      <input
-        id="site_theme_dark"
-        class="input input-bordered w-full"
-        name="site_theme_dark"
-        value={config.site_theme_dark ?? "dark"}
-      />
-    </div>
-    <button type="submit" class="btn btn-primary">Save</button>
-  </form>
+  <section class="max-w-xl">
+    <h1 class="text-3xl font-bold mb-2">Site Settings</h1>
+    <p class="text-sm text-base-content/70 mb-6">Update core blog metadata and theme preferences.</p>
+
+    <form id="site-config-form" class="space-y-4 mb-10">
+      <div class="form-control">
+        <label class="label" for="site-title">
+          <span class="label-text font-medium">Site Basligi</span>
+        </label>
+        <input id="site-title" name="site_title" class="input input-bordered w-full" value={siteTitle} />
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="site-description">
+          <span class="label-text font-medium">Site Aciklamasi</span>
+        </label>
+        <input
+          id="site-description"
+          name="site_description"
+          class="input input-bordered w-full"
+          value={siteDescription}
+        />
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="custom-domain">
+          <span class="label-text font-medium">Custom Domain (Bilgi)</span>
+        </label>
+        <input
+          id="custom-domain"
+          class="input input-bordered w-full"
+          value={customDomain}
+          placeholder="Henüz bağlı değil"
+          readonly
+        />
+      </div>
+
+      <div class="rounded-box border border-base-300 bg-base-100 p-4 space-y-3">
+        <h2 class="text-sm font-semibold text-base-content">Branding</h2>
+
+        <div class="form-control gap-2">
+          <label class="label p-0" for="site-logo-file">
+            <span class="label-text font-medium">Site Logosu (Acik Tema)</span>
+          </label>
+          <input
+            id="site-logo-file"
+            type="file"
+            accept="image/png,image/svg+xml,image/jpeg,image/webp"
+            class="file-input file-input-bordered w-full"
+          />
+          <button id="site-logo-upload-btn" type="button" class="btn btn-outline btn-sm w-fit">Logo Yukle</button>
+          <input id="site-logo-url" type="hidden" value={siteLogo} />
+          <img
+            id="site-logo-preview"
+            src={siteLogo || ''}
+            alt="Site logosu onizleme"
+            class:list={['h-12 w-auto rounded border border-base-300 bg-base-200 p-1', { hidden: !siteLogo }]}
+          />
+          <p id="site-logo-upload-message" class="text-sm text-base-content/70"></p>
+        </div>
+
+        <div class="form-control gap-2">
+          <label class="label p-0" for="site-logo-dark-file">
+            <span class="label-text font-medium">Site Logosu (Koyu Tema)</span>
+          </label>
+          <p class="text-xs text-base-content/60">Koyu temada gosterilir. Bos birakilirsa acik tema logosu kullanilir.</p>
+          <input
+            id="site-logo-dark-file"
+            type="file"
+            accept="image/png,image/svg+xml,image/jpeg,image/webp"
+            class="file-input file-input-bordered w-full"
+          />
+          <button id="site-logo-dark-upload-btn" type="button" class="btn btn-outline btn-sm w-fit">Logo Yukle</button>
+          <input id="site-logo-dark-url" type="hidden" value={siteLogoDark} />
+          <img
+            id="site-logo-dark-preview"
+            src={siteLogoDark || ''}
+            alt="Site koyu tema logosu onizleme"
+            class:list={['h-12 w-auto rounded border border-base-300 bg-base-200 p-1', { hidden: !siteLogoDark }]}
+          />
+          <p id="site-logo-dark-upload-message" class="text-sm text-base-content/70"></p>
+        </div>
+
+        <div class="form-control gap-2">
+          <label class="label p-0" for="site-favicon-file">
+            <span class="label-text font-medium">Site Favicon</span>
+          </label>
+          <input
+            id="site-favicon-file"
+            type="file"
+            accept="image/png,image/svg+xml,image/x-icon"
+            class="file-input file-input-bordered w-full"
+          />
+          <button id="site-favicon-upload-btn" type="button" class="btn btn-outline btn-sm w-fit">Favicon Yukle</button>
+          <input id="site-favicon-url" type="hidden" value={siteFavicon} />
+          <img
+            id="site-favicon-preview"
+            src={siteFavicon || ''}
+            alt="Site favicon onizleme"
+            class:list={['h-10 w-10 rounded border border-base-300 bg-base-200 p-1', { hidden: !siteFavicon }]}
+          />
+          <p id="site-favicon-upload-message" class="text-sm text-base-content/70"></p>
+        </div>
+
+        <div class="form-control">
+          <label class="label" for="logo-display">
+            <span class="label-text font-medium">Logo Gorunumu</span>
+          </label>
+          <select id="logo-display" name="logo_display" class="select select-bordered w-full">
+            <option value="text" selected={logoDisplay === 'text'}>Sadece site basligi</option>
+            <option value="logo" selected={logoDisplay === 'logo'}>Sadece logo</option>
+            <option value="logo_text" selected={logoDisplay === 'logo_text'}>Logo + site basligi</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="author-name">
+          <span class="label-text font-medium">Yazar Adi</span>
+        </label>
+        <input id="author-name" name="author_name" class="input input-bordered w-full" value={authorName} />
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="author-bio">
+          <span class="label-text font-medium">Yazar Biyografisi</span>
+        </label>
+        <textarea id="author-bio" name="author_bio" class="textarea textarea-bordered w-full" rows="4">{authorBio}</textarea>
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="author-bio-long">
+          <span class="label-text font-medium">Hakkında Sayfası Biyografisi (uzun)</span>
+        </label>
+        <textarea
+          id="author-bio-long"
+          name="author_bio_long"
+          class="textarea textarea-bordered w-full"
+          rows="6"
+          placeholder="Hakkında sayfasında görünecek detaylı biyografi..."
+        >{authorBioLong}</textarea>
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="author-type">
+          <span class="label-text font-medium">Yazar Tipi</span>
+        </label>
+        <select id="author-type" name="author_type" class="select select-bordered w-full">
+          <option value="person" selected={authorType === 'person'}>Person</option>
+          <option value="organization" selected={authorType === 'organization'}>Organization</option>
+        </select>
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="author-url">
+          <span class="label-text font-medium">Yazar URL</span>
+        </label>
+        <input
+          id="author-url"
+          name="author_url"
+          class="input input-bordered w-full"
+          placeholder="https://ornek.com/about"
+          value={authorUrl}
+        />
+      </div>
+
+      <div class="rounded-box border border-base-300 bg-base-100 p-4 space-y-4">
+        <h2 class="text-sm font-semibold text-base-content">Sosyal Medya</h2>
+        <div class="form-control">
+          <label class="label" for="social-twitter">
+            <span class="label-text font-medium">Twitter/X URL</span>
+          </label>
+          <input
+            id="social-twitter"
+            name="social_twitter"
+            type="url"
+            class="input input-bordered w-full"
+            placeholder="https://x.com/kullanici"
+            value={socialTwitter}
+          />
+        </div>
+        <div class="form-control">
+          <label class="label" for="social-linkedin">
+            <span class="label-text font-medium">LinkedIn URL</span>
+          </label>
+          <input
+            id="social-linkedin"
+            name="social_linkedin"
+            type="url"
+            class="input input-bordered w-full"
+            placeholder="https://www.linkedin.com/in/..."
+            value={socialLinkedin}
+          />
+        </div>
+        <div class="form-control">
+          <label class="label" for="social-github">
+            <span class="label-text font-medium">GitHub URL</span>
+          </label>
+          <input
+            id="social-github"
+            name="social_github"
+            type="url"
+            class="input input-bordered w-full"
+            placeholder="https://github.com/kullanici"
+            value={socialGithub}
+          />
+        </div>
+        <div class="form-control">
+          <label class="label" for="social-website">
+            <span class="label-text font-medium">Website URL</span>
+          </label>
+          <input
+            id="social-website"
+            name="social_website"
+            type="url"
+            class="input input-bordered w-full"
+            placeholder="https://ornek.com"
+            value={socialWebsite}
+          />
+        </div>
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="blog-layout">
+          <span class="label-text font-medium">Blog Duzeni</span>
+        </label>
+        <select id="blog-layout" name="blog_layout" class="select select-bordered w-full">
+          <option value="list" selected={blogLayout === 'list'}>Liste (alt alta)</option>
+          <option value="grid" selected={blogLayout === 'grid'}>2 Kolonlu Grid</option>
+          <option value="featured" selected={blogLayout === 'featured'}>One Cikan + Liste</option>
+        </select>
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="site-lang">
+          <span class="label-text font-medium">Site Dili</span>
+        </label>
+        <select id="site-lang" name="site_lang" class="select select-bordered w-full">
+          <option value="tr" selected={siteLang === 'tr'}>Turkce</option>
+          <option value="en" selected={siteLang === 'en'}>English</option>
+          <option value="fi" selected={siteLang === 'fi'}>Suomi</option>
+          <option value="sv" selected={siteLang === 'sv'}>Svenska</option>
+        </select>
+      </div>
+
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-medium">Paylasim Butonlari</span>
+        </label>
+        <div class="space-y-2 rounded-box border border-base-300 bg-base-100 p-3">
+          <label class="label cursor-pointer justify-start gap-3 py-1" for="share-twitter">
+            <input id="share-twitter" type="checkbox" class="checkbox checkbox-sm" checked={shareTwitter} />
+            <span class="label-text">Twitter/X</span>
+          </label>
+          <label class="label cursor-pointer justify-start gap-3 py-1" for="share-linkedin">
+            <input id="share-linkedin" type="checkbox" class="checkbox checkbox-sm" checked={shareLinkedin} />
+            <span class="label-text">LinkedIn</span>
+          </label>
+          <label class="label cursor-pointer justify-start gap-3 py-1" for="share-facebook">
+            <input id="share-facebook" type="checkbox" class="checkbox checkbox-sm" checked={shareFacebook} />
+            <span class="label-text">Facebook</span>
+          </label>
+          <label class="label cursor-pointer justify-start gap-3 py-1" for="share-whatsapp">
+            <input id="share-whatsapp" type="checkbox" class="checkbox checkbox-sm" checked={shareWhatsapp} />
+            <span class="label-text">WhatsApp</span>
+          </label>
+          <label class="label cursor-pointer justify-start gap-3 py-1" for="share-copy">
+            <input id="share-copy" type="checkbox" class="checkbox checkbox-sm" checked={shareCopy} />
+            <span class="label-text">Linki Kopyala</span>
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Kaydet</button>
+      <p id="site-config-message" class="text-sm"></p>
+    </form>
+
+    <h1 class="text-3xl font-bold mb-2">Theme Settings</h1>
+    <p class="text-sm text-base-content/70 mb-6">Manage blog and dashboard themes independently.</p>
+
+    <form id="theme-form" class="space-y-4">
+      <div class="form-control">
+        <label class="label" for="site-theme-light">
+          <span class="label-text font-medium">Acik Tema</span>
+        </label>
+        <select id="site-theme-light" class="select select-bordered w-full" name="site-theme-light">
+          {THEMES.map((theme) => (
+            <option value={theme} selected={theme === currentSiteThemeLight}>
+              {theme}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="site-theme-dark">
+          <span class="label-text font-medium">Koyu Tema</span>
+        </label>
+        <select id="site-theme-dark" class="select select-bordered w-full" name="site-theme-dark">
+          {THEMES.map((theme) => (
+            <option value={theme} selected={theme === currentSiteThemeDark}>
+              {theme}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div class="form-control">
+        <label class="label" for="dashboard-theme">
+          <span class="label-text font-medium">Dashboard Theme</span>
+        </label>
+        <select id="dashboard-theme" class="select select-bordered w-full" name="dashboard-theme">
+          {THEMES.map((theme) => (
+            <option value={theme} selected={theme === currentDashboardTheme}>
+              {theme}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Save Themes</button>
+      <p id="theme-message" class="text-sm"></p>
+    </form>
+  </section>
 </Dashboard>
+
+<script is:inline>
+  const siteConfigForm = document.getElementById('site-config-form');
+  const siteConfigMessage = document.getElementById('site-config-message');
+  const MAX_UPLOAD_SIZE = 512 * 1024;
+
+  const postConfigValue = async (key, value) => {
+    const response = await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ key, value }),
+    });
+    if (!response.ok) throw new Error(`Config update failed for ${key}`);
+  };
+
+  const uploadAndSaveAsset = async ({
+    inputId,
+    urlFieldId,
+    previewId,
+    messageId,
+    configKey,
+    allowedTypes,
+  }) => {
+    const inputEl = document.getElementById(inputId);
+    const urlFieldEl = document.getElementById(urlFieldId);
+    const previewEl = document.getElementById(previewId);
+    const messageEl = document.getElementById(messageId);
+    if (!inputEl || !('files' in inputEl) || !inputEl.files || inputEl.files.length === 0) {
+      if (messageEl) messageEl.textContent = 'Lutfen bir dosya secin.';
+      return;
+    }
+
+    const file = inputEl.files[0];
+    if (file.size > MAX_UPLOAD_SIZE) {
+      if (messageEl) messageEl.textContent = 'Dosya boyutu 512KB limitini asamaz.';
+      return;
+    }
+    if (file.type && !allowedTypes.includes(file.type)) {
+      if (messageEl) messageEl.textContent = 'Desteklenmeyen dosya tipi.';
+      return;
+    }
+
+    try {
+      if (messageEl) messageEl.textContent = 'Yukleniyor...';
+      const body = new FormData();
+      body.append('file', file, file.name);
+      const uploadResponse = await fetch('/api/upload-media', {
+        method: 'POST',
+        body,
+        credentials: 'same-origin',
+      });
+      const uploadData = await uploadResponse.json().catch(() => ({}));
+      if (!uploadResponse.ok || uploadData.success !== 1 || !uploadData.file?.url) {
+        throw new Error(uploadData.error || 'Upload failed');
+      }
+
+      const uploadedUrl = String(uploadData.file.url);
+      await postConfigValue(configKey, uploadedUrl);
+
+      if (urlFieldEl && 'value' in urlFieldEl) urlFieldEl.value = uploadedUrl;
+      if (previewEl && 'src' in previewEl) {
+        previewEl.src = uploadedUrl;
+        previewEl.classList.remove('hidden');
+      }
+      if (messageEl) messageEl.textContent = 'Yukleme basarili.';
+    } catch (err) {
+      if (messageEl) messageEl.textContent = 'Yukleme basarisiz. Tekrar deneyin.';
+      console.error(err);
+    }
+  };
+
+  const logoUploadBtn = document.getElementById('site-logo-upload-btn');
+  logoUploadBtn?.addEventListener('click', () =>
+    uploadAndSaveAsset({
+      inputId: 'site-logo-file',
+      urlFieldId: 'site-logo-url',
+      previewId: 'site-logo-preview',
+      messageId: 'site-logo-upload-message',
+      configKey: 'site_logo',
+      allowedTypes: ['image/png', 'image/svg+xml', 'image/jpeg', 'image/webp'],
+    })
+  );
+
+  const logoDarkUploadBtn = document.getElementById('site-logo-dark-upload-btn');
+  logoDarkUploadBtn?.addEventListener('click', () =>
+    uploadAndSaveAsset({
+      inputId: 'site-logo-dark-file',
+      urlFieldId: 'site-logo-dark-url',
+      previewId: 'site-logo-dark-preview',
+      messageId: 'site-logo-dark-upload-message',
+      configKey: 'site_logo_dark',
+      allowedTypes: ['image/png', 'image/svg+xml', 'image/jpeg', 'image/webp'],
+    })
+  );
+
+  const faviconUploadBtn = document.getElementById('site-favicon-upload-btn');
+  faviconUploadBtn?.addEventListener('click', () =>
+    uploadAndSaveAsset({
+      inputId: 'site-favicon-file',
+      urlFieldId: 'site-favicon-url',
+      previewId: 'site-favicon-preview',
+      messageId: 'site-favicon-upload-message',
+      configKey: 'site_favicon',
+      allowedTypes: ['image/png', 'image/svg+xml', 'image/x-icon', 'image/vnd.microsoft.icon'],
+    })
+  );
+
+  siteConfigForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const titleInput = document.getElementById('site-title');
+    const descriptionInput = document.getElementById('site-description');
+    const authorNameInput = document.getElementById('author-name');
+    const authorBioInput = document.getElementById('author-bio');
+    const authorBioLongInput = document.getElementById('author-bio-long');
+    const authorTypeInput = document.getElementById('author-type');
+    const authorUrlInput = document.getElementById('author-url');
+    const socialTwitterInput = document.getElementById('social-twitter');
+    const socialLinkedinInput = document.getElementById('social-linkedin');
+    const socialGithubInput = document.getElementById('social-github');
+    const socialWebsiteInput = document.getElementById('social-website');
+    const blogLayoutInput = document.getElementById('blog-layout');
+    const siteLangInput = document.getElementById('site-lang');
+    const shareTwitterInput = document.getElementById('share-twitter');
+    const shareLinkedinInput = document.getElementById('share-linkedin');
+    const shareFacebookInput = document.getElementById('share-facebook');
+    const shareWhatsappInput = document.getElementById('share-whatsapp');
+    const shareCopyInput = document.getElementById('share-copy');
+    const siteLogoInput = document.getElementById('site-logo-url');
+    const siteLogoDarkInput = document.getElementById('site-logo-dark-url');
+    const siteFaviconInput = document.getElementById('site-favicon-url');
+    const logoDisplayInput = document.getElementById('logo-display');
+
+    const updates = [
+      { key: 'site_title', value: titleInput && 'value' in titleInput ? titleInput.value : '' },
+      {
+        key: 'site_description',
+        value: descriptionInput && 'value' in descriptionInput ? descriptionInput.value : '',
+      },
+      { key: 'site_logo', value: siteLogoInput && 'value' in siteLogoInput ? siteLogoInput.value : '' },
+      {
+        key: 'site_favicon',
+        value: siteFaviconInput && 'value' in siteFaviconInput ? siteFaviconInput.value : '',
+      },
+      {
+        key: 'site_logo_dark',
+        value: siteLogoDarkInput && 'value' in siteLogoDarkInput ? siteLogoDarkInput.value : '',
+      },
+      {
+        key: 'logo_display',
+        value:
+          logoDisplayInput &&
+          'value' in logoDisplayInput &&
+          (logoDisplayInput.value === 'logo' || logoDisplayInput.value === 'logo_text')
+            ? logoDisplayInput.value
+            : 'text',
+      },
+      { key: 'author_name', value: authorNameInput && 'value' in authorNameInput ? authorNameInput.value : '' },
+      { key: 'author_bio', value: authorBioInput && 'value' in authorBioInput ? authorBioInput.value : '' },
+      {
+        key: 'author_bio_long',
+        value: authorBioLongInput && 'value' in authorBioLongInput ? authorBioLongInput.value : '',
+      },
+      {
+        key: 'author_type',
+        value:
+          authorTypeInput && 'value' in authorTypeInput && authorTypeInput.value === 'organization'
+            ? 'organization'
+            : 'person',
+      },
+      { key: 'author_url', value: authorUrlInput && 'value' in authorUrlInput ? authorUrlInput.value : '' },
+      { key: 'social_twitter', value: socialTwitterInput && 'value' in socialTwitterInput ? socialTwitterInput.value : '' },
+      { key: 'social_linkedin', value: socialLinkedinInput && 'value' in socialLinkedinInput ? socialLinkedinInput.value : '' },
+      { key: 'social_github', value: socialGithubInput && 'value' in socialGithubInput ? socialGithubInput.value : '' },
+      { key: 'social_website', value: socialWebsiteInput && 'value' in socialWebsiteInput ? socialWebsiteInput.value : '' },
+      { key: 'blog_layout', value: blogLayoutInput && 'value' in blogLayoutInput ? blogLayoutInput.value : 'list' },
+      { key: 'site_lang', value: siteLangInput && 'value' in siteLangInput ? siteLangInput.value : 'en' },
+      { key: 'share_twitter', value: shareTwitterInput && 'checked' in shareTwitterInput && shareTwitterInput.checked ? '1' : '0' },
+      { key: 'share_linkedin', value: shareLinkedinInput && 'checked' in shareLinkedinInput && shareLinkedinInput.checked ? '1' : '0' },
+      { key: 'share_facebook', value: shareFacebookInput && 'checked' in shareFacebookInput && shareFacebookInput.checked ? '1' : '0' },
+      { key: 'share_whatsapp', value: shareWhatsappInput && 'checked' in shareWhatsappInput && shareWhatsappInput.checked ? '1' : '0' },
+      { key: 'share_copy', value: shareCopyInput && 'checked' in shareCopyInput && shareCopyInput.checked ? '1' : '0' },
+    ];
+
+    try {
+      const responses = await Promise.all(
+        updates.map((update) =>
+          fetch('/api/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(update),
+          })
+        )
+      );
+      if (responses.some((response) => !response.ok)) throw new Error('Settings save failed');
+      if (siteConfigMessage) siteConfigMessage.textContent = 'Saved. Reloading...';
+      window.location.reload();
+    } catch (err) {
+      if (siteConfigMessage) siteConfigMessage.textContent = 'Could not save settings. Try again.';
+      console.error(err);
+    }
+  });
+
+  const form = document.getElementById('theme-form');
+  const siteThemeLightSelect = document.getElementById('site-theme-light');
+  const siteThemeDarkSelect = document.getElementById('site-theme-dark');
+  const dashboardThemeSelect = document.getElementById('dashboard-theme');
+  const message = document.getElementById('theme-message');
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const siteThemeLight = siteThemeLightSelect && 'value' in siteThemeLightSelect ? siteThemeLightSelect.value : 'light';
+    const siteThemeDark = siteThemeDarkSelect && 'value' in siteThemeDarkSelect ? siteThemeDarkSelect.value : 'dark';
+    const dashboardTheme =
+      dashboardThemeSelect && 'value' in dashboardThemeSelect ? dashboardThemeSelect.value : 'light';
+
+    try {
+      const requests = await Promise.all([
+        fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ key: 'site_theme_light', value: siteThemeLight }),
+        }),
+        fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ key: 'site_theme_dark', value: siteThemeDark }),
+        }),
+        fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ key: 'dashboard_theme', value: dashboardTheme }),
+        }),
+      ]);
+
+      if (requests.some((response) => !response.ok)) throw new Error('Theme save failed');
+
+      if (message) {
+        message.textContent = 'Saved. Reloading...';
+      }
+      window.location.reload();
+    } catch (err) {
+      if (message) {
+        message.textContent = 'Could not save theme. Try again.';
+      }
+      console.error(err);
+    }
+  });
+</script>

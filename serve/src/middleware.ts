@@ -1,5 +1,5 @@
 import { defineMiddleware } from "astro:middleware";
-import { env } from "cloudflare:workers";
+import type { APIContext } from "astro";
 
 type TenantConfig = {
   d1_database_id: string;
@@ -43,7 +43,7 @@ function isTenantConfig(value: unknown): value is TenantConfig {
   );
 }
 
-export const onRequest = defineMiddleware(async (context, next) => {
+export const onRequest = defineMiddleware(async (context: APIContext, next) => {
   const requestUrl = new URL(context.request.url);
   const forwardedHost = context.request.headers
     .get("x-forwarded-host")
@@ -53,6 +53,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const hostname = forwardedHost ?? hostHeader ?? requestUrl.hostname;
   const subdomain = resolveSubdomain(hostname);
+  const runtime = context.locals.runtime;
+  const env = runtime.env as {
+    CF_ACCOUNT_ID?: string;
+    CF_API_TOKEN?: string;
+    TENANT_KV?: KVNamespace;
+  };
   const d1ApiEnv = {
     CF_ACCOUNT_ID: env.CF_ACCOUNT_ID ?? "",
     CF_API_TOKEN: env.CF_API_TOKEN ?? ""
@@ -65,7 +71,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   try {
-    const tenantKv = (env as { TENANT_KV?: KVNamespace }).TENANT_KV;
+    const tenantKv = env.TENANT_KV;
     if (!tenantKv) {
       return new Response("Site not found", { status: 404 });
     }

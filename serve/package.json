@@ -9,8 +9,12 @@
     "deploy": "astro build && wrangler deploy --config dist/server/wrangler.json"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^13.1.10",
-    "astro": "^6.1.8",
+    "@astrojs/cloudflare": "^11.0.0",
+    "@astrojs/tailwind": "^5.1.0",
+    "@tailwindcss/typography": "^0.5.10",
+    "astro": "^4.15.0",
+    "daisyui": "^4.12.24",
+    "tailwindcss": "^3.4.0",
     "marked": "^17.0.1"
   },
   "devDependencies": {

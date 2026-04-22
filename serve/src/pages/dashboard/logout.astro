@@ -1,8 +1,8 @@
 ---
-if (Astro.request.method === "POST") {
-  Astro.cookies.delete("auth", { path: "/" });
-  return Astro.redirect("/dashboard/login");
+if (Astro.request.method === 'POST') {
+  Astro.cookies.delete('auth');
+  return Astro.redirect('/dashboard/login');
 }
 
-return Astro.redirect("/dashboard");
+return Astro.redirect('/dashboard');
 ---

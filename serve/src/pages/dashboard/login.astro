@@ -1,65 +1,67 @@
 ---
-import "../../styles/global.css";
+import '../../styles/global.css';
 
+let error = '';
 const tenantConfig = Astro.locals.tenant.config;
-const expectedToken = (tenantConfig?.access_token ?? "").trim();
 
-let error = "";
-
-if (Astro.request.method === "POST") {
+if (Astro.request.method === 'POST') {
   const formData = await Astro.request.formData();
-  const password = String(formData.get("password") ?? "");
-
-  if (!tenantConfig) {
-    return Astro.redirect("/dashboard");
-  }
-
-  if (!expectedToken) {
-    error = "Tenant access token is not configured.";
-  } else if (password === expectedToken) {
-    Astro.cookies.set("auth", expectedToken, {
+  const password = formData.get('password');
+  
+  if (tenantConfig?.access_token && password === tenantConfig.access_token) {
+    Astro.cookies.set('auth', tenantConfig.access_token, {
       httpOnly: true,
-      secure: Astro.url.protocol === "https:",
-      sameSite: "strict",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7 // 7 gün
     });
-    return Astro.redirect("/dashboard");
+    return Astro.redirect('/dashboard');
   } else {
-    error = "Incorrect password";
+    error = 'Incorrect password';
   }
 }
 ---
 
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login - Dashboard</title>
-  </head>
-  <body class="bg-gray-50 min-h-screen flex items-center justify-center">
-    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-      <h1 class="text-2xl font-bold mb-6">Dashboard Login</h1>
-
-      {error && <div class="bg-red-50 text-red-600 p-3 rounded mb-4">{error}</div>}
-
-      <form method="POST">
-        <div class="mb-4">
-          <label class="block text-sm font-medium mb-2">Password</label>
-          <input
-            type="password"
-            name="password"
-            required
-            class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter password"
-          />
-        </div>
-
-        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-          Login
-        </button>
-      </form>
-    </div>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Dashboard</title>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+    <h1 class="text-2xl font-bold mb-6">Dashboard Login</h1>
+    
+    {error && (
+      <div class="bg-red-50 text-red-600 p-3 rounded mb-4">
+        {error}
+      </div>
+    )}
+    
+    <form method="POST">
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-2">Password</label>
+        <input 
+          type="password" 
+          name="password" 
+          required
+          class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+          placeholder="Enter password"
+        />
+      </div>
+      
+      <button 
+        type="submit"
+        class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+      >
+        Login
+      </button>
+      
+      <p class="text-xs text-gray-500 mt-4">
+        Default password: <code class="bg-gray-100 px-1">changeme</code>
+      </p>
+    </form>
+  </div>
+</body>
 </html>
