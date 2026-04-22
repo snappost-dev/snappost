@@ -1,0 +1,226 @@
+---
+import LandingBase from "../../layouts/LandingBase.astro";
+
+if (!Astro.locals.isLanding) {
+  return Astro.redirect("/dashboard");
+}
+
+const API_URL =
+  Astro.locals.runtime.env.API_URL ||
+  "https://snappost-api.snappost-dev.workers.dev";
+const token = Astro.cookies.get("auth_token")?.value;
+
+if (!token) {
+  return Astro.redirect("/login");
+}
+
+let user: any = null;
+let sites: any[] = [];
+let provisionError = "";
+let provisionSuccess = "";
+let domainFieldError: { siteId: string; message: string } | null = null;
+let domainSuccessMessage = "";
+
+try {
+  const meRes = await fetch(`${API_URL}/api/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!meRes.ok) {
+    Astro.cookies.delete("auth_token", { path: "/" });
+    return Astro.redirect("/login");
+  }
+  user = (await meRes.json()).user;
+} catch {
+  return Astro.redirect("/login");
+}
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = form.get("action")?.toString();
+
+  if (action === "provision") {
+    const siteName = form.get("site_name")?.toString().trim().toLowerCase() ?? "";
+    if (!siteName) {
+      provisionError = "Site name required";
+    } else {
+      try {
+        const res = await fetch(`${API_URL}/api/provision`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ site_name: siteName }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const base = data.error || "Provisioning failed";
+          provisionError = data.detail ? `${base}: ${data.detail}` : base;
+        } else {
+          provisionSuccess = `Blog "${siteName}" created!`;
+        }
+      } catch {
+        provisionError = "Could not connect to server";
+      }
+    }
+  } else if (action === "connect_domain") {
+    const siteId = form.get("site_id")?.toString();
+    const domain = form.get("custom_domain")?.toString()?.trim();
+    if (!siteId || !domain) {
+      domainFieldError = { siteId: siteId || "", message: "Domain required" };
+    } else {
+      try {
+        const res = await fetch(`${API_URL}/api/sites/${siteId}/domain`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ domain }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          domainFieldError = {
+            siteId,
+            message: data.detail ? `${data.error}: ${data.detail}` : data.error || "Request failed",
+          };
+        } else {
+          domainSuccessMessage =
+            "Custom domain registered at Cloudflare. DNS and SSL can take 24–48 hours.";
+        }
+      } catch {
+        domainFieldError = { siteId, message: "Could not connect to server" };
+      }
+    }
+  } else if (action === "logout") {
+    Astro.cookies.delete("auth_token", { path: "/" });
+    return Astro.redirect("/");
+  }
+}
+
+try {
+  const sitesRes = await fetch(`${API_URL}/api/sites`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (sitesRes.ok) {
+    sites = (await sitesRes.json()).sites || [];
+  }
+} catch {}
+---
+
+<LandingBase title="Manage">
+  <div class="max-w-5xl mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-2xl font-bold">Dashboard</h1>
+        <p class="text-gray-500 text-sm">{user.email}</p>
+      </div>
+      <form method="POST">
+        <input type="hidden" name="action" value="logout" />
+        <button type="submit" class="text-gray-500 hover:text-gray-700 text-sm">Log out</button>
+      </form>
+    </div>
+
+    {provisionError && (
+      <div class="bg-red-50 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">{provisionError}</div>
+    )}
+    {provisionSuccess && (
+      <div class="bg-green-50 text-green-800 px-4 py-3 rounded-lg mb-4 text-sm border border-green-200">
+        {provisionSuccess}
+      </div>
+    )}
+    {domainSuccessMessage && (
+      <div class="bg-green-50 text-green-800 px-4 py-3 rounded-lg mb-4 text-sm border border-green-200">
+        {domainSuccessMessage}
+      </div>
+    )}
+
+    <div class="bg-white border border-gray-200 rounded-xl p-6 mb-8">
+      <h2 class="text-lg font-semibold mb-4">Create New Blog</h2>
+      <form method="POST" class="flex gap-3">
+        <input type="hidden" name="action" value="provision" />
+        <input
+          type="text"
+          name="site_name"
+          required
+          pattern="[a-z0-9-]+"
+          class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+          placeholder="my-awesome-blog"
+        />
+        <button
+          type="submit"
+          class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition whitespace-nowrap"
+        >
+          Create Blog
+        </button>
+      </form>
+      <p class="text-xs text-gray-400 mt-2">
+        This takes ~15 seconds. A D1 database and tenant routing record will be created.
+      </p>
+    </div>
+
+    <h2 class="text-lg font-semibold mb-4">Your Blogs ({sites.length})</h2>
+    {sites.length === 0 ? (
+      <div class="bg-white border border-gray-200 rounded-xl p-12 text-center">
+        <h3 class="text-lg font-semibold mb-1">No blogs yet</h3>
+      </div>
+    ) : (
+      <div class="space-y-4">
+        {sites.map((site: any) => {
+          const blogUrl = `https://${site.site_name}.snappost.app`;
+          const dashboardUrl = `${blogUrl}/dashboard`;
+          return (
+            <div class="bg-white border border-gray-200 rounded-xl p-6">
+              <div class="flex justify-between items-start gap-4">
+                <div class="min-w-0 flex-1 space-y-2">
+                  <h3 class="text-lg font-semibold">{site.site_name}</h3>
+                  <p class="text-sm">
+                    <span class="text-gray-500">Blog</span>
+                    <a class="ml-2 text-blue-600 hover:underline break-all" href={blogUrl} target="_blank"
+                      >{blogUrl}</a
+                    >
+                  </p>
+                  <p class="text-sm">
+                    <span class="text-gray-500">Dashboard</span>
+                    <a
+                      class="ml-2 text-blue-600 hover:underline break-all"
+                      href={dashboardUrl}
+                      target="_blank"
+                      >{dashboardUrl}</a
+                    >
+                  </p>
+                  <form method="POST" class="flex flex-col sm:flex-row gap-2 sm:items-end max-w-xl pt-2">
+                    <input type="hidden" name="action" value="connect_domain" />
+                    <input type="hidden" name="site_id" value={String(site.id)} />
+                    <input
+                      type="text"
+                      name="custom_domain"
+                      placeholder="blog.yourdomain.com"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                    <button
+                      type="submit"
+                      class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-900"
+                    >
+                      Connect domain
+                    </button>
+                  </form>
+                  {domainFieldError && domainFieldError.siteId === String(site.id) && (
+                    <p class="text-red-600 text-xs mt-2">{domainFieldError.message}</p>
+                  )}
+                </div>
+                <a
+                  href={`${dashboardUrl}/login?token=${site.access_token || ""}`}
+                  target="_blank"
+                  class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition"
+                >
+                  Open Dashboard
+                </a>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+</LandingBase>

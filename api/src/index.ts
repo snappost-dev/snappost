@@ -496,8 +496,8 @@ app.post('/api/provision', async (c) => {
   const shellName = `${prefix}-shell`;
   const dashboardName = `${prefix}-dash`;
   const accessToken = crypto.randomUUID();
-  const siteUrl = 'https://snappost-serve.pages.dev';
-  const dashboardUrl = 'https://snappost-serve.pages.dev/dashboard';
+  const siteUrl = `https://${site_name}.snappost.app`;
+  const dashboardUrl = `https://${site_name}.snappost.app/dashboard`;
 
   // Rollback tracking
   let databaseId: string | null = null;

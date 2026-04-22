@@ -1,109 +1,45 @@
 ---
-import Base from "../layouts/Base.astro";
-import PostCard from "../components/PostCard.astro";
-import { getDateLocale, loadTranslations, normalizeLanguage } from "../i18n";
-import { loadBlogConfig, localBlogConfig } from "../lib/blog-config";
-import { queryD1 } from "../lib/d1";
+import LandingBase from "../layouts/LandingBase.astro";
 
-type PostRow = {
-  slug: string;
-  title: string;
-  description?: string | null;
-  content_html?: string | null;
-  created_at: string;
-};
-
-const tenantConfig = Astro.locals.tenant.config;
-const d1ApiEnv = Astro.locals.d1ApiEnv;
-
-let config = localBlogConfig();
-let posts: PostRow[] = [];
-
-if (tenantConfig) {
-  try {
-    config = await loadBlogConfig(tenantConfig.d1_database_id, d1ApiEnv);
-    posts = await queryD1<PostRow>(
-      "SELECT * FROM posts WHERE published = 1 ORDER BY created_at DESC LIMIT 3",
-      [],
-      tenantConfig.d1_database_id,
-      d1ApiEnv
-    );
-  } catch (error) {
-    console.error("[index] D1 error:", error);
-    throw error;
-  }
+if (!Astro.locals.isLanding) {
+  return Astro.redirect("/blog");
 }
 
-const siteLang = normalizeLanguage(config.site_lang || "en");
-const t = loadTranslations(siteLang);
-const dateLocale = getDateLocale(siteLang);
-
-const blogLayoutRaw = String(config.blog_layout ?? "list").trim();
-const blogLayout =
-  blogLayoutRaw === "grid" || blogLayoutRaw === "featured" ? blogLayoutRaw : "list";
-const featuredPost = blogLayout === "featured" ? posts[0] : null;
-const remainingPosts = blogLayout === "featured" ? posts.slice(1) : posts;
-
-const featuredDate = featuredPost
-  ? new Date(featuredPost.created_at).toLocaleDateString(dateLocale, {
-      year: "numeric",
-      month: "long",
-      day: "numeric"
-    })
-  : "";
-const featuredDescription = (featuredPost?.description ?? "").trim();
-const featuredImgMatch = featuredPost?.content_html?.match(/<img[^>]+src="([^"]+)"/);
-const featuredThumbnail = featuredImgMatch?.[1] ?? null;
+const softwareAppJsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Snappost",
+  description: "Launch your blog in seconds. No setup, no config files.",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  url: "https://snappost.app",
+}).replace(/</g, "\\u003c");
 ---
 
-<Base config={config} title={config.site_title} description={config.site_description} canonicalPath="/">
-  <section class="mb-10 rounded-box border border-base-300 bg-base-100 p-6 text-center">
-    <h1 class="text-4xl font-bold mb-4">{config.site_title}</h1>
-    <p class="text-xl text-base-content/70">{config.site_description}</p>
-    <div class="mt-6">
-      <a href="/blog" class="link link-primary text-sm font-medium">{t.all_posts_link}</a>
+<LandingBase title="Home">
+  <script type="application/ld+json" set:html={softwareAppJsonLd} />
+  <div class="container mx-auto px-4 py-16">
+    <div class="max-w-4xl mx-auto text-center">
+      <h1 class="text-6xl font-bold text-gray-900 mb-6">
+        Launch Your Blog<br />
+        <span class="text-blue-600">In Seconds</span>
+      </h1>
+      <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+        No setup. No config files. No hosting worries.<br />
+        Register, name your blog, and you're live.
+      </p>
+      <a
+        href="/register"
+        class="inline-block bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
+      >
+        Start Free &rarr;
+      </a>
+      <p class="text-sm text-gray-500 mt-4">Free forever &bull; No credit card required</p>
     </div>
-  </section>
-
-  {!tenantConfig ? (
-    <section class="rounded-box border border-base-300 bg-base-100 p-6 text-center">
-      <h2 class="text-2xl font-semibold">Hello local</h2>
-    </section>
-  ) : blogLayout === "grid" ? (
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-      {posts.map((post, index) => (
-        <PostCard post={post} locale={dateLocale} priority={index === 0} />
-      ))}
-    </div>
-  ) : blogLayout === "featured" ? (
-    <div class="space-y-6">
-      {featuredPost && (
-        <article class="card border border-base-300 bg-base-100 shadow-sm transition hover:shadow-md">
-          {featuredThumbnail && (
-            <figure class="max-h-96 overflow-hidden">
-              <img src={featuredThumbnail} alt="" class="h-full w-full object-cover" />
-            </figure>
-          )}
-          <a href={`/blog/${featuredPost.slug}`} class="card-body block">
-            <h2 class="mb-2 text-2xl font-bold hover:text-primary">{featuredPost.title}</h2>
-            {featuredDescription && <p class="mb-4 text-base-content/80">{featuredDescription}</p>}
-            <time class="text-sm text-base-content/60">{featuredDate}</time>
-          </a>
-        </article>
-      )}
-      {remainingPosts.length > 0 && (
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {remainingPosts.map((post, index) => (
-            <PostCard post={post} locale={dateLocale} priority={index === 0} />
-          ))}
-        </div>
-      )}
-    </div>
-  ) : (
-    <div class="space-y-6">
-      {posts.map((post, index) => (
-        <PostCard post={post} locale={dateLocale} priority={index === 0} />
-      ))}
-    </div>
-  )}
-</Base>
+  </div>
+</LandingBase>

@@ -50,7 +50,7 @@ export const onRequest = defineMiddleware(async (context: APIContext, next) => {
     request.headers.get("Host") ||
     "";
   const hostname = host.split(",")[0]?.trim() ?? "";
-  const subdomain = resolveSubdomain(hostname);
+  const normalizedHost = hostname.toLowerCase().split(":")[0];
   const runtime = context.locals.runtime;
   const env = runtime.env as {
     CF_ACCOUNT_ID?: string;
@@ -61,6 +61,16 @@ export const onRequest = defineMiddleware(async (context: APIContext, next) => {
     CF_ACCOUNT_ID: env.CF_ACCOUNT_ID ?? "",
     CF_API_TOKEN: env.CF_API_TOKEN ?? ""
   };
+
+  if (normalizedHost === "snappost.app") {
+    context.locals.isLanding = true;
+    context.locals.tenant = { subdomain: "landing", config: null };
+    context.locals.d1ApiEnv = d1ApiEnv;
+    return next();
+  }
+
+  context.locals.isLanding = false;
+  const subdomain = resolveSubdomain(hostname);
 
   if (subdomain === "local") {
     context.locals.tenant = { subdomain, config: null };
