@@ -1,6 +1,6 @@
 # SNAPPOST — Project Status (V1 MVP + dashboard editörü)
 
-**Son güncelleme:** 2026-04-19  
+**Son güncelleme:** 2026-04-21  
 **Repo:** https://github.com/snappost-dev/snappost  
 **Branch:** main
 
@@ -8,7 +8,7 @@
 
 **Dokumantasyon hiyerarsisi (aktif -> legacy):**
 - Aktif karar kaynagi: `PROJECT-STATUS.md`
-- Uygulama/operasyon: `README.md`, `api/README.md`, `landing/README.md`, `docs/SPRINT-PLAN.md`, `docs/ENV-VARIABLES-CHECKLIST.md`
+- Uygulama/operasyon: `README.md`, `api/README.md`, `landing/README.md`, `serve/README.md`, `docs/SPRINT-PLAN.md`, `docs/ENV-VARIABLES-CHECKLIST.md`
 - Template lokal gelistirme: `templates/shell/README.md`, `templates/dashboard/README.md`
 - Legacy/arsiv belgeler: PHASE-2 ve ilk Cursor setup dokumanlari (yalnizca tarihsel baglam)
 
@@ -143,6 +143,15 @@ Hata olursa rollback: oluşturulan Pages projeleri ve D1 database silinir.
 │       ├── typings/minimatch/    # tsserver shim (typeRoots)
 │       └── dist/                 # Build output → api/src/templates/dashboard/
 │
+├── serve/                        # Deneysel SaaS runtime (Astro SSR + KV + D1 HTTP API)
+│   ├── README.md                 # Serve mimarisi, env ve local/deploy notlari
+│   ├── src/
+│   │   ├── middleware.ts         # Subdomain -> tenant KV resolve
+│   │   ├── lib/d1.ts             # D1 HTTP API helper (queryD1)
+│   │   └── pages/                # Shell + dashboard + API route'lari
+│   ├── wrangler.toml
+│   └── package.json
+│
 ├── docs/                         # Arşiv / referans dokümanlar
 │   ├── SPRINT-PLAN.md                # Operasyon, CF rate limit rehberi, duman testleri, blog+R2 sprint
 │   ├── ENV-VARIABLES-CHECKLIST.md    # CF env iş listesi
@@ -223,6 +232,7 @@ config (key, value)
 | Landing | Astro 4 SSR, Tailwind, @astrojs/cloudflare |
 | Templates (dashboard) | Astro 4 SSR, Tailwind, D1, **Editor.js** (CDN), DaisyUI; sunucuda JSON→HTML |
 | Templates (shell) | Astro 4 SSR, Tailwind, D1, DaisyUI; `marked` bağımlılığı şemada/kodda legacy için kalabilir |
+| Serve (deneysel) | Astro 4 SSR, `@astrojs/cloudflare`, Tailwind + DaisyUI, KV tabanlı tenant routing, D1 HTTP API (`queryD1`) |
 | Deploy mekanizması | CF Pages Direct Upload API (upload-token → check-missing → bucket upload/retry → upsert-hashes → FormData deployment with _worker.js bundle; 500/1101’de opsiyonel inline fallback) |
 | Template embedding | Build time esbuild bundle → base64 encoded TS modules |
 | Session | httpOnly cookie (`auth_token`), JWT Bearer token |
@@ -245,6 +255,7 @@ config (key, value)
 |-----|-----|-------------------|
 | **Sabit** | `api` (Worker), `landing` (Pages) | Repoyu **Git ile Cloudflare’e bağlayıp** otomatik build veya **`wrangler deploy`** / **`wrangler pages deploy`**. |
 | **Kiracı başına** | Shell + Dashboard (Pages) + blog D1 | **Git push ile değil**; yalnızca **`POST /api/provision`** tetiklenince Worker **CF REST API** ile proje oluşturur ve gömülü şablonu **Direct Upload** eder (bkz. §2 provision adımları). Şablon hattı ayrıntısı aşağıda **“Kiracı şablon hattı”**. |
+| **Deneysel** | `serve` (tek runtime) | Ayrı bir PoC hattı; `serve/` içinde CLI ile deploy edilir. Mevcut production provisioning akışının yerine geçmez. |
 
 #### Kiracı şablon hattı (B7)
 

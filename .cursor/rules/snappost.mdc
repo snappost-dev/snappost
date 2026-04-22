@@ -25,7 +25,7 @@ alwaysApply: true
 
 Aktif rehber sırası:
 - `PROJECT-STATUS.md` (ana kaynak)
-- `README.md`, `api/README.md`, `landing/README.md`
+- `README.md`, `api/README.md`, `landing/README.md`, `serve/README.md`
 - `docs/ENV-VARIABLES-CHECKLIST.md`, `docs/SPRINT-PLAN.md`
 - `templates/shell/README.md`, `templates/dashboard/README.md`
 - `docs/archive-editorjs-v2-plan.md` (tamamlanan Editor.js işinin kapanış kaydı)
@@ -53,6 +53,7 @@ Aşağıdaki dosyalar tarihsel bağlam içindir; **aktif karar kaynağı değild
 8. **R2 medya:** Bucket `snappost-media`, `MEDIA_BUCKET`; prefix `u{userId}/s{siteId}/…` — `api/src/lib/media-keys.ts`. Upload: `POST /api/sites/:id/media` (multipart `file`, jpeg/png/webp/gif/svg); public: `GET /api/media/raw/:enc`. Kiracı dashboard origin `sp-*-dash.pages.dev` CORS’ta.
 9. **Pages assets 500/1101:** `POST /pages/assets/upload` bazı hesaplarda tek dosyada bile 500 verebilir. Provision’da `check-missing` + bucket retry var; gerekirse `PAGES_INLINE_ASSET_FALLBACK` (varsayılan açık) ile `_worker.js` inline fallback devreye girer. Bu durum **R2 bucket** problemi değildir.
 10. **Branding config:** Dashboard settings artık `site_logo`, `site_logo_dark` (opsiyonel), `site_favicon`, `logo_display` (`text`/`logo`/`logo_text`) yönetir. Shell nav’da aktif tema tercihine göre dark/light logo swap yapılır (dark boşsa light fallback).
+11. **Serve klasörü:** `serve/` deneysel SaaS runtime’dır; production provision hattının kaynağı hâlâ `templates/*` + `api/src/generated/*-template.ts` zinciridir.
 
 ## Kod yolları (kısa)
 
@@ -62,6 +63,7 @@ Aşağıdaki dosyalar tarihsel bağlam içindir; **aktif karar kaynağı değild
 - Landing sayfalar: `landing/src/pages/`
 - Blog şablon kaynak: `templates/shell/`
 - Admin şablon kaynak: `templates/dashboard/`
+- Serve runtime: `serve/src/` (`middleware.ts`, `lib/d1.ts`, `pages/*`)
 
 ## Dokümantasyon güncelleme (her implementasyonda)
 
