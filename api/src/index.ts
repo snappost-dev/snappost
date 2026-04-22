@@ -29,7 +29,6 @@ import {
   isTenantDashboardOrigin,
   deleteR2ObjectsWithPrefix,
 } from './lib/media-serve';
-import { generateDashboardAdminPassword } from './lib/dashboard-password';
 import {
   normalizeEmail,
   isEmailAllowed,
@@ -39,6 +38,7 @@ import { rateLimitClientKey, tryRateLimit, type CfRateLimiter } from './lib/cf-r
 
 type Bindings = {
   DB: D1Database;
+  TENANT_KV: KVNamespace;
   /** R2 — kiracı görselleri (B1); B2’de upload bu binding ile yazacak */
   MEDIA_BUCKET: R2Bucket;
   /** Opsiyonel — tanımsızsa atlanır (eski wrangler / yerel ortam) */
@@ -496,7 +496,8 @@ app.post('/api/provision', async (c) => {
   const shellName = `${prefix}-shell`;
   const dashboardName = `${prefix}-dash`;
   const accessToken = crypto.randomUUID();
-  const dashboardAdminPassword = generateDashboardAdminPassword();
+  const siteUrl = 'https://snappost-serve.pages.dev';
+  const dashboardUrl = 'https://snappost-serve.pages.dev/dashboard';
 
   // Rollback tracking
   let databaseId: string | null = null;
@@ -516,8 +517,16 @@ app.post('/api/provision', async (c) => {
     console.log(`[provision] Executing schema on ${databaseId}`);
     await executeD1SQL(databaseId, BLOG_SCHEMA_SQL, token, accountId);
 
-    const shellProdUrl = `https://${shellName}.pages.dev`;
-    const dashProdUrl = `https://${dashboardName}.pages.dev`;
+    const tenantPayload = {
+      d1_database_id: databaseId,
+      shell_type: 'blog' as const,
+      user_id: String(user.userId),
+      access_token: accessToken,
+    };
+    if (!c.env.TENANT_KV) {
+      throw new Error('TENANT_KV binding missing');
+    }
+    await c.env.TENANT_KV.put(site_name, JSON.stringify(tenantPayload));
 
     const inserted = await c.env.DB.prepare(
       `INSERT INTO sites (user_id, site_name, d1_database_id, shell_project_name, shell_url, 
@@ -529,10 +538,10 @@ app.post('/api/provision', async (c) => {
         user.userId,
         site_name,
         databaseId,
-        shellName,
-        shellProdUrl,
-        dashboardName,
-        dashProdUrl,
+        null,
+        siteUrl,
+        null,
+        dashboardUrl,
         accessToken
       )
       .first<{ id: number }>();
@@ -542,64 +551,66 @@ app.post('/api/provision', async (c) => {
       throw new Error('provision: site row insert failed');
     }
 
-    const apiPublicBase =
-      (c.env.SNAPPOST_API_PUBLIC_URL?.trim()) || new URL(c.req.url).origin;
-
-    // 5. Create shell project + set binding BEFORE deploy
-    console.log(`[provision] Creating shell project: ${shellName}`);
-    await createPagesProject(shellName, token, accountId);
-    shellCreated = true;
-    await setPagesBinding(
-      shellName,
-      {
-        d1DatabaseId: databaseId,
-        d1DatabaseName: dbName,
-        envVars: { SITE_URL: shellProdUrl },
-      },
-      token,
-      accountId
-    );
-
-    // 6. Deploy shell
-    const shellTemplate = await prepareShellTemplate();
-    const shellUrl = await uploadToPages(shellName, shellTemplate, token, accountId, {
-      inlineAssetFallback: pagesInlineAssetFallbackEnabled(c.env),
-    });
-    console.log(`[provision] Shell deployed: ${shellUrl}`);
-
-    // 7. Create dashboard project + set binding BEFORE deploy
-    console.log(`[provision] Creating dashboard project: ${dashboardName}`);
-    await createPagesProject(dashboardName, token, accountId);
-    dashboardCreated = true;
-    await setPagesBinding(
-      dashboardName,
-      {
-        d1DatabaseId: databaseId,
-        d1DatabaseName: dbName,
-        envVars: {
-          ACCESS_TOKEN: accessToken,
-          SNAPPOST_API_URL: apiPublicBase.replace(/\/$/, ''),
-          SNAPPOST_SITE_ID: String(siteRowId),
-          ADMIN_PASSWORD: dashboardAdminPassword,
-        },
-      },
-      token,
-      accountId
-    );
-
-    // 8. Deploy dashboard
-    const dashTemplate = await prepareDashboardTemplate();
-    const dashUrl = await uploadToPages(dashboardName, dashTemplate, token, accountId, {
-      inlineAssetFallback: pagesInlineAssetFallbackEnabled(c.env),
-    });
-    console.log(`[provision] Dashboard deployed: ${dashUrl}`);
+    // LEGACY: Per-tenant Pages deploy (shell + dashboard) akışı pivot öncesi referans olarak tutuluyor.
+    // const shellProdUrl = `https://${shellName}.pages.dev`;
+    // const dashProdUrl = `https://${dashboardName}.pages.dev`;
+    // const apiPublicBase =
+    //   (c.env.SNAPPOST_API_PUBLIC_URL?.trim()) || new URL(c.req.url).origin;
+    //
+    // // LEGACY: Create shell project + set binding BEFORE deploy
+    // console.log(`[provision] Creating shell project: ${shellName}`);
+    // await createPagesProject(shellName, token, accountId);
+    // shellCreated = true;
+    // await setPagesBinding(
+    //   shellName,
+    //   {
+    //     d1DatabaseId: databaseId,
+    //     d1DatabaseName: dbName,
+    //     envVars: { SITE_URL: shellProdUrl },
+    //   },
+    //   token,
+    //   accountId
+    // );
+    //
+    // // LEGACY: Deploy shell
+    // const shellTemplate = await prepareShellTemplate();
+    // const shellUrl = await uploadToPages(shellName, shellTemplate, token, accountId, {
+    //   inlineAssetFallback: pagesInlineAssetFallbackEnabled(c.env),
+    // });
+    // console.log(`[provision] Shell deployed: ${shellUrl}`);
+    //
+    // // LEGACY: Create dashboard project + set binding BEFORE deploy
+    // console.log(`[provision] Creating dashboard project: ${dashboardName}`);
+    // await createPagesProject(dashboardName, token, accountId);
+    // dashboardCreated = true;
+    // await setPagesBinding(
+    //   dashboardName,
+    //   {
+    //     d1DatabaseId: databaseId,
+    //     d1DatabaseName: dbName,
+    //     envVars: {
+    //       ACCESS_TOKEN: accessToken,
+    //       SNAPPOST_API_URL: apiPublicBase.replace(/\/$/, ''),
+    //       SNAPPOST_SITE_ID: String(siteRowId),
+    //       ADMIN_PASSWORD: '<legacy-generated-password>',
+    //     },
+    //   },
+    //   token,
+    //   accountId
+    // );
+    //
+    // // LEGACY: Deploy dashboard
+    // const dashTemplate = await prepareDashboardTemplate();
+    // const dashUrl = await uploadToPages(dashboardName, dashTemplate, token, accountId, {
+    //   inlineAssetFallback: pagesInlineAssetFallbackEnabled(c.env),
+    // });
+    // console.log(`[provision] Dashboard deployed: ${dashUrl}`);
 
     return c.json({
-      shell_url: shellProdUrl,
-      dashboard_url: dashProdUrl,
+      site_url: siteUrl,
+      dashboard_url: dashboardUrl,
       access_token: accessToken,
-      // Dashboard /login — bir kez gösterilir; kayıp halinde Pages → ADMIN_PASSWORD güncellenir
-      dashboard_password: dashboardAdminPassword,
+      d1_database_id: databaseId,
     });
   } catch (error) {
     console.error('[provision] Error:', error);

@@ -9,6 +9,11 @@ binding = "DB"
 database_name = "snappost-provisioning"
 database_id = "d8c8583f-e604-44f0-8ead-7b0d53b4f151"
 
+[[kv_namespaces]]
+binding = "TENANT_KV"
+id = "8d9afa8bc95b4600b8779a62309c15aa"
+preview_id = "8d9afa8bc95b4600b8779a62309c15aa"
+
 # Blog/medya (B1) — tek bucket, kiracı prefix: u{userId}/s{siteId}/…
 # Oluşturma: wrangler r2 bucket create snappost-media
 [[r2_buckets]]

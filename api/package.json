@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "build": "wrangler deploy --dry-run",
     "embed": "node scripts/embed-templates.mjs",
     "sync-templates": "node scripts/sync-templates.mjs",
     "templates:build": "npm run build --prefix ../templates/shell && npm run build --prefix ../templates/dashboard",
