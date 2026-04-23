@@ -24,6 +24,7 @@ declare namespace App {
       config: TenantConfig | null;
     };
     isLanding: boolean;
+    manageSiteName?: string;
     d1ApiEnv: {
       CF_ACCOUNT_ID: string;
       CF_API_TOKEN: string;
