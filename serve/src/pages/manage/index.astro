@@ -20,6 +20,8 @@ let provisionError = "";
 let provisionSuccess = "";
 let domainFieldError: { siteId: string; message: string } | null = null;
 let domainSuccessMessage = "";
+let deleteSiteError: { siteId: string; message: string } | null = null;
+let deleteSiteSuccessMessage = "";
 
 try {
   const meRes = await fetch(`${API_URL}/api/auth/me`, {
@@ -92,6 +94,29 @@ if (Astro.request.method === "POST") {
         domainFieldError = { siteId, message: "Could not connect to server" };
       }
     }
+  } else if (action === "delete_site") {
+    const siteId = form.get("site_id")?.toString();
+    if (!siteId) {
+      deleteSiteError = { siteId: "", message: "Missing site" };
+    } else {
+      try {
+        const res = await fetch(`${API_URL}/api/sites/${siteId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          deleteSiteError = {
+            siteId,
+            message: data.detail ? `${data.error}: ${data.detail}` : data.error || "Delete failed",
+          };
+        } else {
+          deleteSiteSuccessMessage = "Blog deleted successfully.";
+        }
+      } catch {
+        deleteSiteError = { siteId, message: "Could not connect to server" };
+      }
+    }
   } else if (action === "logout") {
     Astro.cookies.delete("auth_token", { path: "/" });
     return Astro.redirect("/");
@@ -134,6 +159,11 @@ try {
         {domainSuccessMessage}
       </div>
     )}
+    {deleteSiteSuccessMessage && (
+      <div class="bg-green-50 text-green-800 px-4 py-3 rounded-lg mb-4 text-sm border border-green-200">
+        {deleteSiteSuccessMessage}
+      </div>
+    )}
 
     <div class="bg-white border border-gray-200 rounded-xl p-6 mb-8">
       <h2 class="text-lg font-semibold mb-4">Create New Blog</h2>
@@ -170,54 +200,59 @@ try {
           const blogUrl = `https://${site.site_name}.snappost.app`;
           const dashboardUrl = `${blogUrl}/dashboard`;
           return (
-            <div class="bg-white border border-gray-200 rounded-xl p-6">
-              <div class="flex justify-between items-start gap-4">
-                <div class="min-w-0 flex-1 space-y-2">
-                  <h3 class="text-lg font-semibold">{site.site_name}</h3>
-                  <p class="text-sm">
-                    <span class="text-gray-500">Blog</span>
-                    <a class="ml-2 text-blue-600 hover:underline break-all" href={blogUrl} target="_blank"
-                      >{blogUrl}</a
-                    >
-                  </p>
-                  <p class="text-sm">
-                    <span class="text-gray-500">Dashboard</span>
-                    <a
-                      class="ml-2 text-blue-600 hover:underline break-all"
-                      href={dashboardUrl}
-                      target="_blank"
-                      >{dashboardUrl}</a
-                    >
-                  </p>
-                  <form method="POST" class="flex flex-col sm:flex-row gap-2 sm:items-end max-w-xl pt-2">
-                    <input type="hidden" name="action" value="connect_domain" />
+            <>
+              <div class="bg-white border border-gray-200 rounded-xl p-6">
+                <div class="flex justify-between items-start gap-4">
+                  <div class="min-w-0 flex-1 space-y-2">
+                    <h3 class="text-lg font-semibold">{site.site_name}</h3>
+                    <p class="text-sm">
+                      <span class="text-gray-500">Blog</span>
+                      <a class="ml-2 text-blue-600 hover:underline break-all" href={blogUrl} target="_blank"
+                        >{blogUrl}</a
+                      >
+                    </p>
+                    <form method="POST" class="flex flex-col sm:flex-row gap-2 sm:items-end max-w-xl pt-2">
+                      <input type="hidden" name="action" value="connect_domain" />
+                      <input type="hidden" name="site_id" value={String(site.id)} />
+                      <input
+                        type="text"
+                        name="custom_domain"
+                        placeholder="blog.yourdomain.com"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                      <button
+                        type="submit"
+                        class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-900"
+                      >
+                        Connect domain
+                      </button>
+                    </form>
+                    {domainFieldError && domainFieldError.siteId === String(site.id) && (
+                      <p class="text-red-600 text-xs mt-2">{domainFieldError.message}</p>
+                    )}
+                  </div>
+                  <a
+                    href={`${dashboardUrl}?token=${encodeURIComponent(site.access_token || "")}`}
+                    target="_blank"
+                    class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition"
+                  >
+                    Open Dashboard
+                  </a>
+                  <form
+                    method="POST"
+                    class="inline"
+                    onsubmit="return confirm('Bu blogu silmek istediğinizden emin misiniz?');"
+                  >
+                    <input type="hidden" name="action" value="delete_site" />
                     <input type="hidden" name="site_id" value={String(site.id)} />
-                    <input
-                      type="text"
-                      name="custom_domain"
-                      placeholder="blog.yourdomain.com"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    />
-                    <button
-                      type="submit"
-                      class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-900"
-                    >
-                      Connect domain
-                    </button>
+                    <button type="submit" class="btn btn-error btn-sm">Delete blog</button>
                   </form>
-                  {domainFieldError && domainFieldError.siteId === String(site.id) && (
-                    <p class="text-red-600 text-xs mt-2">{domainFieldError.message}</p>
-                  )}
                 </div>
-                <a
-                  href={`${dashboardUrl}?token=${encodeURIComponent(site.access_token || "")}`}
-                  target="_blank"
-                  class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition"
-                >
-                  Open Dashboard
-                </a>
               </div>
-            </div>
+              {deleteSiteError && deleteSiteError.siteId === String(site.id) && (
+                <p class="text-red-600 text-xs mt-2">{deleteSiteError.message}</p>
+              )}
+            </>
           );
         })}
       </div>

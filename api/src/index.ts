@@ -474,6 +474,11 @@ app.post('/api/provision', async (c) => {
     return c.json({ error: 'site_name required (lowercase alphanumeric + hyphens only)' }, 400);
   }
 
+  const existing = await c.env.TENANT_KV.get(site_name);
+  if (existing) {
+    return c.json({ error: 'Bu site adı kullanılıyor' }, 409);
+  }
+
   const dup = await c.env.DB.prepare('SELECT id FROM sites WHERE user_id = ? AND site_name = ?')
     .bind(user.userId, site_name)
     .first<{ id: number }>();
@@ -1103,6 +1108,16 @@ app.delete('/api/sites/:id', async (c) => {
     }
   } catch (e) {
     warnings.push(`R2 media: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  try {
+    const tenantKey =
+      typeof site.site_name === 'string' ? site.site_name.trim() : '';
+    if (tenantKey) {
+      await c.env.TENANT_KV.delete(tenantKey);
+    }
+  } catch (e) {
+    console.error('[sites/delete] TENANT_KV delete failed:', e);
   }
 
   await c.env.DB.prepare('DELETE FROM sites WHERE id = ? AND user_id = ?')
