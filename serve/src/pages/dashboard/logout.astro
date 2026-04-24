@@ -1,20 +1,7 @@
 ---
-import { requireDashboardAuth } from '../../lib/dashboard-auth';
-
 if (Astro.request.method === 'POST') {
-  const denied = await requireDashboardAuth(Astro);
-  if (denied) return denied;
-
   Astro.cookies.delete('auth');
-  Astro.cookies.delete('auth_user_id');
-  const headers = new Headers();
-  headers.set('Location', '/dashboard/login');
-  headers.append('Set-Cookie', 'auth=; Max-Age=0; Path=/; Domain=snappost.app');
-  headers.append('Set-Cookie', 'auth_user_id=; Max-Age=0; Path=/; Domain=snappost.app');
-  return new Response(null, {
-    status: 302,
-    headers,
-  });
+  return Astro.redirect('/dashboard/login');
 }
 
 return Astro.redirect('/dashboard');

@@ -1,6 +1,5 @@
 import type { APIRoute } from "astro";
 import { isApiAuthorized } from "../../../../lib/api-auth";
-import { requireDashboardAuth } from "../../../../lib/dashboard-auth";
 import { queryD1 } from "../../../../lib/d1";
 
 type PublishBody = {
@@ -8,9 +7,6 @@ type PublishBody = {
 };
 
 export const PATCH: APIRoute = async ({ params, request, locals, cookies }) => {
-  const authResult = await requireDashboardAuth({ cookies, locals, isApi: true });
-  if (authResult) return authResult;
-
   const tenantConfig = locals.tenant.config;
   const d1ApiEnv = locals.d1ApiEnv;
   const authCookie = cookies.get("auth")?.value;

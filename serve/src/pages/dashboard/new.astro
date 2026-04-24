@@ -2,13 +2,10 @@
 import '../../styles/global.css';
 import { renderEditorJSToHTML } from '../../lib/editor';
 import { queryD1 } from '../../lib/d1';
-import { requireDashboardAuth } from '../../lib/dashboard-auth';
 
 let error = '';
 const tenantConfig = Astro.locals.tenant.config;
 const d1ApiEnv = Astro.locals.d1ApiEnv;
-const denied = await requireDashboardAuth(Astro);
-if (denied) return denied;
 
 if (Astro.request.method === 'POST') {
   if (!tenantConfig) {

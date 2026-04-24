@@ -59,8 +59,6 @@ const logoDisplayRaw = (config.logo_display || "text").trim().toLowerCase();
 const logoDisplay =
   logoDisplayRaw === "logo" || logoDisplayRaw === "logo_text" ? logoDisplayRaw : "text";
 const hasSiteLogo = Boolean((config.site_logo || "").trim());
-const authCookie = Astro.cookies.get("auth")?.value;
-const isOwner = !!authCookie;
 ---
 
 <!doctype html>
@@ -149,14 +147,5 @@ const isOwner = !!authCookie;
     <footer class="border-t border-base-300 bg-base-200 text-center py-8 text-sm text-base-content/60">
       <p>&copy; {new Date().getFullYear()} {config.author_name}</p>
     </footer>
-
-    {isOwner && (
-      <a
-        href="/dashboard"
-        class="btn btn-sm btn-neutral fixed bottom-4 right-4 z-20 shadow-md"
-      >
-        ⚙ Dashboard
-      </a>
-    )}
   </body>
 </html>

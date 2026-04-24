@@ -12,7 +12,6 @@ type RuntimeEnv = {
   TENANT_KV: KVNamespace;
   CF_ACCOUNT_ID: string;
   CF_API_TOKEN: string;
-  API_URL?: string;
   SNAPPOST_API_URL?: string;
   SNAPPOST_SITE_ID?: string;
 };
@@ -23,8 +22,6 @@ declare namespace App {
       subdomain: string;
       config: TenantConfig | null;
     };
-    isLanding: boolean;
-    manageSiteName?: string;
     d1ApiEnv: {
       CF_ACCOUNT_ID: string;
       CF_API_TOKEN: string;
