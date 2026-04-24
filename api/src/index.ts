@@ -52,6 +52,8 @@ type Bindings = {
   MAX_MEDIA_UPLOAD_MB?: string;
   /** Virgülle ayrılmış; tanımsız veya boş = kısıt yok */
   ALLOWED_EMAILS?: string;
+  /** "false" ise whitelist kapalı (register herkese açık). Varsayılan: açık */
+  WHITELIST_ENABLED?: string;
   /** Pozitif tam sayı; kullanıcı başına en fazla kaç blog (sites satırı). Tanımsız/boş = sınırsız */
   MAX_SITES_PER_USER?: string;
   /** Yalnızca tam olarak "true" iken /test/* açılır; production’da tanımlamayın */
@@ -269,15 +271,15 @@ app.post('/api/auth/register', async (c) => {
       return c.json({ error: 'Geçerli bir e-posta adresi girin.' }, 400);
     }
 
-    const allowed = await resolveEffectiveAllowedEmailSet(c.env, c.env.DB);
-    if (!isEmailAllowed(normalizedEmail, allowed)) {
-      return c.json(
-        {
-          error: 'Bu e-posta ile kayıt şu an kapalı. Davetli kullanıcı listesinde değilsiniz.',
-          detail: 'İzin listesi: Worker ALLOWED_EMAILS ve/veya D1 allowed_emails.',
-        },
-        403
-      );
+    const whitelistEnabled = c.env.WHITELIST_ENABLED !== 'false';
+    if (whitelistEnabled) {
+      const allowedEmails = (c.env.ALLOWED_EMAILS || '')
+        .split(',')
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean);
+      if (!isEmailAllowed(normalizedEmail, new Set(allowedEmails))) {
+        return c.json({ error: 'Kayıt şu an davet ile sınırlıdır' }, 403);
+      }
     }
     
     // Check if user exists (mevcut kayıtlar için case-insensitive)

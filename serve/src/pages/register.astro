@@ -7,7 +7,6 @@ if (!Astro.locals.isLanding) {
 
 const API_URL =
   Astro.locals.runtime.env.API_URL ||
-  import.meta.env.API_URL ||
   "https://snappost-api.snappost-dev.workers.dev";
 let error = "";
 
@@ -28,13 +27,17 @@ if (Astro.request.method === "POST") {
       const data = await res.json();
 
       if (!res.ok) {
+        if (res.status === 403) {
+          error = data.error || "Kayıt şu an davet ile sınırlıdır";
+          return;
+        }
         const base = data.error || "Registration failed";
         error = data.detail ? `${base}: ${data.detail}` : base;
       } else {
         Astro.cookies.set("auth_token", data.token, {
           path: "/",
           httpOnly: true,
-          secure: import.meta.env.PROD,
+          secure: true,
           sameSite: "lax",
           maxAge: 60 * 60 * 24 * 7,
         });
