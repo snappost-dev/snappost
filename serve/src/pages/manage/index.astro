@@ -54,11 +54,13 @@ if (Astro.request.method === "POST") {
           },
           body: JSON.stringify({ site_name: siteName }),
         });
-        const data = await res.json();
         if (!res.ok) {
-          const base = data.error || "Provisioning failed";
-          provisionError = data.detail ? `${base}: ${data.detail}` : base;
+          const err = await res.json();
+          const base = err.error || "Provisioning failed";
+          provisionError = err.detail ? `${base}: ${err.detail}` : base;
+          provisionSuccess = "";
         } else {
+          await res.json();
           provisionSuccess = `Blog "${siteName}" created!`;
         }
       } catch {

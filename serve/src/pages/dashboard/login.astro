@@ -10,7 +10,13 @@ if (tenantConfig?.access_token && tokenFromQuery && tokenFromQuery === tenantCon
     httpOnly: true,
     secure: true,
     sameSite: "strict",
-    maxAge: 60 * 60 * 24 * 7 // 7 gün
+    maxAge: 3600 // 1 saat
+  });
+  Astro.cookies.set("auth_user_id", tenantConfig.user_id, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    maxAge: 3600 // 1 saat
   });
   return Astro.redirect("/dashboard");
 }
@@ -21,6 +27,12 @@ if (Astro.request.method === 'POST') {
   
   if (tenantConfig?.access_token && password === tenantConfig.access_token) {
     Astro.cookies.set('auth', tenantConfig.access_token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7 // 7 gün
+    });
+    Astro.cookies.set('auth_user_id', tenantConfig.user_id, {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',

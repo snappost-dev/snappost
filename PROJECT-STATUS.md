@@ -351,6 +351,10 @@ Landing'de runtime env: `Astro.locals.runtime.env.API_URL` (CF Pages SSR'da `imp
 | 14 | E-posta whitelist | **Uygulandı:** `ALLOWED_EMAILS` (opsiyonel); boş/tanımsız = kısıt yok. Uçlar: register, login, me, sites, site detay, provision, domain, site silme — **§9.5 (kapatıldı)**. |
 | 15 | Pages assets upload 500/1101 | Bazı hesap/projelerde `POST /pages/assets/upload` tek dosyada bile 500 dönebiliyor. Provision akışında `check-missing` + bölmeli retry + opsiyonel `PAGES_INLINE_ASSET_FALLBACK` (varsayılan açık) ile devam edilir. |
 
+### 8.1 Serve Known Issues
+
+- `serve/` pivot hattında tespit edilen güncel bilinen sorunlar ve planlanan düzeltmeler: [`serve/KNOWN-ISSUES.md`](serve/KNOWN-ISSUES.md)
+
 ---
 
 ## 9. Yol haritası

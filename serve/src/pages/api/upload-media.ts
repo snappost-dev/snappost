@@ -1,9 +1,13 @@
 import type { APIRoute } from "astro";
 import { isApiAuthorized } from "../../lib/api-auth";
+import { requireDashboardAuth } from "../../lib/dashboard-auth";
 
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request, locals, cookies }) => {
+  const authResult = await requireDashboardAuth({ cookies, locals, isApi: true });
+  if (authResult) return authResult;
+
   const tenantConfig = locals.tenant.config;
   const authCookie = cookies.get("auth")?.value;
 

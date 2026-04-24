@@ -1,6 +1,7 @@
 ---
 import Dashboard from '../../layouts/Dashboard.astro';
 import { queryD1 } from '../../lib/d1';
+import { requireDashboardAuth } from '../../lib/dashboard-auth';
 
 const THEMES = [
   'light',
@@ -39,6 +40,8 @@ const THEMES = [
 
 const tenantConfig = Astro.locals.tenant.config;
 const d1ApiEnv = Astro.locals.d1ApiEnv;
+const denied = await requireDashboardAuth(Astro);
+if (denied) return denied;
 
 const siteThemeLightRows = tenantConfig
   ? await queryD1<{ value: string }>(
