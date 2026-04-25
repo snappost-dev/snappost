@@ -43,8 +43,6 @@ period = 60
 
 [vars]
 CF_ACCOUNT_ID = "1094e722fe9d2b939e94a8ceb124d21b"
-# Opsiyonel — virgülle ayrılmış e-postalar; boş veya satır yok = kayıt/giriş herkese açık
-# ALLOWED_EMAILS = "alice@example.com,bob@example.com"
 # Opsiyonel — kullanıcı başına en çok kaç blog (sites). Tanımsız = sınırsız
 # MAX_SITES_PER_USER = "3"
 # Opsiyonel — tarayıcı CORS Origin listesi (virgülle). Boş = localhost + snappost.dev + pages.dev varsayılanları
