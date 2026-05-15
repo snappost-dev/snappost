@@ -6,3 +6,5 @@ dist/
 .dev.vars
 *.log
 .DS_Store
+.cursor/settings.json
+*.code-workspace
